@@ -192,42 +192,144 @@ export default function PhotoQuest() {
             ][index % 4];
             
             return (
-              <Card key={quest.id} className="bg-white rounded-3xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+              <Card key={quest.id} className="bg-white rounded-3xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-2 border-transparent hover:border-romantic/30 relative overflow-hidden">
+                <div className="absolute top-3 right-3 text-3xl opacity-20">
+                  {quest.title.includes('Ano') && '💍'}
+                  {quest.title.includes('polibek') && '💋'}
+                  {quest.title.includes('prstýnek') && '💎'}
+                  {quest.title.includes('tanec') && '💃'}
+                  {quest.title.includes('hostů') && '👥'}
+                  {(!quest.title.includes('Ano') && !quest.title.includes('polibek') && 
+                    !quest.title.includes('prstýnek') && !quest.title.includes('tanec') && 
+                    !quest.title.includes('hostů')) && '📷'}
+                </div>
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
-                    <div className={`w-16 h-16 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      <IconComponent className="text-white" size={24} />
+                    <div className={`w-20 h-20 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                      <IconComponent className="text-white" size={28} />
                     </div>
-                    <h3 className="font-display text-xl font-bold text-charcoal mb-2">{quest.title}</h3>
-                    <p className="text-charcoal/70 text-sm">{quest.description}</p>
+                    <h3 className="font-display text-xl font-bold text-charcoal mb-3 flex items-center justify-center">
+                      <span className="mr-2">🎯</span>
+                      {quest.title}
+                    </h3>
+                    <p className="text-charcoal/70 text-sm font-medium">{quest.description}</p>
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="bg-blush rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-blush to-cream rounded-xl p-4 border-2 border-romantic/20">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-charcoal">Postup</span>
-                        <span className={`text-sm ${colorClasses.text} font-bold`}>{getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek</span>
+                        <span className="text-sm font-bold text-charcoal flex items-center">
+                          <span className="mr-2">📊</span>
+                          Váš postup
+                        </span>
+                        <span className={`text-lg ${colorClasses.text} font-bold px-3 py-1 rounded-full bg-white/50`}>
+                          {getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek
+                        </span>
                       </div>
-                      <Progress value={progress} className="w-full" />
+                      <Progress value={progress} className="w-full h-3" />
+                      <div className="mt-2 text-xs text-charcoal/70 text-center">
+                        {progress === 100 ? "🎉 Úkol dokončen!" : `Zbývá ${quest.targetPhotos - getPhotosUploadedForQuest(quest.id)} ověřených fotek`}
+                      </div>
                     </div>
                     
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
-                          className={`w-full ${colorClasses.bg} text-white ${colorClasses.hover}`}
+                          className={`w-full ${colorClasses.bg} text-white ${colorClasses.hover} font-bold py-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
                           onClick={() => setSelectedQuest(quest)}
                         >
-                          <Camera className="mr-2" size={16} />
-                          Nahrát fotku
+                          <Camera className="mr-2" size={18} />
+                          📸 Nahrát fotku
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
-                          <DialogTitle>Nahrát fotku pro: {quest.title}</DialogTitle>
-                          <p className="text-sm text-charcoal/70">
-                            Nahrajte svou fotku pro tento úkol a získejte body! AI systém ověří, zda fotka odpovídá zadání.
-                          </p>
+                          <DialogTitle className="text-xl font-bold text-romantic">
+                            📸 {quest.title}
+                          </DialogTitle>
                         </DialogHeader>
+                        
+                        {/* Challenge Instructions */}
+                        <div className="space-y-4 mb-6">
+                          <div className="bg-gradient-to-r from-blush to-cream p-4 rounded-xl border-2 border-romantic/20">
+                            <h4 className="font-bold text-charcoal mb-2 flex items-center">
+                              <span className="text-romantic mr-2">🎯</span>
+                              Zadání úkolu:
+                            </h4>
+                            <p className="text-charcoal/80 font-medium">{quest.description}</p>
+                          </div>
+                          
+                          {/* Specific Instructions Based on Challenge */}
+                          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
+                            <h4 className="font-bold text-yellow-800 mb-2 flex items-center">
+                              <span className="mr-2">💡</span>
+                              Jak vyfotit:
+                            </h4>
+                            <div className="text-yellow-700 text-sm space-y-1">
+                              {quest.title.includes('Ano') && (
+                                <>
+                                  <p><strong>CO:</strong> Moment výměny slibů nebo prstýnků</p>
+                                  <p><strong>KDO:</strong> Nevěsta a ženich během obřadu</p>
+                                  <p><strong>KDY:</strong> Během svatebního obřadu</p>
+                                  <p><strong>JAK:</strong> Zachyťte emoce a důležitý okamžik</p>
+                                </>
+                              )}
+                              {quest.title.includes('polibek') && (
+                                <>
+                                  <p><strong>CO:</strong> První manželský polibek</p>
+                                  <p><strong>KDO:</strong> Novomanželé</p>
+                                  <p><strong>KDY:</strong> Na konci obřadu</p>
+                                  <p><strong>JAK:</strong> Zachyťte ten magický moment</p>
+                                </>
+                              )}
+                              {quest.title.includes('prstýnek') && (
+                                <>
+                                  <p><strong>CO:</strong> Detail snubních prstýnků</p>
+                                  <p><strong>KDO:</strong> Prstýnky na rukou nebo samostatně</p>
+                                  <p><strong>KDY:</strong> Kdykoliv během dne</p>
+                                  <p><strong>JAK:</strong> Ostré detailní foto prstýnků</p>
+                                </>
+                              )}
+                              {quest.title.includes('tanec') && (
+                                <>
+                                  <p><strong>CO:</strong> První tanec novomanželů</p>
+                                  <p><strong>KDO:</strong> Nevěsta a ženich tančící</p>
+                                  <p><strong>KDY:</strong> Během večerní zábavy</p>
+                                  <p><strong>JAK:</strong> Zachyťte pohyb a radost</p>
+                                </>
+                              )}
+                              {quest.title.includes('hostů') && (
+                                <>
+                                  <p><strong>CO:</strong> Skupinová fotka svatebčanů</p>
+                                  <p><strong>KDO:</strong> Hosté svatby</p>
+                                  <p><strong>KDY:</strong> Kdykoliv během oslavy</p>
+                                  <p><strong>JAK:</strong> Zajistěte, aby byli všichni vidět</p>
+                                </>
+                              )}
+                              {(!quest.title.includes('Ano') && !quest.title.includes('polibek') && 
+                                !quest.title.includes('prstýnek') && !quest.title.includes('tanec') && 
+                                !quest.title.includes('hostů')) && (
+                                <>
+                                  <p><strong>CO:</strong> Podle popisu úkolu výše</p>
+                                  <p><strong>KDO:</strong> Relevantní osoby pro daný úkol</p>
+                                  <p><strong>KDY:</strong> Ve správný moment</p>
+                                  <p><strong>JAK:</strong> Kvalitní a jasná fotka</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-xl">
+                            <h4 className="font-bold text-blue-800 mb-2 flex items-center">
+                              <span className="mr-2">🤖</span>
+                              AI ověření:
+                            </h4>
+                            <p className="text-blue-700 text-sm">
+                              Systém automaticky zkontroluje, zda fotka odpovídá zadání. 
+                              Pouze ověřené fotky se započítají do postupu!
+                            </p>
+                          </div>
+                        </div>
                         <div className="space-y-4">
                           <div>
                             <Label htmlFor="uploaderName">Vaše jméno (pro sledování postupu)</Label>
