@@ -64,7 +64,7 @@ export default function PhotoQuest() {
       });
 
       // Show AI analysis with suggestions
-      if (data.aiAnalysis) {
+      if (data.aiAnalysis && data.aiAnalysis.trim()) {
         setTimeout(() => {
           toast({
             title: data.isVerified ? "AI Analýza" : "AI Doporučení",

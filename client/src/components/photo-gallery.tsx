@@ -37,7 +37,7 @@ export default function PhotoGallery() {
     onSuccess: (data) => {
       toast({
         title: "Foto nahráno!",
-        description: `Vaše fotka byla úspěšně přidána do galerie s AI hodnocením ${data.verificationScore}%.`,
+        description: `Vaše fotka byla úspěšně přidána do galerie s AI hodnocením ${data.verificationScore || 0}%.`,
       });
       
       // Show AI analysis of the photo
@@ -50,10 +50,12 @@ export default function PhotoGallery() {
         }, 1500);
       }
       
+      // Reset form state
       setSelectedFile(null);
       setUploaderName("");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+        fileInputRef.current.removeAttribute('capture');
       }
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
     },
@@ -184,13 +186,13 @@ export default function PhotoGallery() {
                   <p className="text-charcoal/60 text-sm">Podporované formáty: JPG, PNG, HEIC (max 10MB)</p>
                 </div>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md" aria-describedby="gallery-upload-description">
+              <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Nahrát fotku do galerie</DialogTitle>
                 </DialogHeader>
-                <p id="gallery-upload-description" className="text-sm text-charcoal/70 mb-4">
+                <div className="text-sm text-charcoal/70 mb-4">
                   Sdílejte své krásné vzpomínky ze svatby s ostatními hosty.
-                </p>
+                </div>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="uploaderName">Vaše jméno</Label>
