@@ -42,7 +42,14 @@ export default function PhotoQuest() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await apiRequest('POST', '/api/photos/upload', formData);
+      const response = await fetch('/api/photos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -130,13 +137,18 @@ export default function PhotoQuest() {
           {challenges.map((quest, index) => {
             const IconComponent = getQuestIcon(quest.title);
             const progress = getProgressForQuest(quest.id);
-            const colors = ['romantic', 'gold', 'love', 'sage'][index % 4];
+            const colorClasses = [
+              { bg: 'bg-romantic', text: 'text-romantic', hover: 'hover:bg-romantic/80' },
+              { bg: 'bg-gold', text: 'text-gold', hover: 'hover:bg-gold/80' },
+              { bg: 'bg-love', text: 'text-love', hover: 'hover:bg-love/80' },
+              { bg: 'bg-sage', text: 'text-sage', hover: 'hover:bg-sage/80' }
+            ][index % 4];
             
             return (
               <Card key={quest.id} className="bg-white rounded-3xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
-                    <div className={`w-16 h-16 bg-${colors} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                    <div className={`w-16 h-16 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-4`}>
                       <IconComponent className="text-white" size={24} />
                     </div>
                     <h3 className="font-display text-xl font-bold text-charcoal mb-2">{quest.title}</h3>
@@ -147,7 +159,7 @@ export default function PhotoQuest() {
                     <div className="bg-blush rounded-xl p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-charcoal">Postup</span>
-                        <span className={`text-sm text-${colors} font-bold`}>0/{quest.targetPhotos} fotek</span>
+                        <span className={`text-sm ${colorClasses.text} font-bold`}>0/{quest.targetPhotos} fotek</span>
                       </div>
                       <Progress value={progress} className="w-full" />
                     </div>
@@ -155,17 +167,20 @@ export default function PhotoQuest() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
-                          className={`w-full bg-${colors} text-white hover:bg-${colors}/80`}
+                          className={`w-full ${colorClasses.bg} text-white ${colorClasses.hover}`}
                           onClick={() => setSelectedQuest(quest)}
                         >
                           <Camera className="mr-2" size={16} />
                           Nahrát fotku
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-md" aria-describedby="upload-description">
                         <DialogHeader>
                           <DialogTitle>Nahrát fotku pro: {quest.title}</DialogTitle>
                         </DialogHeader>
+                        <p id="upload-description" className="text-sm text-charcoal/70 mb-4">
+                          Nahrajte svou fotku pro tento úkol a získejte body!
+                        </p>
                         <div className="space-y-4">
                           <div>
                             <Label htmlFor="uploaderName">Vaše jméno</Label>

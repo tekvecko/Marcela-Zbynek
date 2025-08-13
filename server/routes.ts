@@ -59,7 +59,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload photo
   app.post("/api/photos/upload", upload.single('photo'), async (req, res) => {
     try {
+      console.log('Upload request received:', {
+        hasFile: !!req.file,
+        body: req.body,
+        files: req.files
+      });
+      
       if (!req.file) {
+        console.log('No file in request');
         return res.status(400).json({ message: "No photo uploaded" });
       }
 
