@@ -17,11 +17,19 @@ const upload = multer({
   dest: uploadDir,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/heic'];
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/heic', 
+      'image/heif',
+      'image/webp'
+    ];
+    console.log('File mime type:', file.mimetype);
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only JPG, PNG, and HEIC are allowed.'));
+      cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
     }
   }
 });
