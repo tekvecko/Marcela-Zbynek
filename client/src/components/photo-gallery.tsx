@@ -34,11 +34,22 @@ export default function PhotoGallery() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Foto nahráno!",
-        description: "Vaše fotka byla úspěšně přidána do galerie.",
+        description: `Vaše fotka byla úspěšně přidána do galerie s AI hodnocením ${data.verificationScore}%.`,
       });
+      
+      // Show AI analysis of the photo
+      if (data.aiAnalysis) {
+        setTimeout(() => {
+          toast({
+            title: "AI Popis fotky",
+            description: data.aiAnalysis,
+          });
+        }, 1500);
+      }
+      
       setSelectedFile(null);
       setUploaderName("");
       if (fileInputRef.current) {
@@ -185,7 +196,10 @@ export default function PhotoGallery() {
                     className="w-full bg-romantic hover:bg-love"
                   >
                     {uploadPhotoMutation.isPending ? (
-                      "Nahrávám..."
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>AI analyzuje fotku...</span>
+                      </div>
                     ) : (
                       <>
                         <Upload className="mr-2" size={16} />

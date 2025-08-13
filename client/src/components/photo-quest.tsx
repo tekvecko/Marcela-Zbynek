@@ -54,22 +54,34 @@ export default function PhotoQuest() {
     },
     onSuccess: (data) => {
       const verificationMessage = data.isVerified 
-        ? `Foto bylo úspěšně ověřeno AI s hodnocením ${data.verificationScore}%!`
-        : "Foto bylo nahráno, ale neprošlo AI ověřením. Zkuste nahrát jiný snímek.";
+        ? `Foto bylo úspěšně ověřeno AI s hodnocením ${data.verificationScore}%! Postup byl aktualizován.`
+        : "Foto neprošlo AI ověřením a nebylo započítáno do postupu.";
       
       toast({
-        title: data.isVerified ? "Foto ověřeno! ✓" : "Foto nahráno",
+        title: data.isVerified ? "Foto ověřeno! ✓" : "Foto odmítnuto",
         description: verificationMessage,
         variant: data.isVerified ? "default" : "destructive",
       });
       
+      // Show AI analysis with suggestions
       if (data.aiAnalysis) {
         setTimeout(() => {
           toast({
-            title: "AI Analýza",
+            title: data.isVerified ? "AI Analýza" : "AI Doporučení",
             description: data.aiAnalysis,
+            variant: data.isVerified ? "default" : "destructive",
           });
-        }, 2000);
+        }, 1500);
+      }
+      
+      // Navigate to gallery section to see the uploaded photo
+      if (data.isVerified) {
+        setTimeout(() => {
+          const galleryElement = document.getElementById('gallery');
+          if (galleryElement) {
+            galleryElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 3000);
       }
       
       setSelectedFile(null);
@@ -79,6 +91,7 @@ export default function PhotoQuest() {
       }
       queryClient.invalidateQueries({ queryKey: ["/api/quest-leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-progress", uploaderName] });
     },
     onError: () => {
       toast({
@@ -208,13 +221,13 @@ export default function PhotoQuest() {
                           Nahrát fotku
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md" aria-describedby="upload-description">
+                      <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle>Nahrát fotku pro: {quest.title}</DialogTitle>
+                          <p className="text-sm text-charcoal/70">
+                            Nahrajte svou fotku pro tento úkol a získejte body! AI systém ověří, zda fotka odpovídá zadání.
+                          </p>
                         </DialogHeader>
-                        <p id="upload-description" className="text-sm text-charcoal/70 mb-4">
-                          Nahrajte svou fotku pro tento úkol a získejte body! AI systém ověří, zda fotka odpovídá zadání.
-                        </p>
                         <div className="space-y-4">
                           <div>
                             <Label htmlFor="uploaderName">Vaše jméno (pro sledování postupu)</Label>
