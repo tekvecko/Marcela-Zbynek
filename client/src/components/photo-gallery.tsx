@@ -229,18 +229,47 @@ export default function PhotoGallery() {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors">
+                    {/* AI Verification Badge */}
+                    {photo.isVerified && (
+                      <div className="absolute top-2 left-2">
+                        <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                          <span>✓</span>
+                          <span>AI Ověřeno</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Verification Score Badge */}
+                    {photo.verificationScore && photo.verificationScore > 0 && (
+                      <div className="absolute top-2 right-2">
+                        <div className={`text-white text-xs px-2 py-1 rounded-full ${
+                          photo.verificationScore >= 80 ? 'bg-green-500' : 
+                          photo.verificationScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}>
+                          {photo.verificationScore}%
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Od: {photo.uploaderName}</span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleLike(photo.id)}
-                            disabled={likePhotoMutation.isPending}
-                            className="flex items-center space-x-1 hover:text-red-400 transition-colors"
-                          >
-                            <Heart size={16} className="fill-current text-red-400" />
-                            <span className="text-sm">{photo.likes}</span>
-                          </button>
+                      <div className="space-y-2">
+                        {photo.aiAnalysis && (
+                          <div className="text-xs bg-black/50 rounded p-2">
+                            {photo.aiAnalysis}
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Od: {photo.uploaderName}</span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleLike(photo.id)}
+                              disabled={likePhotoMutation.isPending}
+                              className="flex items-center space-x-1 hover:text-red-400 transition-colors"
+                            >
+                              <Heart size={16} className="fill-current text-red-400" />
+                              <span className="text-sm">{photo.likes}</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

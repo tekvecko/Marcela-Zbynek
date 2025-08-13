@@ -52,11 +52,26 @@ export default function PhotoQuest() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const verificationMessage = data.isVerified 
+        ? `Foto bylo úspěšně ověřeno AI s hodnocením ${data.verificationScore}%!`
+        : "Foto bylo nahráno, ale neprošlo AI ověřením. Zkuste nahrát jiný snímek.";
+      
       toast({
-        title: "Foto nahráno!",
-        description: "Vaše fotka byla úspěšně nahrána do quest systému.",
+        title: data.isVerified ? "Foto ověřeno! ✓" : "Foto nahráno",
+        description: verificationMessage,
+        variant: data.isVerified ? "default" : "destructive",
       });
+      
+      if (data.aiAnalysis) {
+        setTimeout(() => {
+          toast({
+            title: "AI Analýza",
+            description: data.aiAnalysis,
+          });
+        }, 2000);
+      }
+      
       setSelectedFile(null);
       setSelectedQuest(null);
       if (fileInputRef.current) {
@@ -106,9 +121,28 @@ export default function PhotoQuest() {
     return Camera;
   };
 
+  // Query for quest-specific progress
+  const { data: questProgress = [] } = useQuery({
+    queryKey: ["/api/quest-progress", uploaderName],
+    enabled: !!uploaderName,
+  });
+
   const getProgressForQuest = (questId: string) => {
-    // This is a simplified calculation - in a real app you'd query for specific progress
-    return Math.floor(Math.random() * 100); // Mock progress for display
+    if (!uploaderName || questProgress.length === 0) return 0;
+    
+    const progress = questProgress.find((p: any) => p.questId === questId);
+    const challenge = challenges.find(c => c.id === questId);
+    
+    if (!progress || !challenge) return 0;
+    
+    return Math.min((progress.photosUploaded / challenge.targetPhotos) * 100, 100);
+  };
+
+  const getPhotosUploadedForQuest = (questId: string) => {
+    if (!uploaderName || questProgress.length === 0) return 0;
+    
+    const progress = questProgress.find((p: any) => p.questId === questId);
+    return progress ? progress.photosUploaded : 0;
   };
 
   if (challengesLoading) {
@@ -159,7 +193,7 @@ export default function PhotoQuest() {
                     <div className="bg-blush rounded-xl p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-charcoal">Postup</span>
-                        <span className={`text-sm ${colorClasses.text} font-bold`}>0/{quest.targetPhotos} fotek</span>
+                        <span className={`text-sm ${colorClasses.text} font-bold`}>{getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek</span>
                       </div>
                       <Progress value={progress} className="w-full" />
                     </div>
@@ -179,11 +213,11 @@ export default function PhotoQuest() {
                           <DialogTitle>Nahrát fotku pro: {quest.title}</DialogTitle>
                         </DialogHeader>
                         <p id="upload-description" className="text-sm text-charcoal/70 mb-4">
-                          Nahrajte svou fotku pro tento úkol a získejte body!
+                          Nahrajte svou fotku pro tento úkol a získejte body! AI systém ověří, zda fotka odpovídá zadání.
                         </p>
                         <div className="space-y-4">
                           <div>
-                            <Label htmlFor="uploaderName">Vaše jméno</Label>
+                            <Label htmlFor="uploaderName">Vaše jméno (pro sledování postupu)</Label>
                             <Input
                               id="uploaderName"
                               value={uploaderName}
@@ -212,7 +246,10 @@ export default function PhotoQuest() {
                             className="w-full"
                           >
                             {uploadPhotoMutation.isPending ? (
-                              "Nahrávám..."
+                              <div className="flex items-center space-x-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>AI ověřuje fotku...</span>
+                              </div>
                             ) : (
                               <>
                                 <Upload className="mr-2" size={16} />

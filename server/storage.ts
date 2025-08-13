@@ -135,8 +135,12 @@ export class MemStorage implements IStorage {
   async createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge> {
     const id = randomUUID();
     const questChallenge: QuestChallenge = {
-      ...challenge,
       id,
+      title: challenge.title,
+      description: challenge.description,
+      targetPhotos: challenge.targetPhotos ?? 1,
+      points: challenge.points ?? 10,
+      isActive: challenge.isActive ?? true,
       createdAt: new Date(),
     };
     this.questChallenges.set(id, questChallenge);
@@ -162,9 +166,17 @@ export class MemStorage implements IStorage {
   async createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto> {
     const id = randomUUID();
     const uploadedPhoto: UploadedPhoto = {
-      ...photo,
       id,
+      filename: photo.filename,
+      originalName: photo.originalName,
+      mimeType: photo.mimeType,
+      size: photo.size,
+      uploaderName: photo.uploaderName,
+      questId: photo.questId ?? null,
       likes: 0,
+      isVerified: photo.isVerified ?? false,
+      verificationScore: photo.verificationScore ?? null,
+      aiAnalysis: photo.aiAnalysis ?? null,
       createdAt: new Date(),
     };
     this.uploadedPhotos.set(id, uploadedPhoto);
@@ -215,8 +227,11 @@ export class MemStorage implements IStorage {
   async createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress> {
     const id = randomUUID();
     const questProgressRecord: QuestProgress = {
-      ...progress,
       id,
+      questId: progress.questId,
+      participantName: progress.participantName,
+      photosUploaded: progress.photosUploaded ?? 0,
+      isCompleted: progress.isCompleted ?? false,
       completedAt: null,
       createdAt: new Date(),
     };
