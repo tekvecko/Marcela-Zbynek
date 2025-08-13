@@ -57,10 +57,11 @@ export default function PhotoGallery() {
       }
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Upload error:', error);
       toast({
         title: "Chyba při nahrávání",
-        description: "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
+        description: error.message || "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
         variant: "destructive",
       });
       
@@ -68,6 +69,8 @@ export default function PhotoGallery() {
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+        fileInputRef.current.removeAttribute('capture');
+      }
       }
     },
   });
@@ -102,7 +105,8 @@ export default function PhotoGallery() {
 
   const handleCameraCapture = () => {
     if (fileInputRef.current) {
-      // Set accept to capture from camera
+      // Set accept and capture for camera
+      fileInputRef.current.setAttribute('accept', 'image/*');
       fileInputRef.current.setAttribute('capture', 'environment');
       fileInputRef.current.click();
     }
@@ -110,7 +114,8 @@ export default function PhotoGallery() {
 
   const handleFilePickerOpen = () => {
     if (fileInputRef.current) {
-      // Remove capture attribute for file picker
+      // Set accept but remove capture for file picker
+      fileInputRef.current.setAttribute('accept', 'image/*,image/heic,image/heif');
       fileInputRef.current.removeAttribute('capture');
       fileInputRef.current.click();
     }

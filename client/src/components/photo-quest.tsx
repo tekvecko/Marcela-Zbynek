@@ -56,13 +56,13 @@ export default function PhotoQuest() {
       const verificationMessage = data.isVerified 
         ? `Foto bylo úspěšně ověřeno AI s hodnocením ${data.verificationScore}%! Postup byl aktualizován.`
         : "Foto neprošlo AI ověřením a nebylo započítáno do postupu.";
-      
+
       toast({
         title: data.isVerified ? "Foto ověřeno! ✓" : "Foto odmítnuto",
         description: verificationMessage,
         variant: data.isVerified ? "default" : "destructive",
       });
-      
+
       // Show AI analysis with suggestions
       if (data.aiAnalysis) {
         setTimeout(() => {
@@ -73,7 +73,7 @@ export default function PhotoQuest() {
           });
         }, 1500);
       }
-      
+
       // Navigate to gallery section to see the uploaded photo
       if (data.isVerified) {
         setTimeout(() => {
@@ -83,7 +83,7 @@ export default function PhotoQuest() {
           }
         }, 3000);
       }
-      
+
       // Always reset form and close dialog, regardless of verification status
       setSelectedFile(null);
       setUploaderName("");
@@ -95,17 +95,19 @@ export default function PhotoQuest() {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress", uploaderName] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Upload error:', error);
       toast({
         title: "Chyba při nahrávání",
-        description: "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
+        description: error.message || "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
         variant: "destructive",
       });
-      
-      // Reset form on error so user can try again
+
+      // Reset form completely on error
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+        fileInputRef.current.removeAttribute('capture');
       }
     },
   });
@@ -166,18 +168,18 @@ export default function PhotoQuest() {
 
   const getProgressForQuest = (questId: string) => {
     if (!uploaderName || questProgress.length === 0) return 0;
-    
+
     const progress = questProgress.find((p: any) => p.questId === questId);
     const challenge = challenges.find(c => c.id === questId);
-    
+
     if (!progress || !challenge) return 0;
-    
+
     return Math.min((progress.photosUploaded / challenge.targetPhotos) * 100, 100);
   };
 
   const getPhotosUploadedForQuest = (questId: string) => {
     if (!uploaderName || questProgress.length === 0) return 0;
-    
+
     const progress = questProgress.find((p: any) => p.questId === questId);
     return progress ? progress.photosUploaded : 0;
   };
@@ -203,7 +205,7 @@ export default function PhotoQuest() {
             Pomozte nám zachytit naši svatbu z různých úhlů! Plňte úkoly a sdílejte své fotky.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {challenges.map((quest, index) => {
             const IconComponent = getQuestIcon(quest.title);
@@ -214,7 +216,7 @@ export default function PhotoQuest() {
               { bg: 'bg-love', text: 'text-love', hover: 'hover:bg-love/80' },
               { bg: 'bg-sage', text: 'text-sage', hover: 'hover:bg-sage/80' }
             ][index % 4];
-            
+
             return (
               <Card key={quest.id} className="bg-white rounded-3xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-2 border-transparent hover:border-romantic/30 relative overflow-hidden">
                 <div className="absolute top-3 right-3 text-3xl opacity-20">
@@ -238,7 +240,7 @@ export default function PhotoQuest() {
                     </h3>
                     <p className="text-charcoal/70 text-sm font-medium">{quest.description}</p>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="bg-gradient-to-r from-blush to-cream rounded-xl p-4 border-2 border-romantic/20">
                       <div className="flex items-center justify-between mb-2">
@@ -255,7 +257,7 @@ export default function PhotoQuest() {
                         {progress === 100 ? "🎉 Úkol dokončen!" : `Zbývá ${quest.targetPhotos - getPhotosUploadedForQuest(quest.id)} ověřených fotek`}
                       </div>
                     </div>
-                    
+
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
@@ -272,7 +274,7 @@ export default function PhotoQuest() {
                             📸 {quest.title}
                           </DialogTitle>
                         </DialogHeader>
-                        
+
                         {/* Challenge Instructions */}
                         <div className="space-y-4 mb-6">
                           <div className="bg-gradient-to-r from-blush to-cream p-4 rounded-xl border-2 border-romantic/20">
@@ -282,7 +284,7 @@ export default function PhotoQuest() {
                             </h4>
                             <p className="text-charcoal/80 font-medium">{quest.description}</p>
                           </div>
-                          
+
                           {/* Specific Instructions Based on Challenge */}
                           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
                             <h4 className="font-bold text-yellow-800 mb-2 flex items-center">
@@ -342,7 +344,7 @@ export default function PhotoQuest() {
                               )}
                             </div>
                           </div>
-                          
+
                           <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-xl">
                             <h4 className="font-bold text-blue-800 mb-2 flex items-center">
                               <span className="mr-2">🤖</span>
@@ -367,7 +369,7 @@ export default function PhotoQuest() {
                           <div>
                             <Label htmlFor="photo">Vyberte fotku nebo vyfotografujte</Label>
                             <div className="space-y-3">
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-2 gap-4">
                                 <Button 
                                   type="button"
                                   variant="outline" 
@@ -390,7 +392,7 @@ export default function PhotoQuest() {
                               <Input
                                 id="photo"
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,image/heic,image/heif"
                                 ref={fileInputRef}
                                 onChange={handleFileSelect}
                                 className="hidden"
@@ -436,7 +438,7 @@ export default function PhotoQuest() {
               <Trophy className="inline mr-2 text-gold" size={24} />
               Žebříček nejlepších fotografů
             </h3>
-            
+
             {leaderboardLoading ? (
               <p className="text-center text-charcoal/70">Načítání žebříčku...</p>
             ) : leaderboard.length === 0 ? (
