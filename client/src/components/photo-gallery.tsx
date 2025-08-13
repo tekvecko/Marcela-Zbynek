@@ -24,7 +24,14 @@ export default function PhotoGallery() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await apiRequest('POST', '/api/photos/upload', formData);
+      const response = await fetch('/api/photos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -140,10 +147,13 @@ export default function PhotoGallery() {
                   <p className="text-charcoal/60 text-sm">Podporované formáty: JPG, PNG, HEIC (max 10MB)</p>
                 </div>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-md" aria-describedby="gallery-upload-description">
                 <DialogHeader>
                   <DialogTitle>Nahrát fotku do galerie</DialogTitle>
                 </DialogHeader>
+                <p id="gallery-upload-description" className="text-sm text-charcoal/70 mb-4">
+                  Sdílejte své krásné vzpomínky ze svatby s ostatními hosty.
+                </p>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="uploaderName">Vaše jméno</Label>
