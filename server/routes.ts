@@ -5,6 +5,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { verifyPhotoForChallenge, analyzePhotoContent } from "./gemini";
 
 // Configure multer for photo uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -72,6 +73,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = photoUploadSchema.parse(req.body);
       
+      let isVerified = false;
+      let verificationScore = 0;
+      let aiAnalysis = "";
+      
+      // If this is for a quest challenge, verify with Gemini AI
+      if (validatedData.questId) {
+        const challenge = await storage.getQuestChallenge(validatedData.questId);
+        if (challenge) {
+          console.log(`Verifying photo for challenge: ${challenge.title}`);
+          const filePath = path.join(uploadDir, req.file.filename);
+          const verification = await verifyPhotoForChallenge(
+            filePath, 
+            challenge.title, 
+            challenge.description
+          );
+          
+          isVerified = verification.isValid;
+          verificationScore = Math.round(verification.confidence * 100);
+          aiAnalysis = verification.explanation;
+          
+          console.log(`Verification result: ${verification.isValid}, confidence: ${verification.confidence}`);
+        }
+      } else {
+        // For general gallery photos, just analyze content
+        const filePath = path.join(uploadDir, req.file.filename);
+        aiAnalysis = await analyzePhotoContent(filePath);
+        isVerified = true; // Gallery photos are auto-approved
+        verificationScore = 85; // Good default score
+      }
+      
       const photo = await storage.createUploadedPhoto({
         filename: req.file.filename,
         originalName: req.file.originalname,
@@ -79,6 +110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         size: req.file.size,
         uploaderName: validatedData.uploaderName,
         questId: validatedData.questId || null,
+        isVerified,
+        verificationScore,
+        aiAnalysis,
       });
 
       // Update quest progress if questId provided

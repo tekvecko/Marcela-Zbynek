@@ -28,6 +28,9 @@ export const uploadedPhotos = pgTable("uploaded_photos", {
   uploaderName: text("uploader_name").notNull(),
   questId: varchar("quest_id").references(() => questChallenges.id),
   likes: integer("likes").notNull().default(0),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationScore: integer("verification_score").default(0), // 0-100
+  aiAnalysis: text("ai_analysis"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
