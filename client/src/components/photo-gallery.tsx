@@ -71,7 +71,6 @@ export default function PhotoGallery() {
         fileInputRef.current.value = "";
         fileInputRef.current.removeAttribute('capture');
       }
-      }
     },
   });
 
