@@ -115,14 +115,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiAnalysis,
       });
 
-      // Update quest progress if questId provided
-      if (validatedData.questId) {
+      // Update quest progress if questId provided and photo is verified
+      if (validatedData.questId && isVerified) {
         const progress = await storage.getOrCreateQuestProgress(validatedData.questId, validatedData.uploaderName);
         const challenge = await storage.getQuestChallenge(validatedData.questId);
         const newPhotosCount = progress.photosUploaded + 1;
         const isCompleted = challenge ? newPhotosCount >= challenge.targetPhotos : false;
         
         await storage.updateQuestProgress(progress.id, newPhotosCount, isCompleted);
+        console.log(`Updated quest progress: ${newPhotosCount}/${challenge?.targetPhotos} photos`);
+      } else if (validatedData.questId && !isVerified) {
+        console.log('Photo not verified - quest progress not updated');
       }
 
       res.json(photo);
