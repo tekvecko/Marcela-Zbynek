@@ -84,7 +84,9 @@ export default function PhotoQuest() {
         }, 3000);
       }
       
+      // Always reset form and close dialog, regardless of verification status
       setSelectedFile(null);
+      setUploaderName("");
       setSelectedQuest(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -99,6 +101,12 @@ export default function PhotoQuest() {
         description: "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
         variant: "destructive",
       });
+      
+      // Reset form on error so user can try again
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     },
   });
 
@@ -106,6 +114,22 @@ export default function PhotoQuest() {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+    }
+  };
+
+  const handleCameraCapture = () => {
+    if (fileInputRef.current) {
+      // Set accept to capture from camera
+      fileInputRef.current.setAttribute('capture', 'environment');
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFilePickerOpen = () => {
+    if (fileInputRef.current) {
+      // Remove capture attribute for file picker
+      fileInputRef.current.removeAttribute('capture');
+      fileInputRef.current.click();
     }
   };
 
@@ -341,14 +365,37 @@ export default function PhotoQuest() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="photo">Vyberte fotku</Label>
-                            <Input
-                              id="photo"
-                              type="file"
-                              accept="image/*"
-                              ref={fileInputRef}
-                              onChange={handleFileSelect}
-                            />
+                            <Label htmlFor="photo">Vyberte fotku nebo vyfotografujte</Label>
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button 
+                                  type="button"
+                                  variant="outline" 
+                                  onClick={handleCameraCapture}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Camera size={16} />
+                                  <span>Vyfotit</span>
+                                </Button>
+                                <Button 
+                                  type="button"
+                                  variant="outline" 
+                                  onClick={handleFilePickerOpen}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Upload size={16} />
+                                  <span>Vybrat</span>
+                                </Button>
+                              </div>
+                              <Input
+                                id="photo"
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                onChange={handleFileSelect}
+                                className="hidden"
+                              />
+                            </div>
                           </div>
                           {selectedFile && (
                             <div className="text-sm text-gray-600">
