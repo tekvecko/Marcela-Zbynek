@@ -263,12 +263,12 @@ export default function PhotoQuest() {
                               ? 'text-green-700 bg-green-200' 
                               : `${colorClasses.text} bg-white/50`
                           }`}>
-                            {getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek
+                            {isQuestCompleted(quest.id) ? '✓ Splněno' : 'Čeká na splnění'}
                           </span>
                         </div>
                         <Progress value={progress} className="w-full h-3" />
                         <div className="mt-2 text-xs text-charcoal/70 text-center">
-                          {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : `Zbývá ${quest.targetPhotos - getPhotosUploadedForQuest(quest.id)} fotek`}
+                          {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte 1 ověřenou fotku pro splnění"}
                         </div>
                       </div>
 

@@ -134,12 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        const challenge = await storage.getQuestChallenge(validatedData.questId);
-        const newPhotosCount = progress.photosUploaded + 1;
-        const isCompleted = challenge ? newPhotosCount >= challenge.targetPhotos : false;
-        
-        await storage.updateQuestProgress(progress.id, newPhotosCount, isCompleted);
-        console.log(`Updated quest progress: ${newPhotosCount}/${challenge?.targetPhotos} photos`);
+        // For quest challenges, mark as completed immediately after first verified photo
+        await storage.updateQuestProgress(progress.id, 1, true);
+        console.log(`Quest completed with verified photo`);
       } else if (validatedData.questId && !isVerified) {
         console.log('Photo not verified - quest progress not updated');
       }
