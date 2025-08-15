@@ -154,17 +154,24 @@ export default function PhotoQuest() {
   };
 
   const getQuestIcon = (title: string) => {
-    if (title.includes('Ano')) return Heart;
-    if (title.includes('Rodin')) return Users;
-    if (title.includes('tanec')) return Crown;
+    if (title.includes('Ano') || title.includes('polibek') || title.includes('První tanec')) return Heart;
+    if (title.includes('Rodin') || title.includes('Skupin') || title.includes('hostů') || title.includes('Všichni') || title.includes('Svědci')) return Users;
+    if (title.includes('tanec') || title.includes('Házen')) return Crown;
+    if (title.includes('dort') || title.includes('Toast') || title.includes('přípitek')) return Trophy;
     return Camera;
   };
 
   // Query for quest-specific progress
-  const { data: questProgress = [] } = useQuery({
+  const { data: questProgress = [] } = useQuery<QuestProgressData[]>({
     queryKey: ["/api/quest-progress", uploaderName],
     enabled: !!uploaderName,
   });
+
+  const isQuestCompleted = (questId: string) => {
+    if (!uploaderName || questProgress.length === 0) return false;
+    const progress = questProgress.find((p: any) => p.questId === questId);
+    return progress ? progress.isCompleted : false;
+  };
 
   const getProgressForQuest = (questId: string) => {
     if (!uploaderName || questProgress.length === 0) return 0;
@@ -242,30 +249,43 @@ export default function PhotoQuest() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-blush to-cream rounded-xl p-4 border-2 border-romantic/20">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-bold text-charcoal flex items-center">
-                          <span className="mr-2">📊</span>
-                          Váš postup
-                        </span>
-                        <span className={`text-lg ${colorClasses.text} font-bold px-3 py-1 rounded-full bg-white/50`}>
-                          {getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek
-                        </span>
+                      <div className={`bg-gradient-to-r rounded-xl p-4 border-2 ${
+                        isQuestCompleted(quest.id) 
+                          ? 'from-green-100 to-green-50 border-green-300' 
+                          : 'from-blush to-cream border-romantic/20'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-bold text-charcoal flex items-center">
+                            <span className="mr-2">📊</span>
+                            Váš postup
+                          </span>
+                          <span className={`text-lg font-bold px-3 py-1 rounded-full ${
+                            isQuestCompleted(quest.id) 
+                              ? 'text-green-700 bg-green-200' 
+                              : `${colorClasses.text} bg-white/50`
+                          }`}>
+                            {isQuestCompleted(quest.id) ? '✓ Splněno' : 'Čeká na splnění'}
+                          </span>
+                        </div>
+                        <Progress value={progress} className="w-full h-3" />
+                        <div className="mt-2 text-xs text-charcoal/70 text-center">
+                          {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte 1 ověřenou fotku pro splnění"}
+                        </div>
                       </div>
-                      <Progress value={progress} className="w-full h-3" />
-                      <div className="mt-2 text-xs text-charcoal/70 text-center">
-                        {progress === 100 ? "🎉 Úkol dokončen!" : `Zbývá ${quest.targetPhotos - getPhotosUploadedForQuest(quest.id)} ověřených fotek`}
-                      </div>
-                    </div>
 
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
-                          className={`w-full ${colorClasses.bg} text-white ${colorClasses.hover} font-bold py-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
+                          className={`w-full font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg ${
+                            isQuestCompleted(quest.id)
+                              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                              : `${colorClasses.bg} ${colorClasses.hover} text-white hover:shadow-xl transform hover:scale-105`
+                          }`}
                           onClick={() => setSelectedQuest(quest)}
+                          disabled={isQuestCompleted(quest.id)}
                         >
-                          <Camera className="mr-2" size={18} />
-                          📸 Nahrát fotku
+                          <Camera className="w-4 h-4 mr-2" />
+                          {isQuestCompleted(quest.id) ? 'Úkol splněn' : 'Nahrát foto'}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-lg">
@@ -292,49 +312,73 @@ export default function PhotoQuest() {
                               Jak vyfotit:
                             </h4>
                             <div className="text-yellow-700 text-sm space-y-1">
-                              {quest.title.includes('Ano') && (
+                              {(quest.title.includes('Ano') || quest.title.includes('polibek')) && (
                                 <>
-                                  <p><strong>CO:</strong> Moment výměny slibů nebo prstýnků</p>
+                                  <p><strong>CO:</strong> Klíčové momenty obřadu</p>
                                   <p><strong>KDO:</strong> Nevěsta a ženich během obřadu</p>
                                   <p><strong>KDY:</strong> Během svatebního obřadu</p>
-                                  <p><strong>JAK:</strong> Zachyťte emoce a důležitý okamžik</p>
+                                  <p><strong>JAK:</strong> Zachyťte emoce a důležité okamžiky</p>
                                 </>
                               )}
-                              {quest.title.includes('polibek') && (
+                              {(quest.title.includes('prstýnek') || quest.title.includes('Výměna') || quest.title.includes('rukou')) && (
                                 <>
-                                  <p><strong>CO:</strong> První manželský polibek</p>
-                                  <p><strong>KDO:</strong> Novomanželé</p>
-                                  <p><strong>KDY:</strong> Na konci obřadu</p>
-                                  <p><strong>JAK:</strong> Zachyťte ten magický moment</p>
+                                  <p><strong>CO:</strong> Detail snubních prstenů nebo rukou</p>
+                                  <p><strong>KDO:</strong> Ruce novomanželů s prsteny</p>
+                                  <p><strong>KDY:</strong> Během obřadu nebo kdykoliv</p>
+                                  <p><strong>JAK:</strong> Ostré detailní foto</p>
                                 </>
                               )}
-                              {quest.title.includes('prstýnek') && (
+                              {(quest.title.includes('tanec') || quest.title.includes('tančí')) && (
                                 <>
-                                  <p><strong>CO:</strong> Detail snubních prstýnků</p>
-                                  <p><strong>KDO:</strong> Prstýnky na rukou nebo samostatně</p>
-                                  <p><strong>KDY:</strong> Kdykoliv během dne</p>
-                                  <p><strong>JAK:</strong> Ostré detailní foto prstýnků</p>
-                                </>
-                              )}
-                              {quest.title.includes('tanec') && (
-                                <>
-                                  <p><strong>CO:</strong> První tanec novomanželů</p>
-                                  <p><strong>KDO:</strong> Nevěsta a ženich tančící</p>
+                                  <p><strong>CO:</strong> Tanec na svatbě</p>
+                                  <p><strong>KDO:</strong> Novomanželé nebo hosté</p>
                                   <p><strong>KDY:</strong> Během večerní zábavy</p>
                                   <p><strong>JAK:</strong> Zachyťte pohyb a radost</p>
                                 </>
                               )}
-                              {quest.title.includes('hostů') && (
+                              {(quest.title.includes('Rodin') || quest.title.includes('Skupin') || quest.title.includes('hostů') || quest.title.includes('Všichni') || quest.title.includes('Svědci')) && (
                                 <>
-                                  <p><strong>CO:</strong> Skupinová fotka svatebčanů</p>
-                                  <p><strong>KDO:</strong> Hosté svatby</p>
+                                  <p><strong>CO:</strong> Skupinové nebo rodinné foto</p>
+                                  <p><strong>KDO:</strong> Podle zadání - rodina/hosté/svědci</p>
                                   <p><strong>KDY:</strong> Kdykoliv během oslavy</p>
-                                  <p><strong>JAK:</strong> Zajistěte, aby byli všichni vidět</p>
+                                  <p><strong>JAK:</strong> Zajistěte, aby byly vidět všechny tváře</p>
+                                </>
+                              )}
+                              {(quest.title.includes('dort') || quest.title.includes('kytice') || quest.title.includes('Dekorace') || quest.title.includes('Toast')) && (
+                                <>
+                                  <p><strong>CO:</strong> Svatební detaily a atmosféra</p>
+                                  <p><strong>KDO:</strong> Podle zadání</p>
+                                  <p><strong>KDY:</strong> Kdykoliv během dne</p>
+                                  <p><strong>JAK:</strong> Zachyťte krásu a detaily</p>
+                                </>
+                              )}
+                              {(quest.title.includes('Přípravy') || quest.title.includes('Děti') || quest.title.includes('Nečekané') || quest.title.includes('Házen')) && (
+                                <>
+                                  <p><strong>CO:</strong> Speciální momenty a situace</p>
+                                  <p><strong>KDO:</strong> Podle zadání úkolu</p>
+                                  <p><strong>KDY:</strong> Ve správný moment</p>
+                                  <p><strong>JAK:</strong> Buďte připraveni na spontánní momentj</p>
+                                </>
+                              )}
+                              {quest.title.includes('Černobílá') && (
+                                <>
+                                  <p><strong>CO:</strong> Umělecká černobílá fotka</p>
+                                  <p><strong>KDO:</strong> Jakýkoliv subjekt</p>
+                                  <p><strong>KDY:</strong> Kdykoliv</p>
+                                  <p><strong>JAK:</strong> Použijte černobílý filtr nebo režim</p>
                                 </>
                               )}
                               {(!quest.title.includes('Ano') && !quest.title.includes('polibek') && 
                                 !quest.title.includes('prstýnek') && !quest.title.includes('tanec') && 
-                                !quest.title.includes('hostů')) && (
+                                !quest.title.includes('Rodin') && !quest.title.includes('Skupin') &&
+                                !quest.title.includes('hostů') && !quest.title.includes('dort') &&
+                                !quest.title.includes('kytice') && !quest.title.includes('Přípravy') &&
+                                !quest.title.includes('Děti') && !quest.title.includes('Černobílá') &&
+                                !quest.title.includes('Výměna') && !quest.title.includes('rukou') &&
+                                !quest.title.includes('tančí') && !quest.title.includes('Všichni') &&
+                                !quest.title.includes('Svědci') && !quest.title.includes('Dekorace') &&
+                                !quest.title.includes('Toast') && !quest.title.includes('Nečekané') &&
+                                !quest.title.includes('Házen')) && (
                                 <>
                                   <p><strong>CO:</strong> Podle popisu úkolu výše</p>
                                   <p><strong>KDO:</strong> Relevantní osoby pro daný úkol</p>
@@ -406,7 +450,7 @@ export default function PhotoQuest() {
                           )}
                           <Button 
                             onClick={handleUpload} 
-                            disabled={uploadPhotoMutation.isPending}
+                            disabled={uploadPhotoMutation.isPending || (selectedQuest && isQuestCompleted(selectedQuest.id))}
                             className="w-full"
                           >
                             {uploadPhotoMutation.isPending ? (

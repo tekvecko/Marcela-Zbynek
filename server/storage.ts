@@ -56,48 +56,164 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDefaultData() {
-    // Initialize default quest challenges
+    // Initialize default quest challenges with variations
     const defaultChallenges: InsertQuestChallenge[] = [
+      // Obřadní momenty - vysoké body
       {
-        title: 'Okamžik "Ano"',
-        description: 'Zachyťte moment, kdy si říkáme "ano"',
-        targetPhotos: 5,
-        points: 20,
-        isActive: true,
-      },
-      {
-        title: 'Rodinné foto',
-        description: 'Vyfotit rodiny nevěsty a ženicha',
-        targetPhotos: 4,
-        points: 15,
-        isActive: true,
-      },
-      {
-        title: 'Výměna prstenů',
-        description: 'Detail při výměně snubních prstenů',
-        targetPhotos: 3,
+        title: 'Okamžik "Ano" 💍',
+        description: 'Zachyťte moment výměny slibů nebo "ano"',
+        targetPhotos: 1,
         points: 25,
         isActive: true,
       },
       {
-        title: 'První tanec',
-        description: 'Náš speciální první tanec jako manželé',
-        targetPhotos: 3,
+        title: 'První manželský polibek 💋',
+        description: 'Ten magický první polibek jako manželé',
+        targetPhotos: 1,
+        points: 25,
+        isActive: true,
+      },
+      {
+        title: 'Výměna prstenů ✨',
+        description: 'Detail snubních prstenů na rukou',
+        targetPhotos: 1,
         points: 20,
         isActive: true,
       },
       {
-        title: 'Svatební dort',
-        description: 'Krájení svatebního dortu',
-        targetPhotos: 2,
+        title: 'Gratulace novomanželům 🎉',
+        description: 'Moment gratulací a objímání po obřadu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Rodinné a skupinové fotky
+      {
+        title: 'Rodinné foto nevěsty 👨‍👩‍👧‍👦',
+        description: 'Rodina nevěsty pohromadě',
+        targetPhotos: 1,
         points: 15,
         isActive: true,
       },
       {
-        title: 'Hosté baví',
-        description: 'Zachyťte radost a zábavu hostů',
-        targetPhotos: 6,
+        title: 'Rodinné foto ženicha 👨‍👩‍👧‍👦',
+        description: 'Rodina ženicha pohromadě',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Skupinové foto všech hostů 📸',
+        description: 'Všichni svatební hosté na jedné fotce',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Svědci v akci 🤵‍♂️👰‍♀️',
+        description: 'Svědci během obřadu nebo při podpisu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Večerní zábava
+      {
+        title: 'První tanec 💃',
+        description: 'Náš speciální první tanec jako manželé',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Všichni tančí 🕺',
+        description: 'Hosté se baví na tanečním parketu',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Třídení fotek 📱',
+        description: 'Hosté si prohlížejí a sdílejí fotky z večera',
+        targetPhotos: 1,
         points: 10,
+        isActive: true,
+      },
+
+      // Detaily a atmosféra
+      {
+        title: 'Svatební dort 🎂',
+        description: 'Krájení nebo detail svatebního dortu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Svatební kytice 💐',
+        description: 'Krásná svatební kytice nevěsty',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Dekorace a výzdoba 🌸',
+        description: 'Příprava místa, květiny, svíčky',
+        targetPhotos: 1,
+        points: 10,
+        isActive: true,
+      },
+      {
+        title: 'Přípravy před obřadem 💄',
+        description: 'Nevěsta nebo ženich se připravují',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Zábavné a kreativní
+      {
+        title: 'Házen kytice 🎯',
+        description: 'Házení svatební kytice svobodným',
+        targetPhotos: 1,
+        points: 18,
+        isActive: true,
+      },
+      {
+        title: 'Děti na svatbě 👶',
+        description: 'Roztomilé momenty s dětmi hostů',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Nečekané okamžiky 😄',
+        description: 'Vtipné, spontánní nebo nečekané situace',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Toast a přípitek 🥂',
+        description: 'Projevy a přípitek na novomanžele',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+
+      // Kreativní úhly
+      {
+        title: 'Černobílá klasika ⚫⚪',
+        description: 'Artistic černobílá fotka z jakéhokoliv momentu',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Detail rukou 🤝',
+        description: 'Krásný detail propojených rukou novomanželů',
+        targetPhotos: 1,
+        points: 15,
         isActive: true,
       },
     ];
