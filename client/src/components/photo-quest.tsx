@@ -84,13 +84,18 @@ export default function PhotoQuest() {
         }, 3000);
       }
 
-      // Always reset form and close dialog, regardless of verification status
+      // Reset file input and clear selected file (always)
       setSelectedFile(null);
-      setUploaderName("");
-      setSelectedQuest(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+
+      // Only reset uploader name and close dialog if photo was verified
+      if (data.isVerified) {
+        setUploaderName("");
+        setSelectedQuest(null);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["/api/quest-leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress", uploaderName] });
@@ -170,7 +175,7 @@ export default function PhotoQuest() {
   const isQuestCompleted = (questId: string) => {
     if (!uploaderName || questProgress.length === 0) return false;
     const progress = questProgress.find((p: any) => p.questId === questId);
-    return progress ? progress.isCompleted : false;
+    return progress ? Boolean(progress.isCompleted) : false;
   };
 
   const getProgressForQuest = (questId: string) => {
@@ -450,7 +455,7 @@ export default function PhotoQuest() {
                           )}
                           <Button 
                             onClick={handleUpload} 
-                            disabled={uploadPhotoMutation.isPending || (selectedQuest && isQuestCompleted(selectedQuest.id))}
+                            disabled={uploadPhotoMutation.isPending || (selectedQuest ? isQuestCompleted(selectedQuest.id) : false)}
                             className="w-full"
                           >
                             {uploadPhotoMutation.isPending ? (
