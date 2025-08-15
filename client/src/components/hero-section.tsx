@@ -1,20 +1,7 @@
 import flowerArchPhoto from '../assets/IMG-20250707-WA0007.jpg';
+import { Link } from "wouter";
 
 export default function HeroSection() {
-  const scrollToCountdown = () => {
-    const element = document.getElementById('countdown');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const scrollToPhotoQuest = () => {
-    const element = document.getElementById('photo-quest');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <section className="relative min-h-screen flex items-center justify-center romantic-gradient overflow-hidden pt-20">
       {/* Floating hearts decoration */}
@@ -44,18 +31,18 @@ export default function HeroSection() {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.6s'}}>
-          <button 
-            onClick={scrollToCountdown}
-            className="bg-romantic text-white px-8 py-3 rounded-full font-medium hover:bg-love transition-colors shadow-lg"
-          >
-            Zobrazit odpočet
-          </button>
-          <button 
-            onClick={scrollToPhotoQuest}
-            className="bg-gold text-white px-8 py-3 rounded-full font-medium hover:bg-gold/80 transition-colors shadow-lg"
+          <Link 
+            href="/photo-quest"
+            className="bg-romantic text-white px-8 py-3 rounded-full font-medium hover:bg-love transition-colors shadow-lg text-center"
           >
             Začít Photo Quest
-          </button>
+          </Link>
+          <Link 
+            href="/details"
+            className="bg-gold text-white px-8 py-3 rounded-full font-medium hover:bg-gold/80 transition-colors shadow-lg text-center"
+          >
+            Detaily svatby
+          </Link>
         </div>
       </div>
     </section>

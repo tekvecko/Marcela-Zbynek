@@ -1,9 +1,8 @@
 import Navigation from "@/components/navigation";
 import HeroSection from "@/components/hero-section";
 import CountdownTimer from "@/components/countdown-timer";
-import PhotoQuest from "@/components/photo-quest";
-import PhotoGallery from "@/components/photo-gallery";
-import WeddingDetails from "@/components/wedding-details";
+import { Link } from "wouter";
+import { Camera, Heart, MapPin, Users } from "lucide-react";
 
 export default function Home() {
   return (
@@ -11,9 +10,58 @@ export default function Home() {
       <Navigation />
       <HeroSection />
       <CountdownTimer />
-      <PhotoQuest />
-      <PhotoGallery />
-      <WeddingDetails />
+      
+      {/* Quick Navigation Cards */}
+      <section className="py-24 bg-gradient-to-br from-cream to-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-6">
+              Objevte naši svatbu
+            </h2>
+            <p className="text-xl text-charcoal/60 max-w-2xl mx-auto">
+              Vyberte si jednu ze sekcí a začněte prozzkumávat
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Link href="/photo-quest" className="group">
+              <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Camera className="text-white" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Photo Quest</h3>
+                <p className="text-charcoal/60 text-center leading-relaxed">
+                  Plňte fotografické úkoly a pomozte nám zachytit naši svatbu z různých úhlů
+                </p>
+              </div>
+            </Link>
+            
+            <Link href="/gallery" className="group">
+              <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Heart className="text-white" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Galerie</h3>
+                <p className="text-charcoal/60 text-center leading-relaxed">
+                  Prohlédněte si fotky ze svatby a dejte like těm nejkrásnějším
+                </p>
+              </div>
+            </Link>
+            
+            <Link href="/details" className="group">
+              <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-br from-sage to-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MapPin className="text-white" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Detaily</h3>
+                <p className="text-charcoal/60 text-center leading-relaxed">
+                  Všechny důležité informace o naší svatbě - místo, čas, program
+                </p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
       
       {/* Footer */}
       <footer className="romantic-gradient py-16">
