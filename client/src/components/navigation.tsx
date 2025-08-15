@@ -1,51 +1,45 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    setIsMenuOpen(false);
-  };
+  const [location] = useLocation();
 
   return (
     <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <div className="font-script text-2xl text-romantic font-bold">
+          <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
             Marcela <span className="heart-decoration text-3xl">❤️</span> Zbyněk
-          </div>
+          </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
-            <button 
-              onClick={() => scrollToSection('countdown')} 
-              className="text-charcoal hover:text-romantic transition-colors"
+            <Link 
+              href="/" 
+              className={`transition-colors ${location === '/' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
-              Odpočet
-            </button>
-            <button 
-              onClick={() => scrollToSection('photo-quest')} 
-              className="text-charcoal hover:text-romantic transition-colors"
+              Domů
+            </Link>
+            <Link 
+              href="/photo-quest" 
+              className={`transition-colors ${location === '/photo-quest' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
               Photo Quest
-            </button>
-            <button 
-              onClick={() => scrollToSection('gallery')} 
-              className="text-charcoal hover:text-romantic transition-colors"
+            </Link>
+            <Link 
+              href="/gallery" 
+              className={`transition-colors ${location === '/gallery' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
               Galerie
-            </button>
-            <button 
-              onClick={() => scrollToSection('details')} 
-              className="text-charcoal hover:text-romantic transition-colors"
+            </Link>
+            <Link 
+              href="/details" 
+              className={`transition-colors ${location === '/details' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
               Detaily
-            </button>
+            </Link>
           </div>
           
           {/* Mobile Menu Button */}
@@ -61,30 +55,34 @@ export default function Navigation() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-blush">
             <div className="flex flex-col space-y-4">
-              <button 
-                onClick={() => scrollToSection('countdown')} 
-                className="text-left text-charcoal hover:text-romantic transition-colors"
+              <Link 
+                href="/"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
-                Odpočet
-              </button>
-              <button 
-                onClick={() => scrollToSection('photo-quest')} 
-                className="text-left text-charcoal hover:text-romantic transition-colors"
+                Domů
+              </Link>
+              <Link 
+                href="/photo-quest"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/photo-quest' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
                 Photo Quest
-              </button>
-              <button 
-                onClick={() => scrollToSection('gallery')} 
-                className="text-left text-charcoal hover:text-romantic transition-colors"
+              </Link>
+              <Link 
+                href="/gallery"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/gallery' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
                 Galerie
-              </button>
-              <button 
-                onClick={() => scrollToSection('details')} 
-                className="text-left text-charcoal hover:text-romantic transition-colors"
+              </Link>
+              <Link 
+                href="/details"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/details' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
                 Detaily
-              </button>
+              </Link>
             </div>
           </div>
         )}
