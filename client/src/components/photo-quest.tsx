@@ -293,30 +293,30 @@ export default function PhotoQuest() {
                           {isQuestCompleted(quest.id) ? 'Úkol splněn' : 'Nahrát foto'}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-lg">
+                      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                         <DialogHeader>
-                          <DialogTitle className="text-xl font-bold text-romantic">
+                          <DialogTitle className="text-lg sm:text-xl font-bold text-romantic leading-tight">
                             📸 {quest.title}
                           </DialogTitle>
                         </DialogHeader>
 
                         {/* Challenge Instructions */}
-                        <div className="space-y-4 mb-6">
-                          <div className="bg-gradient-to-r from-blush to-cream p-4 rounded-xl border-2 border-romantic/20">
-                            <h4 className="font-bold text-charcoal mb-2 flex items-center">
+                        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                          <div className="bg-gradient-to-r from-blush to-cream p-3 sm:p-4 rounded-xl border-2 border-romantic/20">
+                            <h4 className="font-bold text-charcoal mb-2 flex items-center text-sm sm:text-base">
                               <span className="text-romantic mr-2">🎯</span>
                               Zadání úkolu:
                             </h4>
-                            <p className="text-charcoal/80 font-medium">{quest.description}</p>
+                            <p className="text-charcoal/80 font-medium text-sm sm:text-base">{quest.description}</p>
                           </div>
 
                           {/* Specific Instructions Based on Challenge */}
-                          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
-                            <h4 className="font-bold text-yellow-800 mb-2 flex items-center">
+                          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-r-xl">
+                            <h4 className="font-bold text-yellow-800 mb-2 flex items-center text-sm sm:text-base">
                               <span className="mr-2">💡</span>
                               Jak vyfotit:
                             </h4>
-                            <div className="text-yellow-700 text-sm space-y-1">
+                            <div className="text-yellow-700 text-xs sm:text-sm space-y-1">
                               {(quest.title.includes('Ano') || quest.title.includes('polibek')) && (
                                 <>
                                   <p><strong>CO:</strong> Klíčové momenty obřadu</p>
@@ -394,36 +394,37 @@ export default function PhotoQuest() {
                             </div>
                           </div>
 
-                          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-xl">
-                            <h4 className="font-bold text-blue-800 mb-2 flex items-center">
+                          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4 rounded-r-xl">
+                            <h4 className="font-bold text-blue-800 mb-2 flex items-center text-sm sm:text-base">
                               <span className="mr-2">🤖</span>
                               AI ověření:
                             </h4>
-                            <p className="text-blue-700 text-sm">
+                            <p className="text-blue-700 text-xs sm:text-sm">
                               Systém automaticky zkontroluje, zda fotka odpovídá zadání. 
                               Pouze ověřené fotky se započítají do postupu!
                             </p>
                           </div>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-3 sm:space-y-4">
                           <div>
-                            <Label htmlFor="uploaderName">Vaše jméno (pro sledování postupu)</Label>
+                            <Label htmlFor="uploaderName" className="text-sm sm:text-base">Vaše jméno (pro sledování postupu)</Label>
                             <Input
                               id="uploaderName"
                               value={uploaderName}
                               onChange={(e) => setUploaderName(e.target.value)}
                               placeholder="Zadejte své jméno"
+                              className="text-sm sm:text-base"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="photo">Vyberte fotku nebo vyfotografujte</Label>
+                            <Label htmlFor="photo" className="text-sm sm:text-base">Vyberte fotku nebo vyfotografujte</Label>
                             <div className="space-y-3">
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4">
                                 <Button 
                                   type="button"
                                   variant="outline" 
                                   onClick={handleCameraCapture}
-                                  className="flex items-center space-x-2"
+                                  className="flex items-center justify-center space-x-2 py-3 text-sm sm:text-base"
                                 >
                                   <Camera size={16} />
                                   <span>Vyfotit</span>
@@ -432,7 +433,7 @@ export default function PhotoQuest() {
                                   type="button"
                                   variant="outline" 
                                   onClick={handleFilePickerOpen}
-                                  className="flex items-center space-x-2"
+                                  className="flex items-center justify-center space-x-2 py-3 text-sm sm:text-base"
                                 >
                                   <Upload size={16} />
                                   <span>Vybrat</span>
@@ -449,17 +450,17 @@ export default function PhotoQuest() {
                             </div>
                           </div>
                           {selectedFile && (
-                            <div className="text-sm text-gray-600">
-                              Vybraná fotka: {selectedFile.name}
+                            <div className="text-xs sm:text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+                              <span className="font-medium">Vybraná fotka:</span> {selectedFile.name}
                             </div>
                           )}
                           <Button 
                             onClick={handleUpload} 
                             disabled={uploadPhotoMutation.isPending || (selectedQuest ? isQuestCompleted(selectedQuest.id) : false)}
-                            className="w-full"
+                            className="w-full py-3 text-sm sm:text-base"
                           >
                             {uploadPhotoMutation.isPending ? (
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center justify-center space-x-2">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                 <span>AI ověřuje fotku...</span>
                               </div>
