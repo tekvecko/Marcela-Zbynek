@@ -1,3 +1,5 @@
+import flowerArchPhoto from '../assets/IMG-20250707-WA0007.jpg';
+
 export default function HeroSection() {
   const scrollToCountdown = () => {
     const element = document.getElementById('countdown');
@@ -26,8 +28,8 @@ export default function HeroSection() {
       <div className="text-center z-10 px-4 max-w-4xl mx-auto">
         {/* Wedding couple silhouette */}
         <img 
-          src="https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
-          alt="Romantic wedding silhouette" 
+          src={flowerArchPhoto} 
+          alt="Marcela a Zbyněk pod květinovou branou" 
           className="w-64 h-64 rounded-full mx-auto mb-8 shadow-2xl object-cover border-4 border-white animate-fade-in"
         />
         
