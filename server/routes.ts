@@ -126,6 +126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update quest progress if questId provided and photo is verified
       if (validatedData.questId && isVerified) {
         const progress = await storage.getOrCreateQuestProgress(validatedData.questId, validatedData.uploaderName);
+        
+        // Check if quest is already completed
+        if (progress.isCompleted) {
+          return res.status(400).json({ 
+            message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou." 
+          });
+        }
+        
         const challenge = await storage.getQuestChallenge(validatedData.questId);
         const newPhotosCount = progress.photosUploaded + 1;
         const isCompleted = challenge ? newPhotosCount >= challenge.targetPhotos : false;

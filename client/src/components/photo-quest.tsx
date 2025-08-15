@@ -161,10 +161,16 @@ export default function PhotoQuest() {
   };
 
   // Query for quest-specific progress
-  const { data: questProgress = [] } = useQuery({
+  const { data: questProgress = [] } = useQuery<QuestProgressData[]>({
     queryKey: ["/api/quest-progress", uploaderName],
     enabled: !!uploaderName,
   });
+
+  const isQuestCompleted = (questId: string) => {
+    if (!uploaderName || questProgress.length === 0) return false;
+    const progress = questProgress.find((p: any) => p.questId === questId);
+    return progress ? progress.isCompleted : false;
+  };
 
   const getProgressForQuest = (questId: string) => {
     if (!uploaderName || questProgress.length === 0) return 0;
@@ -242,30 +248,43 @@ export default function PhotoQuest() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-blush to-cream rounded-xl p-4 border-2 border-romantic/20">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-bold text-charcoal flex items-center">
-                          <span className="mr-2">📊</span>
-                          Váš postup
-                        </span>
-                        <span className={`text-lg ${colorClasses.text} font-bold px-3 py-1 rounded-full bg-white/50`}>
-                          {getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek
-                        </span>
+                      <div className={`bg-gradient-to-r rounded-xl p-4 border-2 ${
+                        isQuestCompleted(quest.id) 
+                          ? 'from-green-100 to-green-50 border-green-300' 
+                          : 'from-blush to-cream border-romantic/20'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-bold text-charcoal flex items-center">
+                            <span className="mr-2">📊</span>
+                            Váš postup
+                          </span>
+                          <span className={`text-lg font-bold px-3 py-1 rounded-full ${
+                            isQuestCompleted(quest.id) 
+                              ? 'text-green-700 bg-green-200' 
+                              : `${colorClasses.text} bg-white/50`
+                          }`}>
+                            {getPhotosUploadedForQuest(quest.id)}/{quest.targetPhotos} fotek
+                          </span>
+                        </div>
+                        <Progress value={progress} className="w-full h-3" />
+                        <div className="mt-2 text-xs text-charcoal/70 text-center">
+                          {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : `Zbývá ${quest.targetPhotos - getPhotosUploadedForQuest(quest.id)} fotek`}
+                        </div>
                       </div>
-                      <Progress value={progress} className="w-full h-3" />
-                      <div className="mt-2 text-xs text-charcoal/70 text-center">
-                        {progress === 100 ? "🎉 Úkol dokončen!" : `Zbývá ${quest.targetPhotos - getPhotosUploadedForQuest(quest.id)} ověřených fotek`}
-                      </div>
-                    </div>
 
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
-                          className={`w-full ${colorClasses.bg} text-white ${colorClasses.hover} font-bold py-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
+                          className={`w-full font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg ${
+                            isQuestCompleted(quest.id)
+                              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                              : `${colorClasses.bg} ${colorClasses.hover} text-white hover:shadow-xl transform hover:scale-105`
+                          }`}
                           onClick={() => setSelectedQuest(quest)}
+                          disabled={isQuestCompleted(quest.id)}
                         >
-                          <Camera className="mr-2" size={18} />
-                          📸 Nahrát fotku
+                          <Camera className="w-4 h-4 mr-2" />
+                          {isQuestCompleted(quest.id) ? 'Úkol splněn' : 'Nahrát foto'}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-lg">
@@ -406,7 +425,7 @@ export default function PhotoQuest() {
                           )}
                           <Button 
                             onClick={handleUpload} 
-                            disabled={uploadPhotoMutation.isPending}
+                            disabled={uploadPhotoMutation.isPending || (selectedQuest && isQuestCompleted(selectedQuest.id))}
                             className="w-full"
                           >
                             {uploadPhotoMutation.isPending ? (
