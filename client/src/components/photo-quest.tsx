@@ -207,31 +207,41 @@ export default function PhotoQuest() {
   }
 
   return (
-    <section id="photo-quest" className="py-20 romantic-gradient">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-4">
-            Wedding Photo Quest <span className="heart-decoration">📸</span>
+    <section id="photo-quest" className="py-24 bg-gradient-to-br from-blush via-cream to-white min-h-screen">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center shadow-xl">
+              <span className="text-3xl text-white">📸</span>
+            </div>
+          </div>
+          <h2 className="font-display text-5xl md:text-6xl font-bold bg-gradient-to-r from-romantic via-love to-gold bg-clip-text text-transparent mb-6 leading-tight relative overflow-hidden">
+            <span className="relative z-10">Wedding Photo Quest</span>
+            <div className="absolute inset-0 shimmer-effect"></div>
           </h2>
-          <p className="text-lg text-charcoal/70 max-w-2xl mx-auto">
+          <p className="text-xl text-charcoal/60 max-w-3xl mx-auto font-light leading-relaxed">
             Pomozte nám zachytit naši svatbu z různých úhlů! Plňte úkoly a sdílejte své fotky.
           </p>
+          <div className="flex justify-center mt-8">
+            <div className="w-24 h-1 bg-gradient-to-r from-romantic to-gold rounded-full"></div>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10 mb-16">
           {challenges.map((quest, index) => {
             const IconComponent = getQuestIcon(quest.title);
             const progress = getProgressForQuest(quest.id);
             const colorClasses = [
-              { bg: 'bg-romantic', text: 'text-romantic', hover: 'hover:bg-romantic/80' },
-              { bg: 'bg-gold', text: 'text-gold', hover: 'hover:bg-gold/80' },
-              { bg: 'bg-love', text: 'text-love', hover: 'hover:bg-love/80' },
-              { bg: 'bg-sage', text: 'text-sage', hover: 'hover:bg-sage/80' }
+              { bg: 'bg-gradient-to-br from-romantic to-love', text: 'text-romantic', accent: 'from-romantic/10 to-love/10' },
+              { bg: 'bg-gradient-to-br from-gold to-yellow-400', text: 'text-gold', accent: 'from-gold/10 to-yellow-100' },
+              { bg: 'bg-gradient-to-br from-love to-pink-400', text: 'text-love', accent: 'from-love/10 to-pink-100' },
+              { bg: 'bg-gradient-to-br from-sage to-green-400', text: 'text-sage', accent: 'from-sage/10 to-green-100' }
             ][index % 4];
 
             return (
-              <Card key={quest.id} className="bg-white rounded-3xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-2 border-transparent hover:border-romantic/30 relative overflow-hidden">
-                <div className="absolute top-3 right-3 text-3xl opacity-20">
+              <Card key={quest.id} className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-3 border border-white/20 hover:border-romantic/20 relative overflow-hidden group gentle-float" style={{ animationDelay: `${index * 0.2}s` }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-60"></div>
+                <div className="absolute top-4 right-4 text-4xl opacity-15 group-hover:opacity-25 transition-opacity duration-300">
                   {quest.title.includes('Ano') && '💍'}
                   {quest.title.includes('polibek') && '💋'}
                   {quest.title.includes('prstýnek') && '💎'}
@@ -241,39 +251,37 @@ export default function PhotoQuest() {
                     !quest.title.includes('prstýnek') && !quest.title.includes('tanec') && 
                     !quest.title.includes('hostů')) && '📷'}
                 </div>
-                <CardContent className="p-8">
-                  <div className="text-center mb-6">
-                    <div className={`w-20 h-20 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                      <IconComponent className="text-white" size={28} />
+                <CardContent className="p-10 relative z-10">
+                  <div className="text-center mb-8">
+                    <div className={`w-24 h-24 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl transform group-hover:scale-110 transition-transform duration-300`}>
+                      <IconComponent className="text-white drop-shadow-lg" size={32} />
                     </div>
-                    <h3 className="font-display text-xl font-bold text-charcoal mb-3 flex items-center justify-center">
-                      <span className="mr-2">🎯</span>
+                    <h3 className="font-display text-2xl font-bold text-charcoal mb-4 leading-tight">
                       {quest.title}
                     </h3>
-                    <p className="text-charcoal/70 text-sm font-medium">{quest.description}</p>
+                    <p className="text-charcoal/60 text-base font-light leading-relaxed">{quest.description}</p>
                   </div>
 
-                  <div className="space-y-4">
-                      <div className={`bg-gradient-to-r rounded-xl p-4 border-2 ${
+                  <div className="space-y-6">
+                      <div className={`bg-gradient-to-r rounded-2xl p-6 border backdrop-blur-sm ${
                         isQuestCompleted(quest.id) 
-                          ? 'from-green-100 to-green-50 border-green-300' 
-                          : 'from-blush to-cream border-romantic/20'
+                          ? 'from-emerald-50/80 to-green-50/80 border-emerald-200' 
+                          : `bg-gradient-to-r ${colorClasses.accent} border-white/30`
                       }`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-bold text-charcoal flex items-center">
-                            <span className="mr-2">📊</span>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm font-medium text-charcoal/80">
                             Váš postup
                           </span>
-                          <span className={`text-lg font-bold px-3 py-1 rounded-full ${
+                          <span className={`text-sm font-semibold px-4 py-2 rounded-full backdrop-blur-sm ${
                             isQuestCompleted(quest.id) 
-                              ? 'text-green-700 bg-green-200' 
-                              : `${colorClasses.text} bg-white/50`
+                              ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200' 
+                              : `${colorClasses.text} bg-white/60 border border-white/40`
                           }`}>
                             {isQuestCompleted(quest.id) ? '✓ Splněno' : 'Čeká na splnění'}
                           </span>
                         </div>
-                        <Progress value={progress} className="w-full h-3" />
-                        <div className="mt-2 text-xs text-charcoal/70 text-center">
+                        <Progress value={progress} className="w-full h-2 mb-3" />
+                        <div className="text-xs text-charcoal/60 text-center font-light">
                           {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte 1 ověřenou fotku pro splnění"}
                         </div>
                       </div>
@@ -281,42 +289,47 @@ export default function PhotoQuest() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
-                          className={`w-full font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg ${
+                          className={`w-full font-semibold py-4 px-6 rounded-2xl transition-all duration-500 shadow-xl backdrop-blur-sm border ${
                             isQuestCompleted(quest.id)
-                              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                              : `${colorClasses.bg} ${colorClasses.hover} text-white hover:shadow-xl transform hover:scale-105`
+                              ? 'bg-gray-100/80 text-gray-500 cursor-not-allowed border-gray-200'
+                              : `${colorClasses.bg} text-white hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 border-white/20 hover:border-white/40`
                           }`}
                           onClick={() => setSelectedQuest(quest)}
                           disabled={isQuestCompleted(quest.id)}
                         >
-                          <Camera className="w-4 h-4 mr-2" />
-                          {isQuestCompleted(quest.id) ? 'Úkol splněn' : 'Nahrát foto'}
+                          <Camera className="w-5 h-5 mr-3" />
+                          <span className="font-display text-lg">
+                            {isQuestCompleted(quest.id) ? 'Úkol splněn' : 'Nahrát foto'}
+                          </span>
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-                        <DialogHeader>
-                          <DialogTitle className="text-lg sm:text-xl font-bold text-romantic leading-tight">
-                            📸 {quest.title}
+                      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl">
+                        <DialogHeader className="text-center mb-8">
+                          <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span className="text-2xl text-white">📸</span>
+                          </div>
+                          <DialogTitle className="text-2xl sm:text-3xl font-display font-bold bg-gradient-to-r from-romantic to-love bg-clip-text text-transparent leading-tight">
+                            {quest.title}
                           </DialogTitle>
                         </DialogHeader>
 
                         {/* Challenge Instructions */}
-                        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                          <div className="bg-gradient-to-r from-blush to-cream p-3 sm:p-4 rounded-xl border-2 border-romantic/20">
-                            <h4 className="font-bold text-charcoal mb-2 flex items-center text-sm sm:text-base">
-                              <span className="text-romantic mr-2">🎯</span>
-                              Zadání úkolu:
+                        <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                          <div className="bg-gradient-to-r from-blush/50 to-cream/50 p-4 sm:p-6 rounded-2xl border border-romantic/10 backdrop-blur-sm">
+                            <h4 className="font-semibold text-charcoal mb-3 flex items-center text-base sm:text-lg">
+                              <span className="text-romantic mr-3 text-xl">🎯</span>
+                              Zadání úkolu
                             </h4>
-                            <p className="text-charcoal/80 font-medium text-sm sm:text-base">{quest.description}</p>
+                            <p className="text-charcoal/70 font-light text-base sm:text-lg leading-relaxed">{quest.description}</p>
                           </div>
 
                           {/* Specific Instructions Based on Challenge */}
-                          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-r-xl">
-                            <h4 className="font-bold text-yellow-800 mb-2 flex items-center text-sm sm:text-base">
-                              <span className="mr-2">💡</span>
-                              Jak vyfotit:
+                          <div className="bg-gradient-to-r from-amber-50/80 to-yellow-50/80 border border-amber-200/50 p-4 sm:p-6 rounded-2xl backdrop-blur-sm">
+                            <h4 className="font-semibold text-amber-800 mb-4 flex items-center text-base sm:text-lg">
+                              <span className="mr-3 text-xl">💡</span>
+                              Jak vyfotit
                             </h4>
-                            <div className="text-yellow-700 text-xs sm:text-sm space-y-1">
+                            <div className="text-amber-700/80 text-sm sm:text-base space-y-2 font-light">
                               {(quest.title.includes('Ano') || quest.title.includes('polibek')) && (
                                 <>
                                   <p><strong>CO:</strong> Klíčové momenty obřadu</p>
@@ -394,48 +407,48 @@ export default function PhotoQuest() {
                             </div>
                           </div>
 
-                          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4 rounded-r-xl">
-                            <h4 className="font-bold text-blue-800 mb-2 flex items-center text-sm sm:text-base">
-                              <span className="mr-2">🤖</span>
-                              AI ověření:
+                          <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/50 p-4 sm:p-6 rounded-2xl backdrop-blur-sm">
+                            <h4 className="font-semibold text-blue-800 mb-4 flex items-center text-base sm:text-lg">
+                              <span className="mr-3 text-xl">🤖</span>
+                              AI ověření
                             </h4>
-                            <p className="text-blue-700 text-xs sm:text-sm">
+                            <p className="text-blue-700/80 text-sm sm:text-base font-light leading-relaxed">
                               Systém automaticky zkontroluje, zda fotka odpovídá zadání. 
                               Pouze ověřené fotky se započítají do postupu!
                             </p>
                           </div>
                         </div>
-                        <div className="space-y-3 sm:space-y-4">
-                          <div>
-                            <Label htmlFor="uploaderName" className="text-sm sm:text-base">Vaše jméno (pro sledování postupu)</Label>
+                        <div className="space-y-4 sm:space-y-6">
+                          <div className="space-y-3">
+                            <Label htmlFor="uploaderName" className="text-base sm:text-lg font-medium text-charcoal/80">Vaše jméno (pro sledování postupu)</Label>
                             <Input
                               id="uploaderName"
                               value={uploaderName}
                               onChange={(e) => setUploaderName(e.target.value)}
                               placeholder="Zadejte své jméno"
-                              className="text-sm sm:text-base"
+                              className="text-base sm:text-lg py-3 px-4 rounded-xl border-2 border-romantic/20 focus:border-romantic/40 bg-white/80 backdrop-blur-sm"
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="photo" className="text-sm sm:text-base">Vyberte fotku nebo vyfotografujte</Label>
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4">
+                          <div className="space-y-4">
+                            <Label htmlFor="photo" className="text-base sm:text-lg font-medium text-charcoal/80">Vyberte fotku nebo vyfotografujte</Label>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
                                 <Button 
                                   type="button"
                                   variant="outline" 
                                   onClick={handleCameraCapture}
-                                  className="flex items-center justify-center space-x-2 py-3 text-sm sm:text-base"
+                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/80 hover:bg-romantic/10 backdrop-blur-sm transition-all duration-300"
                                 >
-                                  <Camera size={16} />
+                                  <Camera size={20} />
                                   <span>Vyfotit</span>
                                 </Button>
                                 <Button 
                                   type="button"
                                   variant="outline" 
                                   onClick={handleFilePickerOpen}
-                                  className="flex items-center justify-center space-x-2 py-3 text-sm sm:text-base"
+                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/80 hover:bg-romantic/10 backdrop-blur-sm transition-all duration-300"
                                 >
-                                  <Upload size={16} />
+                                  <Upload size={20} />
                                   <span>Vybrat</span>
                                 </Button>
                               </div>
@@ -450,24 +463,24 @@ export default function PhotoQuest() {
                             </div>
                           </div>
                           {selectedFile && (
-                            <div className="text-xs sm:text-sm text-gray-600 p-2 bg-gray-50 rounded-lg">
+                            <div className="text-sm sm:text-base text-charcoal/70 p-4 bg-gradient-to-r from-emerald-50/80 to-green-50/80 rounded-xl border border-emerald-200/50 backdrop-blur-sm">
                               <span className="font-medium">Vybraná fotka:</span> {selectedFile.name}
                             </div>
                           )}
                           <Button 
                             onClick={handleUpload} 
                             disabled={uploadPhotoMutation.isPending || (selectedQuest ? isQuestCompleted(selectedQuest.id) : false)}
-                            className="w-full py-3 text-sm sm:text-base"
+                            className="w-full py-4 px-6 text-base sm:text-lg font-semibold rounded-2xl bg-gradient-to-r from-romantic to-love text-white hover:from-romantic/90 hover:to-love/90 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 border border-white/20"
                           >
                             {uploadPhotoMutation.isPending ? (
-                              <div className="flex items-center justify-center space-x-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                <span>AI ověřuje fotku...</span>
+                              <div className="flex items-center justify-center space-x-3">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                <span className="font-display">AI ověřuje fotku...</span>
                               </div>
                             ) : (
                               <>
-                                <Upload className="mr-2" size={16} />
-                                Nahrát fotku
+                                <Upload className="mr-3" size={20} />
+                                <span className="font-display">Nahrát fotku</span>
                               </>
                             )}
                           </Button>
@@ -482,44 +495,62 @@ export default function PhotoQuest() {
         </div>
 
         {/* Leaderboard */}
-        <Card className="bg-white rounded-3xl shadow-lg max-w-2xl mx-auto">
-          <CardContent className="p-8">
-            <h3 className="font-display text-2xl font-semibold text-charcoal mb-6 text-center">
-              <Trophy className="inline mr-2 text-gold" size={24} />
-              Žebříček nejlepších fotografů
-            </h3>
+        <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl max-w-4xl mx-auto border border-white/20">
+          <CardContent className="p-10">
+            <div className="text-center mb-10">
+              <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <Trophy className="text-white drop-shadow-lg" size={28} />
+              </div>
+              <h3 className="font-display text-3xl font-bold bg-gradient-to-r from-gold to-yellow-600 bg-clip-text text-transparent mb-4">
+                Žebříček nejlepších fotografů
+              </h3>
+              <div className="flex justify-center">
+                <div className="w-24 h-1 bg-gradient-to-r from-gold to-yellow-400 rounded-full"></div>
+              </div>
+            </div>
 
             {leaderboardLoading ? (
-              <p className="text-center text-charcoal/70">Načítání žebříčku...</p>
+              <p className="text-center text-charcoal/60 text-lg font-light">Načítání žebříčku...</p>
             ) : leaderboard.length === 0 ? (
-              <p className="text-center text-charcoal/70">Zatím nikdo nenahrál fotku. Buďte první!</p>
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-romantic/20 to-love/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-3xl">📸</span>
+                </div>
+                <p className="text-charcoal/60 text-xl font-light">Zatím nikdo nenahrál fotku. Buďte první!</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {leaderboard.slice(0, 5).map((entry, index) => (
                   <div
                     key={entry.participantName}
-                    className={`flex items-center justify-between p-4 rounded-lg ${
-                      index === 0 ? 'bg-gradient-to-r from-gold/10 to-yellow-100 border border-gold/20' : 'bg-gray-50'
+                    className={`flex items-center justify-between p-6 rounded-2xl transition-all duration-300 hover:shadow-lg ${
+                      index === 0 
+                        ? 'bg-gradient-to-r from-gold/10 to-yellow-50 border-2 border-gold/30 shadow-lg' 
+                        : 'bg-gradient-to-r from-white/50 to-gray-50/50 border border-gray-200/50 hover:from-romantic/5 hover:to-love/5'
                     }`}
                   >
-                    <div className="flex items-center space-x-4">
-                      <span
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                          index === 0 ? 'bg-gold' : index === 1 ? 'bg-gray-400' : 'bg-orange-400'
+                    <div className="flex items-center space-x-6">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
+                          index === 0 
+                            ? 'bg-gradient-to-br from-gold to-yellow-500' 
+                            : index === 1 
+                            ? 'bg-gradient-to-br from-gray-400 to-gray-500' 
+                            : 'bg-gradient-to-br from-orange-400 to-orange-500'
                         }`}
                       >
                         {index + 1}
-                      </span>
+                      </div>
                       <div>
-                        <p className="font-semibold text-charcoal">{entry.participantName}</p>
-                        <p className="text-sm text-charcoal/60">{entry.completedQuests} splněných úkolů</p>
+                        <p className="font-semibold text-charcoal text-lg">{entry.participantName}</p>
+                        <p className="text-charcoal/60 font-light">{entry.completedQuests} splněných úkolů</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold text-xl ${index === 0 ? 'text-gold' : 'text-charcoal/60'}`}>
+                      <p className={`font-bold text-2xl ${index === 0 ? 'text-gold' : 'text-charcoal/70'}`}>
                         {entry.totalPoints} bodů
                       </p>
-                      {index === 0 && <p className="text-sm text-charcoal/60">🏆 Vítěz</p>}
+                      {index === 0 && <p className="text-charcoal/60 font-light flex items-center justify-end"><span className="mr-1">🏆</span> Vítěz</p>}
                     </div>
                   </div>
                 ))}
