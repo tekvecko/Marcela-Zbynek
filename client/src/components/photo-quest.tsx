@@ -11,6 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { QuestChallenge } from "@shared/schema";
 
+// Import wedding photos for decoration
+import landscapePhoto from "../assets/IMG-20240620-WA0008.jpg";
+import coupleEventPhoto from "../assets/IMG-20250707-WA0006.jpg";
+import flowerArchPhoto from "../assets/IMG-20250707-WA0007.jpg";
+import familyPhoto from "../assets/IMG-20250707-WA0010.jpg";
+import portraitPhoto from "../assets/IMG-20250414-WA0019.jpg";
+
 interface QuestProgressData {
   questId: string;
   participantName: string;
@@ -207,22 +214,58 @@ export default function PhotoQuest() {
   }
 
   return (
-    <section id="photo-quest" className="py-24 bg-gradient-to-br from-blush via-cream to-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+    <section id="photo-quest" className="py-24 bg-gradient-to-br from-blush via-cream to-white min-h-screen relative overflow-hidden">
+      {/* Floating decorative photos */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-32 h-24 rounded-2xl overflow-hidden shadow-xl opacity-20 rotate-12 gentle-float" style={{ animationDelay: '0s' }}>
+          <img src={flowerArchPhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute top-32 right-16 w-28 h-36 rounded-2xl overflow-hidden shadow-xl opacity-25 -rotate-6 gentle-float" style={{ animationDelay: '1s' }}>
+          <img src={familyPhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute bottom-40 left-20 w-36 h-24 rounded-2xl overflow-hidden shadow-xl opacity-15 rotate-6 gentle-float" style={{ animationDelay: '2s' }}>
+          <img src={landscapePhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute bottom-32 right-12 w-24 h-32 rounded-2xl overflow-hidden shadow-xl opacity-30 -rotate-12 gentle-float" style={{ animationDelay: '1.5s' }}>
+          <img src={coupleEventPhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute top-1/2 left-8 w-20 h-28 rounded-2xl overflow-hidden shadow-xl opacity-10 rotate-45 gentle-float" style={{ animationDelay: '3s' }}>
+          <img src={portraitPhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
         <div className="text-center mb-20">
           <div className="inline-flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center shadow-xl">
-              <span className="text-3xl text-white">📸</span>
+            <div className="w-20 h-20 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center shadow-2xl gentle-float">
+              <span className="text-4xl text-white drop-shadow-lg">📸</span>
             </div>
           </div>
           <h2 className="font-display text-5xl md:text-6xl font-bold bg-gradient-to-r from-romantic via-love to-gold bg-clip-text text-transparent mb-6 leading-tight relative overflow-hidden">
             <span className="relative z-10">Wedding Photo Quest</span>
             <div className="absolute inset-0 shimmer-effect"></div>
           </h2>
-          <p className="text-xl text-charcoal/60 max-w-3xl mx-auto font-light leading-relaxed">
+          <p className="text-xl text-charcoal/60 max-w-3xl mx-auto font-light leading-relaxed mb-12">
             Pomozte nám zachytit naši svatbu z různých úhlů! Plňte úkoly a sdílejte své fotky.
           </p>
-          <div className="flex justify-center mt-8">
+          
+          {/* Featured couple photo as centerpiece */}
+          <div className="flex justify-center mb-8">
+            <div className="relative group">
+              <div className="w-80 h-60 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50 backdrop-blur-sm transform transition-all duration-500 group-hover:scale-105">
+                <img src={flowerArchPhoto} alt="Marcela a Zbyněk pod květinovou branou" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl border border-romantic/20">
+                <p className="font-display text-romantic font-semibold text-lg">Marcela & Zbyněk</p>
+              </div>
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <Heart className="text-love w-5 h-5" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-center">
             <div className="w-24 h-1 bg-gradient-to-r from-romantic to-gold rounded-full"></div>
           </div>
         </div>
@@ -495,8 +538,19 @@ export default function PhotoQuest() {
         </div>
 
         {/* Leaderboard */}
-        <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl max-w-4xl mx-auto border border-white/20">
-          <CardContent className="p-10">
+        <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl max-w-4xl mx-auto border border-white/20 relative overflow-hidden">
+          {/* Decorative photo frames around leaderboard */}
+          <div className="absolute top-4 left-4 w-16 h-12 rounded-lg overflow-hidden shadow-md opacity-20 rotate-12">
+            <img src={portraitPhoto} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="absolute top-6 right-6 w-12 h-16 rounded-lg overflow-hidden shadow-md opacity-15 -rotate-12">
+            <img src={coupleEventPhoto} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="absolute bottom-4 left-6 w-14 h-10 rounded-lg overflow-hidden shadow-md opacity-25 rotate-6">
+            <img src={landscapePhoto} alt="" className="w-full h-full object-cover" />
+          </div>
+          
+          <CardContent className="p-10 relative z-10">
             <div className="text-center mb-10">
               <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                 <Trophy className="text-white drop-shadow-lg" size={28} />
