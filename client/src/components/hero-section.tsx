@@ -1,6 +1,7 @@
 import flowerArchPhoto from '../assets/IMG-20250707-WA0007.jpg';
 import { Link } from "wouter";
 import { useEffect, useState } from "react";
+import GlassButton from "@/components/ui/glass-button";
 
 export default function HeroSection() {
   const [scrollY, setScrollY] = useState(0);
@@ -54,17 +55,15 @@ export default function HeroSection() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.6s'}}>
-            <Link 
-              href="/photo-quest"
-              className="bg-romantic text-white px-8 py-3 rounded-full font-medium hover:bg-love transition-colors shadow-lg text-center"
-            >
-              Začít Photo Quest
+            <Link href="/photo-quest">
+              <GlassButton variant="primary" size="lg" className="w-full sm:w-auto min-w-[180px]">
+                📸 Začít Photo Quest
+              </GlassButton>
             </Link>
-            <Link 
-              href="/details"
-              className="bg-gold text-white px-8 py-3 rounded-full font-medium hover:bg-gold/80 transition-colors shadow-lg text-center"
-            >
-              Detaily svatby
+            <Link href="/details">
+              <GlassButton variant="secondary" size="lg" className="w-full sm:w-auto min-w-[180px]">
+                💍 Detaily svatby
+              </GlassButton>
             </Link>
           </div>
         </div>

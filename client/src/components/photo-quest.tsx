@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import GlassButton from "@/components/ui/glass-button";
 import type { QuestChallenge } from "@shared/schema";
 
 // Import wedding photos for decoration
@@ -321,20 +322,18 @@ export default function PhotoQuest() {
 
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button 
-                          className={`w-full font-semibold py-4 px-6 rounded-2xl transition-all duration-200 shadow-lg border ${
-                            isQuestCompleted(quest.id)
-                              ? 'bg-gray-100/80 text-gray-500 cursor-not-allowed border-gray-200'
-                              : `${colorClasses.bg} text-white hover:shadow-xl transform hover:scale-102 hover:-translate-y-1 border-white/20 hover:border-white/40`
-                          }`}
+                        <GlassButton
+                          variant={isQuestCompleted(quest.id) ? "ghost" : "primary"}
+                          size="lg"
+                          className="w-full"
                           onClick={() => setSelectedQuest(quest)}
                           disabled={isQuestCompleted(quest.id)}
                         >
-                          <Camera className="w-5 h-5 mr-3" />
+                          <Camera className="w-5 h-5" />
                           <span className="font-display text-lg">
-                            {isQuestCompleted(quest.id) ? 'Úkol splněn' : 'Nahrát foto'}
+                            {isQuestCompleted(quest.id) ? '✓ Úkol splněn' : 'Nahrát foto'}
                           </span>
-                        </Button>
+                        </GlassButton>
                       </DialogTrigger>
                       <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl">
                         <DialogHeader className="text-center mb-8">
@@ -466,24 +465,26 @@ export default function PhotoQuest() {
                             <Label htmlFor="photo" className="text-base sm:text-lg font-medium text-charcoal/80">Vyberte fotku nebo vyfotografujte</Label>
                             <div className="space-y-4">
                               <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
-                                <Button 
+                                <GlassButton
                                   type="button"
-                                  variant="outline" 
+                                  variant="outline"
+                                  size="md"
                                   onClick={handleCameraCapture}
-                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/90 hover:bg-romantic/10 transition-all duration-200"
+                                  className="w-full"
                                 >
                                   <Camera size={20} />
                                   <span>Vyfotit</span>
-                                </Button>
-                                <Button 
+                                </GlassButton>
+                                <GlassButton
                                   type="button"
-                                  variant="outline" 
+                                  variant="outline"
+                                  size="md"
                                   onClick={handleFilePickerOpen}
-                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/90 hover:bg-romantic/10 transition-all duration-200"
+                                  className="w-full"
                                 >
                                   <Upload size={20} />
                                   <span>Vybrat</span>
-                                </Button>
+                                </GlassButton>
                               </div>
                               <Input
                                 id="photo"
@@ -500,10 +501,12 @@ export default function PhotoQuest() {
                               <span className="font-medium">Vybraná fotka:</span> {selectedFile.name}
                             </div>
                           )}
-                          <Button 
+                          <GlassButton 
                             onClick={handleUpload} 
                             disabled={uploadPhotoMutation.isPending || (selectedQuest ? isQuestCompleted(selectedQuest.id) : false)}
-                            className="w-full py-4 px-6 text-base sm:text-lg font-semibold rounded-2xl bg-gradient-to-r from-romantic to-love text-white hover:from-romantic/90 hover:to-love/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-102 border border-white/20"
+                            variant="primary"
+                            size="lg"
+                            className="w-full bg-gradient-to-r from-romantic/30 to-love/30 hover:from-romantic/40 hover:to-love/40"
                           >
                             {uploadPhotoMutation.isPending ? (
                               <div className="flex items-center justify-center space-x-3">
@@ -516,7 +519,7 @@ export default function PhotoQuest() {
                                 <span className="font-display">Nahrát fotku</span>
                               </>
                             )}
-                          </Button>
+                          </GlassButton>
                         </div>
                       </DialogContent>
                     </Dialog>

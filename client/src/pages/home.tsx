@@ -3,6 +3,7 @@ import HeroSection from "@/components/hero-section";
 import CountdownTimer from "@/components/countdown-timer";
 import { Link } from "wouter";
 import { Camera, Heart, MapPin, Users } from "lucide-react";
+import GlassButton from "@/components/ui/glass-button";
 
 export default function Home() {
   return (
@@ -24,39 +25,60 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Link href="/photo-quest" className="group">
-              <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20">
-                <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6">
+            <Link href="/photo-quest" className="group block">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <Camera className="text-white" size={24} />
                 </div>
                 <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Photo Quest</h3>
-                <p className="text-charcoal/60 text-center leading-relaxed">
+                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
                   Plňte fotografické úkoly a pomozte nám zachytit naši svatbu z různých úhlů
                 </p>
+                <div className="flex justify-center">
+                  <GlassButton variant="primary" size="md">
+                    <Camera size={16} />
+                    Začít quest
+                  </GlassButton>
+                </div>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </div>
             </Link>
             
-            <Link href="/gallery" className="group">
-              <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20">
-                <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Link href="/gallery" className="group block">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <Heart className="text-white" size={24} />
                 </div>
                 <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Galerie</h3>
-                <p className="text-charcoal/60 text-center leading-relaxed">
+                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
                   Prohlédněte si fotky ze svatby a dejte like těm nejkrásnějším
                 </p>
+                <div className="flex justify-center">
+                  <GlassButton variant="secondary" size="md">
+                    <Heart size={16} />
+                    Zobrazit galerii
+                  </GlassButton>
+                </div>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </div>
             </Link>
             
-            <Link href="/details" className="group">
-              <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/20">
-                <div className="w-16 h-16 bg-gradient-to-br from-sage to-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Link href="/details" className="group block">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-sage to-green-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <MapPin className="text-white" size={24} />
                 </div>
                 <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Detaily</h3>
-                <p className="text-charcoal/60 text-center leading-relaxed">
+                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
                   Všechny důležité informace o naší svatbě - místo, čas, program
                 </p>
+                <div className="flex justify-center">
+                  <GlassButton variant="outline" size="md">
+                    <MapPin size={16} />
+                    Zobrazit detaily
+                  </GlassButton>
+                </div>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </div>
             </Link>
           </div>
