@@ -87,13 +87,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-      
-      {/* Floating Heart */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <div className="bg-romantic hover:bg-love text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg cursor-pointer transform hover:scale-110 transition-all animate-pulse">
-          <i className="fas fa-heart text-2xl"></i>
-        </div>
-      </div>
+
     </div>
   );
 }
