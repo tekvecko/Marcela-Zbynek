@@ -72,16 +72,16 @@ export default function WeddingTimeline() {
   useEffect(() => {
     const weddingDate = new Date('2025-10-11');
     const now = new Date();
-    
+
     // Only show live updates on wedding day
     if (weddingDate.toDateString() === now.toDateString()) {
       const currentTimeStr = now.toTimeString().substring(0, 5);
-      
+
       const activeEvent = timelineEvents.find((event, index) => {
         const nextEvent = timelineEvents[index + 1];
         return currentTimeStr >= event.time && (!nextEvent || currentTimeStr < nextEvent.time);
       });
-      
+
       setCurrentEvent(activeEvent?.id || null);
     }
   }, [currentTime]);
@@ -89,11 +89,11 @@ export default function WeddingTimeline() {
   const isEventCompleted = (eventTime: string) => {
     const weddingDate = new Date('2025-10-11');
     const now = new Date();
-    
+
     if (weddingDate.toDateString() !== now.toDateString()) {
       return false;
     }
-    
+
     const currentTimeStr = now.toTimeString().substring(0, 5);
     return currentTimeStr > eventTime;
   };
@@ -122,7 +122,7 @@ export default function WeddingTimeline() {
             const Icon = event.icon;
             const isCompleted = isEventCompleted(event.time);
             const isActive = isEventActive(event.id);
-            
+
             return (
               <div
                 key={event.id}
@@ -138,7 +138,7 @@ export default function WeddingTimeline() {
                 {index < timelineEvents.length - 1 && (
                   <div className="absolute left-8 top-16 w-0.5 h-12 bg-gradient-to-b from-romantic/40 to-transparent" />
                 )}
-                
+
                 {/* Icon */}
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${
                   isActive
@@ -169,15 +169,15 @@ export default function WeddingTimeline() {
                       </span>
                     )}
                   </div>
-                  
+
                   <h3 className="font-display text-xl font-bold text-charcoal mb-2">
                     {event.title}
                   </h3>
-                  
+
                   <p className="text-charcoal/70 mb-3">
                     {event.description}
                   </p>
-                  
+
                   {event.location && (
                     <div className="flex items-center gap-2 text-charcoal/60">
                       <MapPin size={16} />
