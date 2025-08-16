@@ -27,7 +27,7 @@ export default function HeroSection() {
           Náš den lásky se blíží...
         </p>
         <p className="text-lg text-charcoal/80 mb-12 animate-fade-in" style={{animationDelay: '0.4s'}}>
-          11. října 2025 • Kovalovice 109, Česká republika
+          11. října 2025 • 12:00 • Kovalovice 109, Česká republika
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.6s'}}>
