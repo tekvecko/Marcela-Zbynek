@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import OptimizedImage from "@/components/ui/optimized-image";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import GlassButton from "@/components/ui/glass-button";
 import type { UploadedPhoto } from "@shared/schema";
 
 export default function PhotoGallery() {
@@ -156,7 +159,8 @@ export default function PhotoGallery() {
     return (
       <section id="gallery" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>Načítání galerie...</p>
+          <LoadingSpinner size="lg" className="text-romantic mx-auto" />
+          <p className="mt-4 text-charcoal/60">Načítání galerie...</p>
         </div>
       </section>
     );
@@ -207,24 +211,24 @@ export default function PhotoGallery() {
                     <Label htmlFor="photo">Vyberte fotku nebo vyfotografujte</Label>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-2">
-                        <Button 
+                        <GlassButton
                           type="button"
-                          variant="outline" 
+                          variant="outline"
+                          size="md"
                           onClick={handleCameraCapture}
-                          className="flex items-center space-x-2"
                         >
                           <Camera size={16} />
                           <span>Vyfotit</span>
-                        </Button>
-                        <Button 
+                        </GlassButton>
+                        <GlassButton
                           type="button"
-                          variant="outline" 
+                          variant="outline"
+                          size="md"
                           onClick={handleFilePickerOpen}
-                          className="flex items-center space-x-2"
                         >
                           <Upload size={16} />
                           <span>Vybrat</span>
-                        </Button>
+                        </GlassButton>
                       </div>
                       <Input
                         id="photo"
@@ -241,23 +245,25 @@ export default function PhotoGallery() {
                       Vybraná fotka: {selectedFile.name}
                     </div>
                   )}
-                  <Button 
+                  <GlassButton 
                     onClick={handleUpload} 
                     disabled={uploadPhotoMutation.isPending}
-                    className="w-full bg-romantic hover:bg-love"
+                    variant="primary"
+                    size="lg"
+                    className="w-full"
                   >
                     {uploadPhotoMutation.isPending ? (
                       <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <LoadingSpinner size="sm" />
                         <span>AI analyzuje fotku...</span>
                       </div>
                     ) : (
                       <>
-                        <Upload className="mr-2" size={16} />
+                        <Upload size={16} />
                         Nahrát fotku
                       </>
                     )}
-                  </Button>
+                  </GlassButton>
                 </div>
               </DialogContent>
             </Dialog>
