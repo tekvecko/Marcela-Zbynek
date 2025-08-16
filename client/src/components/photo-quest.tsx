@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, Upload, Trophy, Heart, Users, Crown } from "lucide-react";
+import { Camera, Upload, Trophy, Heart, Users, Crown, HelpCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,40 @@ import coupleEventPhoto from "../assets/IMG-20250707-WA0006.jpg";
 import flowerArchPhoto from "../assets/IMG-20250707-WA0007.jpg";
 import familyPhoto from "../assets/IMG-20250707-WA0010.jpg";
 import portraitPhoto from "../assets/IMG-20250414-WA0019.jpg";
+
+// Define a simple HelpTooltip component
+const HelpTooltip = ({ content, side, className }: { content: string; side?: "top" | "bottom" | "left" | "right"; className?: string }) => (
+  <div className={`group relative ${className}`}>
+    <HelpCircle className="text-charcoal/50 w-5 h-5 cursor-pointer" />
+    <div className={`absolute ${side === 'bottom' ? 'top-full left-1/2 -translate-x-1/2 mt-2' : side === 'top' ? 'bottom-full left-1/2 -translate-x-1/2 mb-2' : ''} 
+                    bg-charcoal text-white text-xs rounded-md px-3 py-2 w-64 max-w-xs z-50 opacity-0 invisible 
+                    group-hover:opacity-100 group-hover:visible transition-opacity duration-200 pointer-events-none`}>
+      {content}
+      <div className={`absolute w-3 h-3 ${side === 'bottom' ? 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45' : side === 'top' ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45' : ''} 
+                      bg-charcoal`}></div>
+    </div>
+  </div>
+);
+
+// Define a simple InfoCard component
+const InfoCard = ({ type, title, content }: { type: 'tip' | 'info' | 'success'; title: string; content: string }) => {
+  const colorMap = {
+    tip: { bg: 'from-blue-100 to-blue-200', text: 'text-blue-800', icon: '💡' },
+    info: { bg: 'from-purple-100 to-purple-200', text: 'text-purple-800', icon: '🤖' },
+    success: { bg: 'from-green-100 to-green-200', text: 'text-green-800', icon: '🏆' },
+  };
+  const { bg, text, icon } = colorMap[type];
+
+  return (
+    <div className={`bg-gradient-to-br ${bg} p-6 rounded-2xl border border-white/30 shadow-lg flex items-start gap-4`}>
+      <span className="text-2xl">{icon}</span>
+      <div>
+        <h4 className={`font-semibold text-lg mb-2 ${text}`}>{title}</h4>
+        <p className="text-charcoal/70 text-sm leading-relaxed">{content}</p>
+      </div>
+    </div>
+  );
+};
 
 interface QuestProgressData {
   questId: string;
@@ -63,85 +97,85 @@ export default function PhotoQuest() {
       // Reset analysis result and upload speed
       setAnalysisResult(null);
       setUploadSpeed(0);
-      
+
       // Stage 1: Uploading
       setUploadStage('uploading');
       setUploadProgress(10);
       setCurrentStep("Nahrávání fotky na server...");
-      
+
       // Track upload speed
       const file = formData.get('photo') as File;
       const fileSizeMB = file ? file.size / (1024 * 1024) : 0;
       const uploadStartTime = Date.now();
-      
+
       // Simulate upload progress with speed calculation
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           const newProgress = Math.min(prev + 3, 30);
-          
+
           // Calculate upload speed based on progress
           const elapsed = (Date.now() - uploadStartTime) / 1000; // seconds
           const progressPercent = newProgress / 100;
           const uploadedMB = fileSizeMB * progressPercent;
           const speed = elapsed > 0 ? uploadedMB / elapsed : 0;
           setUploadSpeed(speed);
-          
+
           return newProgress;
         });
       }, 150);
-      
+
       try {
         const response = await fetch('/api/photos/upload', {
           method: 'POST',
           body: formData,
         });
-        
+
         clearInterval(progressInterval);
-        
+
         // Final upload speed calculation
         const totalUploadTime = (Date.now() - uploadStartTime) / 1000;
         const finalSpeed = totalUploadTime > 0 ? fileSizeMB / totalUploadTime : 0;
         setUploadSpeed(finalSpeed);
-        
+
         // Stage 2: Analyzing
         setUploadStage('analyzing');
         setUploadProgress(40);
         setCurrentStep("AI analyzuje obsah fotky...");
-        
+
         // Simulate analyzing progress
         const analyzeInterval = setInterval(() => {
           setUploadProgress(prev => Math.min(prev + 2, 60));
         }, 200);
-        
+
         await new Promise(resolve => setTimeout(resolve, 1000));
         clearInterval(analyzeInterval);
         setUploadProgress(60);
-        
+
         // Stage 3: Verifying
         setUploadStage('verifying');
         setUploadProgress(80);
         setCurrentStep("Ověřování splnění úkolu...");
-        
+
         // Simulate verification progress
         const verifyInterval = setInterval(() => {
           setUploadProgress(prev => Math.min(prev + 2, 90));
         }, 150);
-        
+
         await new Promise(resolve => setTimeout(resolve, 800));
         clearInterval(verifyInterval);
-        
+
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.message || 'Upload failed');
         }
-        
+
         const data = await response.json();
-        
+
         // Complete
         setUploadStage('complete');
         setUploadProgress(100);
         setCurrentStep("Analýza dokončena!");
-        
+
         return data;
       } catch (error) {
         clearInterval(progressInterval);
@@ -177,7 +211,7 @@ export default function PhotoQuest() {
           setUploadProgress(0);
           setUploadSpeed(0);
           setAnalysisResult(null);
-          
+
           // Navigate to gallery to show the photo
           setLocation('/gallery');
         }, 3000);
@@ -312,7 +346,7 @@ export default function PhotoQuest() {
           <p className="text-xl text-charcoal/60 max-w-3xl mx-auto font-light leading-relaxed mb-12">
             Pomozte nám zachytit naši svatbu z různých úhlů! Plňte úkoly a sdílejte své fotky.
           </p>
-          
+
           {/* Featured couple photo as centerpiece */}
           <div className="flex justify-center mb-8">
             <div className="relative group">
@@ -328,13 +362,33 @@ export default function PhotoQuest() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-center">
             <div className="w-24 h-1 bg-gradient-to-r from-romantic to-gold rounded-full"></div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10 mb-16">
+        {/* Helpful Tips */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+          <InfoCard
+            type="tip"
+            title="Tip pro lepší fotky"
+            content="Zajistěte dostatek světla a držte telefon stabilně. Nejlepší fotky vznikají při přirozeném světle."
+          />
+          <InfoCard
+            type="info"
+            title="AI hodnocení"
+            content="Umělá inteligence kontroluje, zda fotka odpovídá zadání úkolu. Buďte kreativní, ale držte se tématu!"
+          />
+          <InfoCard
+            type="success"
+            title="Body a ceny"
+            content="Za každý splněný úkol získáváte body. Nejlepší hráči na konci svatby vyhrají krásné ceny!"
+          />
+        </div>
+
+        {/* Quest Challenges */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {challenges.map((quest, index) => {
             const IconComponent = getQuestIcon(quest.title);
             const progress = getProgressForQuest(quest.id);
@@ -603,7 +657,7 @@ export default function PhotoQuest() {
                               </>
                             )}
                           </GlassButton>
-                          
+
                           {/* Upload Progress */}
                           {uploadStage !== 'idle' && (
                             <UploadProgress
@@ -614,7 +668,7 @@ export default function PhotoQuest() {
                               className="mt-6"
                             />
                           )}
-                          
+
                           {/* Analysis Result */}
                           {analysisResult && (
                             <PhotoAnalysisResult
@@ -645,83 +699,80 @@ export default function PhotoQuest() {
             );
           })}
         </div>
+      </div>
 
-        {/* Leaderboard */}
-        <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl max-w-4xl mx-auto border border-white/20 relative overflow-hidden">
-          {/* Decorative photo frames around leaderboard */}
-          <div className="absolute top-4 left-4 w-16 h-12 rounded-lg overflow-hidden shadow-md opacity-20 rotate-12">
-            <img src={portraitPhoto} alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute top-6 right-6 w-12 h-16 rounded-lg overflow-hidden shadow-md opacity-15 -rotate-12">
-            <img src={coupleEventPhoto} alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute bottom-4 left-6 w-14 h-10 rounded-lg overflow-hidden shadow-md opacity-25 rotate-6">
-            <img src={landscapePhoto} alt="" className="w-full h-full object-cover" />
+      {/* Leaderboard */}
+      <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl max-w-4xl mx-auto border border-white/20 relative overflow-hidden">
+        {/* Decorative photo frames around leaderboard */}
+        <div className="absolute top-4 left-4 w-16 h-12 rounded-lg overflow-hidden shadow-md opacity-20 rotate-12">
+          <img src={portraitPhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute top-6 right-6 w-12 h-16 rounded-lg overflow-hidden shadow-md opacity-15 -rotate-12">
+          <img src={coupleEventPhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute bottom-4 left-6 w-14 h-10 rounded-lg overflow-hidden shadow-md opacity-25 rotate-6">
+          <img src={landscapePhoto} alt="" className="w-full h-full object-cover" />
+        </div>
+
+        <CardContent className="p-10 relative z-10">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <h3 className="font-display text-2xl font-bold text-charcoal text-center">Žebříček</h3>
+            <HelpTooltip 
+              content="Zde vidíte nejlepší hráče seřazené podle počtu splněných úkolů a získaných bodů. Soutěžte s ostatními hosty!" 
+              side="bottom"
+            />
           </div>
           
-          <CardContent className="p-10 relative z-10">
-            <div className="text-center mb-10">
-              <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                <Trophy className="text-white drop-shadow-lg" size={28} />
-              </div>
-              <h3 className="font-display text-3xl font-bold bg-gradient-to-r from-gold to-yellow-600 bg-clip-text text-transparent mb-4">
-                Žebříček nejlepších fotografů
-              </h3>
-              <div className="flex justify-center">
-                <div className="w-24 h-1 bg-gradient-to-r from-gold to-yellow-400 rounded-full"></div>
-              </div>
-            </div>
 
-            {leaderboardLoading ? (
-              <p className="text-center text-charcoal/60 text-lg font-light">Načítání žebříčku...</p>
-            ) : leaderboard.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-gradient-to-br from-romantic/20 to-love/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-3xl">📸</span>
-                </div>
-                <p className="text-charcoal/60 text-xl font-light">Zatím nikdo nenahrál fotku. Buďte první!</p>
+          {leaderboardLoading ? (
+            <p className="text-center text-charcoal/60 text-lg font-light">Načítání žebříčku...</p>
+          ) : leaderboard.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gradient-to-br from-romantic/20 to-love/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-3xl">📸</span>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {leaderboard.slice(0, 5).map((entry, index) => (
-                  <div
-                    key={entry.participantName}
-                    className={`flex items-center justify-between p-6 rounded-2xl transition-all duration-300 hover:shadow-lg ${
-                      index === 0 
-                        ? 'bg-gradient-to-r from-gold/10 to-yellow-50 border-2 border-gold/30 shadow-lg' 
-                        : 'bg-gradient-to-r from-white/50 to-gray-50/50 border border-gray-200/50 hover:from-romantic/5 hover:to-love/5'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-6">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
-                          index === 0 
-                            ? 'bg-gradient-to-br from-gold to-yellow-500' 
-                            : index === 1 
-                            ? 'bg-gradient-to-br from-gray-400 to-gray-500' 
-                            : 'bg-gradient-to-br from-orange-400 to-orange-500'
-                        }`}
-                      >
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-charcoal text-lg">{entry.participantName}</p>
-                        <p className="text-charcoal/60 font-light">{entry.completedQuests} splněných úkolů</p>
-                      </div>
+              <p className="text-charcoal/60 text-xl font-light">Zatím nikdo nenahrál fotku. Buďte první!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {leaderboard.slice(0, 5).map((entry, index) => (
+                <div
+                  key={entry.participantName}
+                  className={`flex items-center justify-between p-6 rounded-2xl transition-all duration-300 hover:shadow-lg ${
+                    index === 0 
+                      ? 'bg-gradient-to-r from-gold/10 to-yellow-50 border-2 border-gold/30 shadow-lg' 
+                      : 'bg-gradient-to-r from-white/50 to-gray-50/50 border border-gray-200/50 hover:from-romantic/5 hover:to-love/5'
+                  }`}
+                >
+                  <div className="flex items-center space-x-6">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
+                        index === 0 
+                          ? 'bg-gradient-to-br from-gold to-yellow-500' 
+                          : index === 1 
+                          ? 'bg-gradient-to-br from-gray-400 to-gray-500' 
+                          : 'bg-gradient-to-br from-orange-400 to-orange-500'
+                      }`}
+                    >
+                      {index + 1}
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold text-2xl ${index === 0 ? 'text-gold' : 'text-charcoal/70'}`}>
-                        {entry.totalPoints} bodů
-                      </p>
-                      {index === 0 && <p className="text-charcoal/60 font-light flex items-center justify-end"><span className="mr-1">🏆</span> Vítěz</p>}
+                    <div>
+                      <p className="font-semibold text-charcoal text-lg">{entry.participantName}</p>
+                      <p className="text-charcoal/60 font-light">{entry.completedQuests} splněných úkolů</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="text-right">
+                    <p className={`font-bold text-2xl ${index === 0 ? 'text-gold' : 'text-charcoal/70'}`}>
+                      {entry.totalPoints} bodů
+                    </p>
+                    {index === 0 && <p className="text-charcoal/60 font-light flex items-center justify-end"><span className="mr-1">🏆</span> Vítěz</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }

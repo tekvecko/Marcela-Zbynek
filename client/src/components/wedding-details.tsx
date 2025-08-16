@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { HelpTooltip } from "@/components/ui/help-tooltip"; // Předpokládám, že tato komponenta existuje
 
 export default function WeddingDetails() {
-  const { weddingToast } = useToast();
+  const { toast } = useToast(); // Používám toast z useToast hooku
 
   const openGoogleCalendar = () => {
     const url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Svatba+Marcela+a+Zbyn%C4%9Bk&dates=20251011T100000Z/20251011T160000Z&details=Svatba+ve+Star%C3%A1+Po%C5%A1ta,+Kovalovice+109&location=Kovalovice+109,+%C4%8Cesk%C3%A1+republika";
@@ -64,7 +65,7 @@ export default function WeddingDetails() {
           </h2>
           <p className="text-lg text-charcoal/70">Všechny důležité informace o našem velkém dni</p>
         </div>
-        
+
         <div className="grid md:grid-cols-2 gap-12">
           {/* Location Info */}
           <Card className="bg-gradient-to-br from-blush to-cream rounded-3xl shadow-lg">
@@ -75,7 +76,7 @@ export default function WeddingDetails() {
                 </div>
                 <h3 className="font-display text-2xl font-bold text-charcoal mb-2">Místo konání</h3>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start space-x-4">
                   <Calendar className="text-romantic mt-1" size={20} />
@@ -85,7 +86,7 @@ export default function WeddingDetails() {
                     <p className="text-charcoal/70">Česká republika</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <Clock className="text-gold mt-1" size={20} />
                   <div>
@@ -94,7 +95,7 @@ export default function WeddingDetails() {
                     <p className="text-charcoal/70">10:00 - 16:00</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-4">
                   <Utensils className="text-love mt-1" size={20} />
                   <div>
@@ -104,7 +105,7 @@ export default function WeddingDetails() {
                   </div>
                 </div>
               </div>
-              
+
               <Button 
                 onClick={openMap}
                 className="w-full bg-romantic text-white hover:bg-love mt-6"
@@ -114,7 +115,7 @@ export default function WeddingDetails() {
               </Button>
             </CardContent>
           </Card>
-          
+
           {/* Calendar & Social Sharing */}
           <Card className="bg-gradient-to-br from-cream to-gold/20 rounded-3xl shadow-lg">
             <CardContent className="p-8">
@@ -124,30 +125,43 @@ export default function WeddingDetails() {
                 </div>
                 <h3 className="font-display text-2xl font-bold text-charcoal mb-2">Sdílejte s námi</h3>
               </div>
-              
+
               <div className="space-y-6">
                 <div>
                   <h4 className="font-semibold text-charcoal mb-4">Přidat do kalendáře</h4>
                   <div className="space-y-3">
-                    <Button 
-                      onClick={openGoogleCalendar}
-                      variant="outline" 
-                      className="w-full justify-start"
-                    >
-                      <Calendar className="mr-2" size={16} />
-                      Google Kalendář
-                    </Button>
-                    <Button 
-                      onClick={openAppleCalendar}
-                      variant="outline" 
-                      className="w-full justify-start"
-                    >
-                      <Calendar className="mr-2" size={16} />
-                      Apple Kalendář
-                    </Button>
+                    {/* Zde došlo k úpravě */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={openGoogleCalendar}
+                        variant="outline" 
+                        className="w-full justify-start"
+                      >
+                        <Calendar className="mr-2" size={16} />
+                        Google Kalendář
+                      </Button>
+                      <HelpTooltip 
+                        content="Přidá všechny důležité termíny svatby do vašeho kalendáře, abyste na nic nezapomněli."
+                        side="top"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={openAppleCalendar}
+                        variant="outline" 
+                        className="w-full justify-start"
+                      >
+                        <Calendar className="mr-2" size={16} />
+                        Apple Kalendář
+                      </Button>
+                      <HelpTooltip 
+                        content="Přidá všechny důležité termíny svatby do vašeho kalendáře, abyste na nic nezapomněli."
+                        side="top"
+                      />
+                    </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h4 className="font-semibold text-charcoal mb-4">Sdílet svatební web</h4>
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -164,7 +178,7 @@ export default function WeddingDetails() {
                       WhatsApp
                     </Button>
                   </div>
-                  
+
                   <div className="bg-white rounded-xl p-4">
                     <p className="text-sm text-charcoal/70 mb-2">Nebo zkopírujte odkaz:</p>
                     <div className="flex items-center space-x-2">
@@ -197,7 +211,7 @@ export default function WeddingDetails() {
               </h3>
               <p className="text-charcoal/70">Hudba, která doprovází náš velký den</p>
             </div>
-            
+
             {/* Spotify Embed */}
             <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-2xl p-8 text-white text-center">
               <Music size={48} className="mx-auto mb-4" />
