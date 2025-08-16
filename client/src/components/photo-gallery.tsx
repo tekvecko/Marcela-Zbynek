@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Heart, Camera, Images } from "lucide-react";
+import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,15 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import GlassButton from "@/components/ui/glass-button";
 import type { UploadedPhoto } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
 
 export default function PhotoGallery() {
   const [uploaderName, setUploaderName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [voterName, setVoterName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<UploadedPhoto | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -42,7 +45,7 @@ export default function PhotoGallery() {
         title: "Foto nahráno!",
         description: `Vaše fotka byla úspěšně přidána do galerie s AI hodnocením ${data.verificationScore || 0}%.`,
       });
-      
+
       // Show AI analysis of the photo
       if (data.aiAnalysis) {
         setTimeout(() => {
@@ -52,7 +55,7 @@ export default function PhotoGallery() {
           });
         }, 1500);
       }
-      
+
       // Reset form state
       setSelectedFile(null);
       setUploaderName("");
@@ -69,7 +72,7 @@ export default function PhotoGallery() {
         description: error.message || "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
         variant: "destructive",
       });
-      
+
       // Reset form on error so user can try again
       setSelectedFile(null);
       if (fileInputRef.current) {
@@ -80,8 +83,8 @@ export default function PhotoGallery() {
   });
 
   const likePhotoMutation = useMutation({
-    mutationFn: async ({ photoId, voterName }: { photoId: string; voterName: string }) => {
-      const response = await apiRequest('POST', `/api/photos/${photoId}/like`, { voterName });
+    mutationFn: async (photoId: string) => {
+      const response = await apiRequest('POST', `/api/photos/${photoId}/like`);
       return response.json();
     },
     onSuccess: () => {
@@ -142,19 +145,6 @@ export default function PhotoGallery() {
     uploadPhotoMutation.mutate(formData);
   };
 
-  const handleLike = (photoId: string) => {
-    if (!voterName) {
-      toast({
-        title: "Zadejte jméno",
-        description: "Pro hodnocení fotky prosím zadejte své jméno.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    likePhotoMutation.mutate({ photoId, voterName });
-  };
-
   if (isLoading) {
     return (
       <section id="gallery" className="py-20 bg-white">
@@ -175,13 +165,13 @@ export default function PhotoGallery() {
           </h2>
           <p className="text-lg text-charcoal/70">Nejkrásnější momenty z našeho velkého dne</p>
         </div>
-        
+
         {/* Photo upload section */}
         <Card className="bg-gradient-to-r from-blush to-cream rounded-3xl mb-12">
           <CardContent className="p-8 text-center">
             <h3 className="font-display text-2xl font-bold text-charcoal mb-4">Nahrajte své fotky</h3>
             <p className="text-charcoal/70 mb-6">Sdílejte s námi své vzpomínky z naší svatby</p>
-            
+
             <Dialog>
               <DialogTrigger asChild>
                 <div className="border-2 border-dashed border-romantic rounded-2xl p-8 mb-6 bg-white/50 cursor-pointer hover:bg-white/70 transition-colors">
@@ -245,8 +235,8 @@ export default function PhotoGallery() {
                       Vybraná fotka: {selectedFile.name}
                     </div>
                   )}
-                  <GlassButton 
-                    onClick={handleUpload} 
+                  <GlassButton
+                    onClick={handleUpload}
                     disabled={uploadPhotoMutation.isPending}
                     variant="primary"
                     size="lg"
@@ -269,7 +259,7 @@ export default function PhotoGallery() {
             </Dialog>
           </CardContent>
         </Card>
-        
+
         {/* Voter name input */}
         <div className="mb-8 max-w-md mx-auto">
           <Label htmlFor="voterName">Vaše jméno (pro hodnocení fotek)</Label>
@@ -281,7 +271,7 @@ export default function PhotoGallery() {
             className="mt-2"
           />
         </div>
-        
+
         {/* Photo grid */}
         {photos.length === 0 ? (
           <div className="text-center py-16">
@@ -294,54 +284,58 @@ export default function PhotoGallery() {
             {photos.map((photo) => (
               <Card key={photo.id} className="group relative overflow-hidden rounded-2xl aspect-square cursor-pointer hover:scale-105 transition-transform duration-300">
                 <CardContent className="p-0">
-                  <img 
-                    src={`/api/photos/${photo.filename}`} 
+                  <img
+                    src={`/api/photos/${photo.filename}`}
                     alt={`Nahrál ${photo.uploaderName}`}
                     className="w-full h-full object-cover"
+                    onClick={() => setSelectedPhoto(photo)}
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl">
                     {/* AI Verification Badge */}
                     {photo.isVerified && (
                       <div className="absolute top-2 left-2">
-                        <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                        <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg">
                           <span>✓</span>
                           <span>AI Ověřeno</span>
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Verification Score Badge */}
                     {photo.verificationScore && photo.verificationScore > 0 && (
                       <div className="absolute top-2 right-2">
-                        <div className={`text-white text-xs px-2 py-1 rounded-full ${
-                          photo.verificationScore >= 80 ? 'bg-green-500' : 
+                        <div className={`text-white text-xs px-2 py-1 rounded-full shadow-lg ${
+                          photo.verificationScore >= 80 ? 'bg-green-500' :
                           photo.verificationScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                         }`}>
                           {photo.verificationScore}%
                         </div>
                       </div>
                     )}
-                    
-                    <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="space-y-2">
-                        {photo.aiAnalysis && (
-                          <div className="text-xs bg-black/50 rounded p-2">
-                            {photo.aiAnalysis}
+
+                    {/* Hover Info */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-xl">
+                      <div className="text-white space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {photo.uploaderName}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              likePhotoMutation.mutate(photo.id);
+                            }}
+                            className="flex items-center space-x-1 bg-black/50 px-2 py-1 rounded hover:bg-black/70 transition-colors"
+                          >
+                            <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'}`} />
+                            <span className="text-xs">{photo.likes || 0}</span>
+                          </button>
+                        </div>
+                        {photo.questTitle && (
+                          <div className="text-xs text-white/80">
+                            {photo.questTitle}
                           </div>
                         )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Od: {photo.uploaderName}</span>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleLike(photo.id)}
-                              disabled={likePhotoMutation.isPending}
-                              className="flex items-center space-x-1 hover:text-red-400 transition-colors"
-                            >
-                              <Heart size={16} className="fill-current text-red-400" />
-                              <span className="text-sm">{photo.likes}</span>
-                            </button>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -349,6 +343,128 @@ export default function PhotoGallery() {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Photo Detail Modal */}
+        {selectedPhoto && (
+          <Dialog open={!!selectedPhoto} onOpenChange={() => {
+            setSelectedPhoto(null);
+            setIsFullscreen(false);
+          }}>
+            <DialogContent className={`${
+              isFullscreen
+                ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
+                : 'max-w-6xl w-[95vw] max-h-[95vh] p-0'
+            } bg-black/95 border-none transition-all duration-300`}>
+              <div className="relative h-full flex flex-col">
+                {/* Top Controls */}
+                <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center">
+                  <GlassButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                    className="text-white hover:bg-white/20"
+                  >
+                    {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                  </GlassButton>
+
+                  <GlassButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedPhoto(null);
+                      setIsFullscreen(false);
+                    }}
+                    className="text-white hover:bg-white/20"
+                  >
+                    <X size={20} />
+                  </GlassButton>
+                </div>
+
+                {/* Photo Container */}
+                <div className={`${isFullscreen ? 'flex-1' : 'max-h-[70vh]'} flex items-center justify-center p-4`}>
+                  <OptimizedImage
+                    src={`/api/photos/${selectedPhoto.filename}`}
+                    alt={selectedPhoto.aiAnalysis || "Wedding photo"}
+                    className={`${
+                      isFullscreen
+                        ? 'max-w-full max-h-full object-contain'
+                        : 'w-full h-auto max-h-full object-contain'
+                    }`}
+                  />
+                </div>
+
+                {/* Photo Info - Now below the image */}
+                <div className={`${
+                  isFullscreen ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent' : 'bg-black/80'
+                } p-6`}>
+                  <div className="text-white space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold">{selectedPhoto.uploaderName}</h3>
+                        <p className="text-white/80 text-sm">
+                          {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <GlassButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => likePhotoMutation.mutate(selectedPhoto.id)}
+                          disabled={likePhotoMutation.isPending}
+                          className="text-white hover:bg-white/20"
+                        >
+                          <Heart className={`${
+                            selectedPhoto.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'
+                          }`} size={16} />
+                          <span className="text-sm">{selectedPhoto.likes || 0}</span>
+                        </GlassButton>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPhoto.questTitle && (
+                        <Badge variant="secondary" className="bg-romantic/80 text-white">
+                          {selectedPhoto.questTitle}
+                        </Badge>
+                      )}
+
+                      {selectedPhoto.isVerified && (
+                        <Badge variant="secondary" className="bg-green-600/80 text-white">
+                          ✓ AI Ověřeno
+                        </Badge>
+                      )}
+
+                      {selectedPhoto.verificationScore && selectedPhoto.verificationScore > 0 && (
+                        <Badge variant="secondary" className={`${
+                          selectedPhoto.verificationScore >= 80 ? 'bg-green-600/80' :
+                          selectedPhoto.verificationScore >= 60 ? 'bg-yellow-600/80' : 'bg-red-600/80'
+                        } text-white`}>
+                          {selectedPhoto.verificationScore}% spolehlivost
+                        </Badge>
+                      )}
+                    </div>
+
+                    {selectedPhoto.aiAnalysis && (
+                      <div className="bg-black/50 rounded-lg p-4 border border-white/10">
+                        <h4 className="font-medium mb-2 flex items-center">
+                          <span className="mr-2">🤖</span>
+                          AI Analýza fotky
+                        </h4>
+                        <p className="text-white/90 leading-relaxed">{selectedPhoto.aiAnalysis}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </section>
