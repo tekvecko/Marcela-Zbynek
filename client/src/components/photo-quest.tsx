@@ -44,6 +44,7 @@ export default function PhotoQuest() {
   const [currentStep, setCurrentStep] = useState<string>("");
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [uploadSpeed, setUploadSpeed] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -59,18 +60,35 @@ export default function PhotoQuest() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      // Reset analysis result
+      // Reset analysis result and upload speed
       setAnalysisResult(null);
+      setUploadSpeed(0);
       
       // Stage 1: Uploading
       setUploadStage('uploading');
       setUploadProgress(10);
       setCurrentStep("Nahrávání fotky na server...");
       
-      // Simulate upload progress
+      // Track upload speed
+      const file = formData.get('photo') as File;
+      const fileSizeMB = file ? file.size / (1024 * 1024) : 0;
+      const uploadStartTime = Date.now();
+      
+      // Simulate upload progress with speed calculation
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 5, 30));
-      }, 200);
+        setUploadProgress(prev => {
+          const newProgress = Math.min(prev + 3, 30);
+          
+          // Calculate upload speed based on progress
+          const elapsed = (Date.now() - uploadStartTime) / 1000; // seconds
+          const progressPercent = newProgress / 100;
+          const uploadedMB = fileSizeMB * progressPercent;
+          const speed = elapsed > 0 ? uploadedMB / elapsed : 0;
+          setUploadSpeed(speed);
+          
+          return newProgress;
+        });
+      }, 150);
       
       try {
         const response = await fetch('/api/photos/upload', {
@@ -80,19 +98,37 @@ export default function PhotoQuest() {
         
         clearInterval(progressInterval);
         
+        // Final upload speed calculation
+        const totalUploadTime = (Date.now() - uploadStartTime) / 1000;
+        const finalSpeed = totalUploadTime > 0 ? fileSizeMB / totalUploadTime : 0;
+        setUploadSpeed(finalSpeed);
+        
         // Stage 2: Analyzing
         setUploadStage('analyzing');
         setUploadProgress(40);
         setCurrentStep("AI analyzuje obsah fotky...");
         
-        // Wait a bit to show analyzing stage
+        // Simulate analyzing progress
+        const analyzeInterval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 2, 60));
+        }, 200);
+        
         await new Promise(resolve => setTimeout(resolve, 1000));
+        clearInterval(analyzeInterval);
         setUploadProgress(60);
         
         // Stage 3: Verifying
         setUploadStage('verifying');
         setUploadProgress(80);
         setCurrentStep("Ověřování splnění úkolu...");
+        
+        // Simulate verification progress
+        const verifyInterval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 2, 90));
+        }, 150);
+        
+        await new Promise(resolve => setTimeout(resolve, 800));
+        clearInterval(verifyInterval);
         
         if (!response.ok) {
           const error = await response.json();
@@ -110,6 +146,7 @@ export default function PhotoQuest() {
       } catch (error) {
         clearInterval(progressInterval);
         setUploadStage('error');
+        setUploadSpeed(0);
         throw error;
       }
     },
@@ -138,6 +175,7 @@ export default function PhotoQuest() {
           setIsDialogOpen(false);
           setUploadStage('idle');
           setUploadProgress(0);
+          setUploadSpeed(0);
           setAnalysisResult(null);
           
           // Navigate to gallery to show the photo
@@ -572,6 +610,7 @@ export default function PhotoQuest() {
                               stage={uploadStage}
                               progress={uploadProgress}
                               currentStep={currentStep}
+                              uploadSpeed={uploadSpeed}
                               className="mt-6"
                             />
                           )}
@@ -592,6 +631,7 @@ export default function PhotoQuest() {
                                 setAnalysisResult(null);
                                 setUploadStage('idle');
                                 setUploadProgress(0);
+                                setUploadSpeed(0);
                               } : undefined}
                               className="mt-6"
                             />
