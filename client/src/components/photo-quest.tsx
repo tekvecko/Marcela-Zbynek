@@ -10,6 +10,9 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import GlassButton from "@/components/ui/glass-button";
+import UploadProgress from "@/components/ui/upload-progress";
+import PhotoAnalysisResult from "@/components/photo-analysis-result";
+import { useLocation } from "wouter";
 import type { QuestChallenge } from "@shared/schema";
 
 // Import wedding photos for decoration
@@ -36,9 +39,15 @@ export default function PhotoQuest() {
   const [selectedQuest, setSelectedQuest] = useState<QuestChallenge | null>(null);
   const [uploaderName, setUploaderName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'analyzing' | 'verifying' | 'complete' | 'error'>('idle');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<string>("");
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
     queryKey: ["/api/quest-challenges"],
@@ -50,58 +59,90 @@ export default function PhotoQuest() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch('/api/photos/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Upload failed');
+      // Reset analysis result
+      setAnalysisResult(null);
+      
+      // Stage 1: Uploading
+      setUploadStage('uploading');
+      setUploadProgress(10);
+      setCurrentStep("Nahrávání fotky na server...");
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 5, 30));
+      }, 200);
+      
+      try {
+        const response = await fetch('/api/photos/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        clearInterval(progressInterval);
+        
+        // Stage 2: Analyzing
+        setUploadStage('analyzing');
+        setUploadProgress(40);
+        setCurrentStep("AI analyzuje obsah fotky...");
+        
+        // Wait a bit to show analyzing stage
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setUploadProgress(60);
+        
+        // Stage 3: Verifying
+        setUploadStage('verifying');
+        setUploadProgress(80);
+        setCurrentStep("Ověřování splnění úkolu...");
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Upload failed');
+        }
+        
+        const data = await response.json();
+        
+        // Complete
+        setUploadStage('complete');
+        setUploadProgress(100);
+        setCurrentStep("Analýza dokončena!");
+        
+        return data;
+      } catch (error) {
+        clearInterval(progressInterval);
+        setUploadStage('error');
+        throw error;
       }
-      return response.json();
     },
     onSuccess: (data) => {
-      const verificationMessage = data.isVerified 
-        ? `Foto bylo úspěšně ověřeno AI s hodnocením ${data.verificationScore}%! Postup byl aktualizován.`
-        : "Foto neprošlo AI ověřením a nebylo započítáno do postupu.";
-
-      toast({
-        title: data.isVerified ? "Foto ověřeno! ✓" : "Foto odmítnuto",
-        description: verificationMessage,
-        variant: data.isVerified ? "default" : "destructive",
+      // Set analysis result to show inline
+      setAnalysisResult({
+        isValid: data.isVerified,
+        confidence: data.verificationScore / 100,
+        explanation: data.aiAnalysis || (data.isVerified ? "Fotka splňuje požadavky úkolu." : "Fotka nesplňuje požadavky úkolu."),
+        suggestedImprovements: data.aiSuggestions,
+        questTitle: selectedQuest?.title,
+        photoId: data.id
       });
 
-      // Show AI analysis with suggestions
-      if (data.aiAnalysis && data.aiAnalysis.trim()) {
-        setTimeout(() => {
-          toast({
-            title: data.isVerified ? "AI Analýza" : "AI Doporučení",
-            description: data.aiAnalysis,
-            variant: data.isVerified ? "default" : "destructive",
-          });
-        }, 1500);
-      }
-
-      // Navigate to gallery section to see the uploaded photo
-      if (data.isVerified) {
-        setTimeout(() => {
-          const galleryElement = document.getElementById('gallery');
-          if (galleryElement) {
-            galleryElement.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 3000);
-      }
-
-      // Reset file input and clear selected file (always)
+      // Reset file input and clear selected file
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
 
-      // Only reset uploader name and close dialog if photo was verified
+      // If verified, reset form and close dialog after short delay
       if (data.isVerified) {
-        setUploaderName("");
-        setSelectedQuest(null);
+        setTimeout(() => {
+          setUploaderName("");
+          setSelectedQuest(null);
+          setIsDialogOpen(false);
+          setUploadStage('idle');
+          setUploadProgress(0);
+          setAnalysisResult(null);
+          
+          // Navigate to gallery to show the photo
+          setLocation('/gallery');
+        }, 3000);
       }
 
       queryClient.invalidateQueries({ queryKey: ["/api/quest-leaderboard"] });
@@ -110,18 +151,12 @@ export default function PhotoQuest() {
     },
     onError: (error: any) => {
       console.error('Upload error:', error);
-      toast({
-        title: "Chyba při nahrávání",
-        description: error.message || "Nepodařilo se nahrát fotku. Zkuste to prosím znovu.",
-        variant: "destructive",
+      setAnalysisResult({
+        isValid: false,
+        confidence: 0,
+        explanation: error.message || "Došlo k chybě při nahrávání fotky.",
+        questTitle: selectedQuest?.title
       });
-
-      // Reset form completely on error
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-        fileInputRef.current.removeAttribute('capture');
-      }
     },
   });
 
@@ -326,7 +361,13 @@ export default function PhotoQuest() {
                           variant={isQuestCompleted(quest.id) ? "ghost" : "primary"}
                           size="lg"
                           className="w-full"
-                          onClick={() => setSelectedQuest(quest)}
+                          onClick={() => {
+                            setSelectedQuest(quest);
+                            setIsDialogOpen(true);
+                            setAnalysisResult(null);
+                            setUploadStage('idle');
+                            setUploadProgress(0);
+                          }}
                           disabled={isQuestCompleted(quest.id)}
                         >
                           <Camera className="w-5 h-5" />
@@ -335,7 +376,11 @@ export default function PhotoQuest() {
                           </span>
                         </GlassButton>
                       </DialogTrigger>
-                      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl">
+                      <DialogContent 
+                        className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl"
+                        open={isDialogOpen}
+                        onOpenChange={setIsDialogOpen}
+                      >
                         <DialogHeader className="text-center mb-8">
                           <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                             <span className="text-2xl text-white">📸</span>
@@ -520,6 +565,37 @@ export default function PhotoQuest() {
                               </>
                             )}
                           </GlassButton>
+                          
+                          {/* Upload Progress */}
+                          {uploadStage !== 'idle' && (
+                            <UploadProgress
+                              stage={uploadStage}
+                              progress={uploadProgress}
+                              currentStep={currentStep}
+                              className="mt-6"
+                            />
+                          )}
+                          
+                          {/* Analysis Result */}
+                          {analysisResult && (
+                            <PhotoAnalysisResult
+                              isValid={analysisResult.isValid}
+                              confidence={analysisResult.confidence}
+                              explanation={analysisResult.explanation}
+                              suggestedImprovements={analysisResult.suggestedImprovements}
+                              questTitle={analysisResult.questTitle}
+                              onViewInGallery={analysisResult.isValid ? () => {
+                                setLocation('/gallery');
+                                setIsDialogOpen(false);
+                              } : undefined}
+                              onTryAgain={!analysisResult.isValid ? () => {
+                                setAnalysisResult(null);
+                                setUploadStage('idle');
+                                setUploadProgress(0);
+                              } : undefined}
+                              className="mt-6"
+                            />
+                          )}
                         </div>
                       </DialogContent>
                     </Dialog>
