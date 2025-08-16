@@ -7,36 +7,123 @@ interface UploadProgressProps {
   progress: number;
   currentStep?: string;
   error?: string;
+  uploadSpeed?: number; // MB/s
   className?: string;
 }
 
 const stages = [
-  { key: 'uploading', icon: Upload, label: 'Nahrávání fotky', color: 'text-blue-500' },
-  { key: 'analyzing', icon: Brain, label: 'AI analýza obsahu', color: 'text-purple-500' },
-  { key: 'verifying', icon: Camera, label: 'Ověření úkolu', color: 'text-orange-500' },
-  { key: 'complete', icon: CheckCircle, label: 'Hotovo', color: 'text-green-500' },
+  { key: 'uploading', icon: Upload, label: 'Nahrávání fotky', color: 'text-blue-500', bgColor: 'bg-blue-500' },
+  { key: 'analyzing', icon: Brain, label: 'AI analýza obsahu', color: 'text-purple-500', bgColor: 'bg-purple-500' },
+  { key: 'verifying', icon: Camera, label: 'Ověření úkolu', color: 'text-orange-500', bgColor: 'bg-orange-500' },
+  { key: 'complete', icon: CheckCircle, label: 'Hotovo', color: 'text-green-500', bgColor: 'bg-green-500' },
 ];
+
+// Circular Progress Component
+const CircularProgress = ({ 
+  progress, 
+  size = 40, 
+  strokeWidth = 3, 
+  color = "text-blue-500",
+  bgColor = "bg-blue-500"
+}: { 
+  progress: number; 
+  size?: number; 
+  strokeWidth?: number; 
+  color?: string;
+  bgColor?: string;
+}) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+  
+  return (
+    <div className="relative">
+      <svg
+        className="transform -rotate-90"
+        width={size}
+        height={size}
+      >
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          className="text-gray-200"
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className={color}
+          style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+        />
+      </svg>
+      {/* Progress text */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`text-xs font-bold ${color}`}>
+          {Math.round(progress)}%
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export default function UploadProgress({ 
   stage, 
   progress, 
   currentStep, 
   error, 
+  uploadSpeed,
   className 
 }: UploadProgressProps) {
   const currentStageIndex = stages.findIndex(s => s.key === stage);
   
+  // Calculate individual stage progress
+  const getStageProgress = (stageIndex: number) => {
+    if (stageIndex < currentStageIndex) return 100;
+    if (stageIndex > currentStageIndex) return 0;
+    
+    // For current stage, map overall progress to stage-specific progress
+    const stageRanges = [
+      { start: 0, end: 30 },    // uploading
+      { start: 30, end: 60 },   // analyzing
+      { start: 60, end: 90 },   // verifying
+      { start: 90, end: 100 }   // complete
+    ];
+    
+    const range = stageRanges[stageIndex];
+    if (!range) return 0;
+    
+    return Math.min(100, Math.max(0, ((progress - range.start) / (range.end - range.start)) * 100));
+  };
+  
   return (
-    <div className={cn("space-y-4 p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20", className)}>
-      {/* Progress Bar */}
+    <div className={cn("space-y-6 p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20", className)}>
+      {/* Overall Progress Bar */}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-charcoal/70">Průběh uploadu</span>
-          <span className="text-charcoal font-medium">{Math.round(progress)}%</span>
+          <span className="text-charcoal/70">Celkový průběh</span>
+          <div className="flex items-center gap-3">
+            {uploadSpeed && stage === 'uploading' && (
+              <span className="text-blue-600 font-medium text-sm">
+                {uploadSpeed.toFixed(1)} MB/s
+              </span>
+            )}
+            <span className="text-charcoal font-medium">{Math.round(progress)}%</span>
+          </div>
         </div>
         <Progress 
           value={progress} 
-          className="h-2"
+          className="h-3 bg-gray-100"
         />
       </div>
 
@@ -48,46 +135,70 @@ export default function UploadProgress({
         </div>
       )}
 
-      {/* Stage Indicators */}
-      <div className="flex items-center justify-between">
+      {/* Stage Indicators with Circular Progress */}
+      <div className="grid grid-cols-4 gap-4">
         {stages.map((stageInfo, index) => {
           const Icon = stageInfo.icon;
           const isActive = index === currentStageIndex;
           const isCompleted = index < currentStageIndex || stage === 'complete';
           const isError = stage === 'error' && index === currentStageIndex;
+          const stageProgress = getStageProgress(index);
+          
+          // Status indicator
+          const statusColor = isError ? '🔴' : (isCompleted ? '🟢' : (isActive ? '🟡' : '⚪'));
           
           return (
-            <div key={stageInfo.key} className="flex flex-col items-center flex-1">
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
-                isError 
-                  ? "bg-red-500 text-white"
-                  : isCompleted 
-                  ? "bg-green-500 text-white" 
-                  : isActive 
-                  ? `bg-white border-2 border-current ${stageInfo.color}` 
-                  : "bg-gray-200 text-gray-400"
-              )}>
-                {isError ? (
-                  <AlertCircle size={16} />
+            <div key={stageInfo.key} className="flex flex-col items-center space-y-3">
+              {/* Status Indicator */}
+              <div className="text-xl">
+                {statusColor}
+              </div>
+              
+              {/* Circular Progress */}
+              <div className="relative">
+                {isActive && !isError ? (
+                  <CircularProgress 
+                    progress={stageProgress}
+                    size={50}
+                    strokeWidth={4}
+                    color={stageInfo.color}
+                    bgColor={stageInfo.bgColor}
+                  />
                 ) : (
-                  <Icon size={16} className={isActive && !isError ? stageInfo.color : ''} />
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300",
+                    isError 
+                      ? "bg-red-500 text-white"
+                      : isCompleted 
+                      ? "bg-green-500 text-white" 
+                      : "bg-gray-200 text-gray-400"
+                  )}>
+                    {isError ? (
+                      <AlertCircle size={20} />
+                    ) : isCompleted ? (
+                      <CheckCircle size={20} />
+                    ) : (
+                      <Icon size={20} />
+                    )}
+                  </div>
+                )}
+                
+                {/* Animated pulse for active stage */}
+                {isActive && !isError && (
+                  <div className={cn(
+                    "absolute inset-0 rounded-full animate-ping opacity-20",
+                    stageInfo.bgColor
+                  )} />
                 )}
               </div>
+              
+              {/* Stage Label */}
               <span className={cn(
-                "text-xs mt-2 text-center max-w-16",
+                "text-xs text-center max-w-20 leading-tight",
                 isActive ? stageInfo.color : isCompleted ? "text-green-600" : "text-gray-400"
               )}>
                 {stageInfo.label}
               </span>
-              
-              {/* Animated pulse for active stage */}
-              {isActive && stage !== 'error' && (
-                <div className={cn(
-                  "absolute w-8 h-8 rounded-full animate-ping opacity-30",
-                  stageInfo.color.replace('text-', 'bg-')
-                )} />
-              )}
             </div>
           );
         })}
