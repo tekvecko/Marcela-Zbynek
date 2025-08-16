@@ -139,6 +139,19 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+// Specific toast types for wedding app
+type WeddingToastType = 
+  | 'auth-success' 
+  | 'auth-welcome' 
+  | 'auth-auto-login' 
+  | 'auth-logout'
+  | 'photo-uploaded'
+  | 'wedding-timeline'
+
+interface WeddingToast extends Omit<Toast, 'variant'> {
+  type: WeddingToastType;
+}
+
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -168,6 +181,71 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Wedding-specific toast functions
+function weddingToast({ type, title, description, ...props }: WeddingToast) {
+  const toastConfig = getWeddingToastConfig(type);
+  
+  return toast({
+    ...toastConfig,
+    title: title || toastConfig.title,
+    description: description || toastConfig.description,
+    ...props
+  });
+}
+
+function getWeddingToastConfig(type: WeddingToastType) {
+  switch (type) {
+    case 'auth-success':
+      return {
+        title: "Registrace úspěšná! 🎉",
+        description: "Vítejte na naší svatbě!",
+        variant: "default" as const
+      };
+    
+    case 'auth-welcome':
+      return {
+        title: "Vítejte zpět! 💕",
+        description: "Těšíme se na Vás na naší svatbě!",
+        variant: "default" as const
+      };
+    
+    case 'auth-auto-login':
+      return {
+        title: "Automatické přihlášení 🔐",
+        description: "Byli jste úspěšně přihlášeni",
+        variant: "default" as const
+      };
+    
+    case 'auth-logout':
+      return {
+        title: "Odhlášení úspěšné 👋",
+        description: "Na shledanou!",
+        variant: "default" as const
+      };
+    
+    case 'photo-uploaded':
+      return {
+        title: "Fotka přidána do galerie! 📸",
+        description: "Ostatní hosté ji nyní mohou hodnotit",
+        variant: "default" as const
+      };
+    
+    case 'wedding-timeline':
+      return {
+        title: "Důležitý okamžik! 💒",
+        description: "Právě začíná důležitá část svatby",
+        variant: "default" as const
+      };
+    
+    default:
+      return {
+        title: "Oznámení",
+        description: "",
+        variant: "default" as const
+      };
+  }
+}
+
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
@@ -184,8 +262,9 @@ function useToast() {
   return {
     ...state,
     toast,
+    weddingToast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
 
-export { useToast, toast }
+export { useToast, toast, weddingToast }
