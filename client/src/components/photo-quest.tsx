@@ -215,35 +215,25 @@ export default function PhotoQuest() {
 
   return (
     <section id="photo-quest" className="py-24 bg-gradient-to-br from-blush via-cream to-white min-h-screen relative overflow-hidden">
-      {/* Floating decorative photos */}
+      {/* Reduced floating decorative photos - only 2 for better performance */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-20 left-10 w-32 h-24 rounded-2xl overflow-hidden shadow-xl opacity-20 rotate-12 gentle-float" style={{ animationDelay: '0s' }}>
+        <div className="absolute top-20 left-10 w-32 h-24 rounded-2xl overflow-hidden shadow-lg opacity-15 rotate-12">
           <img src={flowerArchPhoto} alt="" className="w-full h-full object-cover" />
         </div>
-        <div className="absolute top-32 right-16 w-28 h-36 rounded-2xl overflow-hidden shadow-xl opacity-25 -rotate-6 gentle-float" style={{ animationDelay: '1s' }}>
-          <img src={familyPhoto} alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="absolute bottom-40 left-20 w-36 h-24 rounded-2xl overflow-hidden shadow-xl opacity-15 rotate-6 gentle-float" style={{ animationDelay: '2s' }}>
-          <img src={landscapePhoto} alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="absolute bottom-32 right-12 w-24 h-32 rounded-2xl overflow-hidden shadow-xl opacity-30 -rotate-12 gentle-float" style={{ animationDelay: '1.5s' }}>
+        <div className="absolute bottom-32 right-12 w-24 h-32 rounded-2xl overflow-hidden shadow-lg opacity-20 -rotate-12">
           <img src={coupleEventPhoto} alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="absolute top-1/2 left-8 w-20 h-28 rounded-2xl overflow-hidden shadow-xl opacity-10 rotate-45 gentle-float" style={{ animationDelay: '3s' }}>
-          <img src={portraitPhoto} alt="" className="w-full h-full object-cover" />
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
         <div className="text-center mb-20">
           <div className="inline-flex items-center justify-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center shadow-2xl gentle-float">
+            <div className="w-20 h-20 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center shadow-xl">
               <span className="text-4xl text-white drop-shadow-lg">📸</span>
             </div>
           </div>
-          <h2 className="font-display text-5xl md:text-6xl font-bold bg-gradient-to-r from-romantic via-love to-gold bg-clip-text text-transparent mb-6 leading-tight relative overflow-hidden">
-            <span className="relative z-10">Wedding Photo Quest</span>
-            <div className="absolute inset-0 shimmer-effect"></div>
+          <h2 className="font-display text-5xl md:text-6xl font-bold bg-gradient-to-r from-romantic via-love to-gold bg-clip-text text-transparent mb-6 leading-tight">
+            Wedding Photo Quest
           </h2>
           <p className="text-xl text-charcoal/60 max-w-3xl mx-auto font-light leading-relaxed mb-12">
             Pomozte nám zachytit naši svatbu z různých úhlů! Plňte úkoly a sdílejte své fotky.
@@ -252,14 +242,14 @@ export default function PhotoQuest() {
           {/* Featured couple photo as centerpiece */}
           <div className="flex justify-center mb-8">
             <div className="relative group">
-              <div className="w-80 h-60 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50 backdrop-blur-sm transform transition-all duration-500 group-hover:scale-105">
+              <div className="w-80 h-60 rounded-3xl overflow-hidden shadow-xl border-4 border-white/50 transform transition-all duration-300 group-hover:scale-105">
                 <img src={flowerArchPhoto} alt="Marcela a Zbyněk pod květinovou branou" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl border border-romantic/20">
+              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white/95 px-6 py-3 rounded-full shadow-lg border border-romantic/20">
                 <p className="font-display text-romantic font-semibold text-lg">Marcela & Zbyněk</p>
               </div>
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute top-4 right-4 bg-white/90 rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <Heart className="text-love w-5 h-5" />
               </div>
             </div>
@@ -282,7 +272,7 @@ export default function PhotoQuest() {
             ][index % 4];
 
             return (
-              <Card key={quest.id} className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-3 border border-white/20 hover:border-romantic/20 relative overflow-hidden group gentle-float" style={{ animationDelay: `${index * 0.2}s` }}>
+              <Card key={quest.id} className="bg-white/95 rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border border-white/30 hover:border-romantic/30 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-60"></div>
                 <div className="absolute top-4 right-4 text-4xl opacity-15 group-hover:opacity-25 transition-opacity duration-300">
                   {quest.title.includes('Ano') && '💍'}
@@ -296,7 +286,7 @@ export default function PhotoQuest() {
                 </div>
                 <CardContent className="p-10 relative z-10">
                   <div className="text-center mb-8">
-                    <div className={`w-24 h-24 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl transform group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-24 h-24 ${colorClasses.bg} rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl transform group-hover:scale-105 transition-transform duration-200`}>
                       <IconComponent className="text-white drop-shadow-lg" size={32} />
                     </div>
                     <h3 className="font-display text-2xl font-bold text-charcoal mb-4 leading-tight">
@@ -306,7 +296,7 @@ export default function PhotoQuest() {
                   </div>
 
                   <div className="space-y-6">
-                      <div className={`bg-gradient-to-r rounded-2xl p-6 border backdrop-blur-sm ${
+                      <div className={`bg-gradient-to-r rounded-2xl p-6 border ${
                         isQuestCompleted(quest.id) 
                           ? 'from-emerald-50/80 to-green-50/80 border-emerald-200' 
                           : `bg-gradient-to-r ${colorClasses.accent} border-white/30`
@@ -315,10 +305,10 @@ export default function PhotoQuest() {
                           <span className="text-sm font-medium text-charcoal/80">
                             Váš postup
                           </span>
-                          <span className={`text-sm font-semibold px-4 py-2 rounded-full backdrop-blur-sm ${
+                          <span className={`text-sm font-semibold px-4 py-2 rounded-full ${
                             isQuestCompleted(quest.id) 
                               ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200' 
-                              : `${colorClasses.text} bg-white/60 border border-white/40`
+                              : `${colorClasses.text} bg-white/80 border border-white/40`
                           }`}>
                             {isQuestCompleted(quest.id) ? '✓ Splněno' : 'Čeká na splnění'}
                           </span>
@@ -332,10 +322,10 @@ export default function PhotoQuest() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button 
-                          className={`w-full font-semibold py-4 px-6 rounded-2xl transition-all duration-500 shadow-xl backdrop-blur-sm border ${
+                          className={`w-full font-semibold py-4 px-6 rounded-2xl transition-all duration-200 shadow-lg border ${
                             isQuestCompleted(quest.id)
                               ? 'bg-gray-100/80 text-gray-500 cursor-not-allowed border-gray-200'
-                              : `${colorClasses.bg} text-white hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 border-white/20 hover:border-white/40`
+                              : `${colorClasses.bg} text-white hover:shadow-xl transform hover:scale-102 hover:-translate-y-1 border-white/20 hover:border-white/40`
                           }`}
                           onClick={() => setSelectedQuest(quest)}
                           disabled={isQuestCompleted(quest.id)}
@@ -469,7 +459,7 @@ export default function PhotoQuest() {
                               value={uploaderName}
                               onChange={(e) => setUploaderName(e.target.value)}
                               placeholder="Zadejte své jméno"
-                              className="text-base sm:text-lg py-3 px-4 rounded-xl border-2 border-romantic/20 focus:border-romantic/40 bg-white/80 backdrop-blur-sm"
+                              className="text-base sm:text-lg py-3 px-4 rounded-xl border-2 border-romantic/20 focus:border-romantic/40 bg-white/90"
                             />
                           </div>
                           <div className="space-y-4">
@@ -480,7 +470,7 @@ export default function PhotoQuest() {
                                   type="button"
                                   variant="outline" 
                                   onClick={handleCameraCapture}
-                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/80 hover:bg-romantic/10 backdrop-blur-sm transition-all duration-300"
+                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/90 hover:bg-romantic/10 transition-all duration-200"
                                 >
                                   <Camera size={20} />
                                   <span>Vyfotit</span>
@@ -489,7 +479,7 @@ export default function PhotoQuest() {
                                   type="button"
                                   variant="outline" 
                                   onClick={handleFilePickerOpen}
-                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/80 hover:bg-romantic/10 backdrop-blur-sm transition-all duration-300"
+                                  className="flex items-center justify-center space-x-3 py-4 text-base sm:text-lg font-medium rounded-xl border-2 border-romantic/30 hover:border-romantic/60 bg-white/90 hover:bg-romantic/10 transition-all duration-200"
                                 >
                                   <Upload size={20} />
                                   <span>Vybrat</span>
@@ -506,14 +496,14 @@ export default function PhotoQuest() {
                             </div>
                           </div>
                           {selectedFile && (
-                            <div className="text-sm sm:text-base text-charcoal/70 p-4 bg-gradient-to-r from-emerald-50/80 to-green-50/80 rounded-xl border border-emerald-200/50 backdrop-blur-sm">
+                            <div className="text-sm sm:text-base text-charcoal/70 p-4 bg-gradient-to-r from-emerald-50/80 to-green-50/80 rounded-xl border border-emerald-200/50">
                               <span className="font-medium">Vybraná fotka:</span> {selectedFile.name}
                             </div>
                           )}
                           <Button 
                             onClick={handleUpload} 
                             disabled={uploadPhotoMutation.isPending || (selectedQuest ? isQuestCompleted(selectedQuest.id) : false)}
-                            className="w-full py-4 px-6 text-base sm:text-lg font-semibold rounded-2xl bg-gradient-to-r from-romantic to-love text-white hover:from-romantic/90 hover:to-love/90 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 border border-white/20"
+                            className="w-full py-4 px-6 text-base sm:text-lg font-semibold rounded-2xl bg-gradient-to-r from-romantic to-love text-white hover:from-romantic/90 hover:to-love/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-102 border border-white/20"
                           >
                             {uploadPhotoMutation.isPending ? (
                               <div className="flex items-center justify-center space-x-3">
