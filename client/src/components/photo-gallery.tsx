@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +19,6 @@ import HelpTooltip from "@/components/ui/help-tooltip";
 
 export default function PhotoGallery() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [voterName, setVoterName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<UploadedPhoto | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
