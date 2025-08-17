@@ -6,7 +6,7 @@ export interface CountdownTime {
 }
 
 export function getWeddingCountdown(): CountdownTime {
-  const weddingDate = new Date('2025-10-11T10:00:00+02:00'); // Czech timezone
+  const weddingDate = new Date('2025-10-11T12:00:00+02:00'); // Czech timezone
   const now = new Date();
   const distance = weddingDate.getTime() - now.getTime();
 
@@ -27,7 +27,7 @@ export function formatDateForCalendar(date: Date): string {
 }
 
 export function createGoogleCalendarUrl(): string {
-  const startDate = new Date('2025-10-11T10:00:00+02:00');
+  const startDate = new Date('2025-10-11T12:00:00+02:00');
   const endDate = new Date('2025-10-11T16:00:00+02:00');
   
   const params = new URLSearchParams({
