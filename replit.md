@@ -9,6 +9,9 @@ This is a wedding website application for Marcela and Zbyněk's wedding on Octob
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Prefers Czech language interface.
+Wants individual pages for photo challenges instead of modal dialogs.
+Authenticated user information should be used instead of manual name entry.
 
 ## System Architecture
 
@@ -78,6 +81,15 @@ Preferred communication style: Simple, everyday language.
 - **Custom CSS Variables**: Romantic color scheme with heart decorations and animations
 
 ## Recent Improvements (August 2025)
+
+### December 2025 Updates
+- **Removed Manual Name Input**: Eliminated "Vaše jméno" fields since users are authenticated via Google account
+- **Individual Challenge Pages**: Converted modular dialog windows to dedicated pages for each photo challenge
+- **Improved Navigation**: Added `/challenge/:id` routes for direct access to specific challenges  
+- **Enhanced User Experience**: Streamlined photo upload process using authenticated user information
+- **Updated Photo Gallery**: Removed voter name input, uses authenticated user email for likes
+
+## Earlier Improvements (August 2025)
 
 ### Performance Optimizations
 - **Loading States**: Added loading spinners and skeleton states throughout the application

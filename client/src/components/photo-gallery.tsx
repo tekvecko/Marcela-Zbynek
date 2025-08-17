@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 import OptimizedImage from "@/components/ui/optimized-image";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import GlassButton from "@/components/ui/glass-button";
@@ -16,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
 
 export default function PhotoGallery() {
-  const [uploaderName, setUploaderName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [voterName, setVoterName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,6 +24,7 @@ export default function PhotoGallery() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: photos = [], isLoading } = useQuery<UploadedPhoto[]>({
     queryKey: ["/api/photos"],
@@ -59,7 +60,6 @@ export default function PhotoGallery() {
 
       // Reset form state
       setSelectedFile(null);
-      setUploaderName("");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
         fileInputRef.current.removeAttribute('capture');
@@ -85,8 +85,12 @@ export default function PhotoGallery() {
 
   const likePhotoMutation = useMutation({
     mutationFn: async (photoId: string) => {
-      const response = await apiRequest('POST', `/api/photos/${photoId}/like`);
-      return response.json();
+      const response = await apiRequest(`/api/photos/${photoId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voterName: user?.email || '' })
+      });
+      return response;
     },
     onSuccess: () => {
       toast({
@@ -130,10 +134,10 @@ export default function PhotoGallery() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !uploaderName) {
+    if (!selectedFile || !user?.email) {
       toast({
         title: "Chybí informace",
-        description: "Prosím vyberte fotku a zadejte své jméno.",
+        description: "Prosím vyberte fotku.",
         variant: "destructive",
       });
       return;
@@ -141,7 +145,7 @@ export default function PhotoGallery() {
 
     const formData = new FormData();
     formData.append('photo', selectedFile);
-    formData.append('uploaderName', uploaderName);
+    formData.append('uploaderName', user.email);
 
     uploadPhotoMutation.mutate(formData);
   };
@@ -195,15 +199,6 @@ export default function PhotoGallery() {
                   Sdílejte své krásné vzpomínky ze svatby s ostatními hosty.
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="uploaderName">Vaše jméno</Label>
-                    <Input
-                      id="uploaderName"
-                      value={uploaderName}
-                      onChange={(e) => setUploaderName(e.target.value)}
-                      placeholder="Zadejte své jméno"
-                    />
-                  </div>
                   <div>
                     <Label htmlFor="photo">Vyberte fotku nebo vyfotografujte</Label>
                     <div className="space-y-3">
@@ -267,23 +262,7 @@ export default function PhotoGallery() {
           </CardContent>
         </Card>
 
-        {/* Voter name input */}
-        <div className="mb-8 max-w-md mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <Label htmlFor="voterName">Vaše jméno (pro hodnocení fotek)</Label>
-            <HelpTooltip 
-              content="Zadejte své jméno abychom mohli rozlišit jednotlivé hlasy při hodnocení fotek. Každý může hlasovat pouze jednou pro každou fotku." 
-              side="right"
-            />
-          </div>
-          <Input
-            id="voterName"
-            value={voterName}
-            onChange={(e) => setVoterName(e.target.value)}
-            placeholder="Zadejte své jméno"
-            className="mt-2"
-          />
-        </div>
+
 
         {/* Photo grid */}
         {photos.length === 0 ? (
@@ -350,9 +329,18 @@ export default function PhotoGallery() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!user?.email) {
+                                toast({
+                                  title: "Přihlášení vyžadováno",
+                                  description: "Pro hodnocení fotek musíte být přihlášeni.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
                               likePhotoMutation.mutate(photo.id);
                             }}
                             className="flex items-center space-x-1 bg-black/50 px-2 py-1 rounded hover:bg-black/70 transition-colors"
+                            disabled={!user?.email}
                           >
                             <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'}`} />
                             <span className="text-xs">{photo.likes || 0}</span>
