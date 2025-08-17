@@ -39,18 +39,17 @@ export default function Login() {
               <GlassButton 
                 variant="primary" 
                 size="lg"
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/api/auth/google'}
                 className="w-full"
-                data-testid="button-login-replit"
+                data-testid="button-login-google"
               >
                 <User size={20} />
-                Přihlásit se přes Replit
+                Přihlásit se přes Google
                 <ArrowRight size={16} />
               </GlassButton>
               
               <div className="text-sm text-charcoal/60 text-center">
-                Bezpečné přihlášení pomocí vašeho Replit účtu,<br />
-                který může být propojen s Google
+                Bezpečné přihlášení pomocí vašeho Google účtu
               </div>
             </div>
 
@@ -70,12 +69,12 @@ export default function Login() {
           {/* Alternative Access */}
           <div className="mt-8 text-center">
             <p className="text-charcoal/60 mb-4">
-              Nemáte Replit účet?
+              Nemáte Google účet?
             </p>
             <div className="space-y-2 text-sm text-charcoal/70">
-              <p>1. Klikněte na "Přihlásit se přes Replit"</p>
-              <p>2. Vyberte "Continue with Google"</p>
-              <p>3. Přihlaste se pomocí vašeho Google účtu</p>
+              <p>1. Navštivte <a href="https://accounts.google.com" target="_blank" className="text-sage underline">accounts.google.com</a></p>
+              <p>2. Vytvořte si nový Google účet</p>
+              <p>3. Vraťte se a přihlaste se</p>
             </div>
           </div>
         </div>
