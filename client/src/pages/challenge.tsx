@@ -152,12 +152,19 @@ export default function ChallengePage() {
     onSuccess: (data) => {
       setAnalysisResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
-      toast({
-        title: "Fotka byla úspěšně nahrána!",
-        description: data.isVerified
-          ? "Gratulujeme! Fotka splnila požadavky úkolu."
-          : "Fotka byla nahrána, ale možná neodpovídá přesně zadání.",
-      });
+      
+      if (data.isVerified) {
+        toast({
+          title: "🎉 Úkol splněn!",
+          description: "Gratulujeme! Fotka splnila požadavky úkolu.",
+        });
+      } else {
+        toast({
+          title: "📸 Fotka nahrána",
+          description: "Fotka byla přidána do galerie, ale nesplnila požadavky úkolu. Zkuste to znovu s jinou fotkou.",
+          variant: "destructive",
+        });
+      }
 
       // Reset for next upload
       setTimeout(() => {
