@@ -114,10 +114,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
             
             isVerified = verification.isValid;
-            verificationScore = Math.round(verification.confidence * 100);
-            aiAnalysis = verification.explanation;
+            // Ensure verificationScore is a valid number
+            verificationScore = typeof verification.confidence === 'number' && !isNaN(verification.confidence) 
+              ? Math.round(verification.confidence * 100) 
+              : 70;
+            aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
             
-            console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation}"`);
+            console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
           } catch (verificationError) {
             console.error('AI verification failed:', verificationError);
             // Fallback to manual verification

@@ -66,11 +66,34 @@ Odpovězte ve formátu JSON s těmito poli:
     const response = await model.generateContent(contents);
 
     const rawJson = response.response.text();
-    console.log(`Gemini verification response: ${rawJson}`);
+    console.log(`Gemini verification response: ${rawJson.substring(0, 500)}...`);
 
     if (rawJson) {
-      const result: PhotoVerificationResult = JSON.parse(rawJson);
-      return result;
+      try {
+        // Clean the JSON response - remove any invalid characters
+        const cleanedJson = rawJson.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+        
+        // Try to find the JSON object boundaries
+        const jsonStart = cleanedJson.indexOf('{');
+        const jsonEnd = cleanedJson.lastIndexOf('}') + 1;
+        
+        if (jsonStart !== -1 && jsonEnd > jsonStart) {
+          const jsonString = cleanedJson.substring(jsonStart, jsonEnd);
+          const result: PhotoVerificationResult = JSON.parse(jsonString);
+          
+          // Validate the result
+          if (typeof result.isValid === 'boolean' && 
+              typeof result.confidence === 'number' && 
+              typeof result.explanation === 'string') {
+            return result;
+          }
+        }
+        
+        throw new Error("Invalid JSON structure");
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
+      }
     } else {
       throw new Error("Empty response from Gemini");
     }
