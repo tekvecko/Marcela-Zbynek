@@ -100,12 +100,15 @@ Authenticated user information should be used instead of manual name entry.
 
 ## Recent Improvements (August 2025)
 
-### December 2025 Updates
+### December 2025 Updates  
 - **Removed Manual Name Input**: Eliminated "Vaše jméno" fields since users are authenticated via Google account
 - **Individual Challenge Pages**: Converted modular dialog windows to dedicated pages for each photo challenge
 - **Improved Navigation**: Added `/challenge/:id` routes for direct access to specific challenges  
 - **Enhanced User Experience**: Streamlined photo upload process using authenticated user information
 - **Updated Photo Gallery**: Removed voter name input, uses authenticated user email for likes
+- **Fixed Gemini AI Issues**: Resolved random photo approval when AI analysis fails - now rejects photos on errors
+- **Enhanced JSON Parsing**: Improved cleanup of Gemini API responses to handle malformed JSON better
+- **Added Retry Mechanism**: Implemented exponential backoff retry for temporary Gemini API failures
 
 ## Earlier Improvements (August 2025)
 
