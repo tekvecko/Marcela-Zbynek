@@ -24,8 +24,10 @@ export default function PhotoAnalysisResult({
   onTryAgain,
   className
 }: PhotoAnalysisResultProps) {
-  const confidencePercentage = Math.round((confidence || 0) * 100);
-  
+  // Ensure confidence is a valid number
+  const safeConfidence = typeof confidence === 'number' && !isNaN(confidence) ? confidence : 0.5;
+  const confidencePercentage = Math.round(safeConfidence * 100);
+
   return (
     <Card className={cn("bg-white/90 backdrop-blur-sm border border-white/20 shadow-lg", className)}>
       <CardContent className="p-6">
@@ -33,13 +35,13 @@ export default function PhotoAnalysisResult({
         <div className="flex items-center gap-4 mb-4">
           <div className={cn(
             "w-12 h-12 rounded-full flex items-center justify-center",
-            isValid 
-              ? "bg-green-100 text-green-600" 
+            isValid
+              ? "bg-green-100 text-green-600"
               : "bg-red-100 text-red-600"
           )}>
             {isValid ? <CheckCircle size={24} /> : <XCircle size={24} />}
           </div>
-          
+
           <div className="flex-1">
             <h3 className={cn(
               "font-display text-xl font-bold",
@@ -113,7 +115,7 @@ export default function PhotoAnalysisResult({
               Zobrazit v galerii
             </GlassButton>
           )}
-          
+
           {!isValid && onTryAgain && (
             <GlassButton
               variant="outline"
