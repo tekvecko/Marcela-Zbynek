@@ -1,8 +1,8 @@
 import * as fs from "fs";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize Gemini AI
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export interface PhotoVerificationResult {
   isValid: boolean;
@@ -45,7 +45,7 @@ Odpovězte ve formátu JSON s těmito poli:
       `Analyzujte tuto fotografii podle zadaného úkolu: "${challengeTitle}" - ${challengeDescription}`,
     ];
 
-    const model = ai.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       systemInstruction: systemPrompt,
       generationConfig: {
@@ -104,7 +104,7 @@ export async function analyzePhotoContent(imagePath: string): Promise<string> {
       Odpovězte stručně a poeticky.`,
     ];
 
-    const model = ai.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash" 
     });
 
