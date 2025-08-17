@@ -92,7 +92,7 @@ export default function WeddingDetails() {
                   <div>
                     <p className="font-semibold text-charcoal">Čas</p>
                     <p className="text-charcoal/70">11. října 2025</p>
-                    <p className="text-charcoal/70">12:00 - 16:00</p>
+                    <p className="text-charcoal/70">12:00</p>
                   </div>
                 </div>
 
