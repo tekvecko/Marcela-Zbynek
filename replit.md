@@ -80,6 +80,24 @@ Authenticated user information should be used instead of manual name entry.
 - **Unsplash**: Stock photography for romantic wedding imagery
 - **Custom CSS Variables**: Romantic color scheme with heart decorations and animations
 
+## Security Audit & Fixes (August 2025)
+
+### Critical Security Vulnerabilities Fixed
+- **Path Traversal Protection**: Added comprehensive filename validation to prevent directory traversal attacks on photo serving endpoint
+- **Parameter Validation**: Implemented strict input validation for all API parameters (questId, photoId) with length limits and character restrictions
+- **Rate Limiting**: Added request throttling (10 uploads/min, 50 likes/min) to prevent abuse and DoS attacks
+- **Authentication Enforcement**: Protected all data endpoints with authentication requirements to prevent unauthorized access
+- **Sensitive Data Logging**: Implemented log sanitization to prevent exposure of user emails, tokens, and IDs in development logs
+- **CSRF Protection**: Added sameSite: 'strict' to session cookies for Cross-Site Request Forgery protection
+- **MIME Type Verification**: Enhanced file upload security with proper MIME type handling for HEIC/HEIF files
+
+### Security Measures Implemented
+- **Input Sanitization**: All user inputs validated with Zod schemas and regex patterns
+- **File Upload Security**: Restricted file types, size limits, and secure storage in isolated directory
+- **Session Security**: HttpOnly, secure cookies with proper TTL and CSRF protection
+- **Error Handling**: Sanitized error messages to prevent information disclosure
+- **Database Security**: Using Drizzle ORM with parameterized queries to prevent SQL injection
+
 ## Recent Improvements (August 2025)
 
 ### December 2025 Updates

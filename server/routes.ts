@@ -8,6 +8,35 @@ import path from "path";
 import fs from "fs";
 import { verifyPhotoForChallenge, analyzePhotoContent } from "./gemini";
 
+// Simple rate limiting middleware
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+const createRateLimit = (maxRequests: number, windowMs: number) => {
+  return (req: any, res: any, next: any) => {
+    const identifier = req.user?.id || req.ip;
+    const now = Date.now();
+    
+    const userLimit = rateLimitMap.get(identifier);
+    
+    if (!userLimit || now > userLimit.resetTime) {
+      rateLimitMap.set(identifier, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+    
+    if (userLimit.count >= maxRequests) {
+      return res.status(429).json({ 
+        message: "Příliš mnoho požadavků. Zkuste to prosím později." 
+      });
+    }
+    
+    userLimit.count++;
+    next();
+  };
+};
+
+const uploadRateLimit = createRateLimit(10, 60 * 1000); // 10 uploads per minute
+const likeRateLimit = createRateLimit(50, 60 * 1000); // 50 likes per minute
+
 // Configure multer for photo uploads
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -78,8 +107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload photo - requires authentication
-  app.post("/api/photos/upload", isAuthenticated, upload.single('photo'), async (req: any, res) => {
+  // Upload photo - requires authentication and rate limiting
+  app.post("/api/photos/upload", isAuthenticated, uploadRateLimit, upload.single('photo'), async (req: any, res) => {
     try {
       console.log('Upload request received:', {
         hasFile: !!req.file,
@@ -206,8 +235,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all uploaded photos
-  app.get("/api/photos", async (req, res) => {
+  // Get all uploaded photos - requires authentication to prevent data leakage
+  app.get("/api/photos", isAuthenticated, async (req, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
       res.json(photos);
@@ -216,21 +245,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get photos for a specific quest
-  app.get("/api/photos/quest/:questId", async (req, res) => {
+  // Get photos for a specific quest - with parameter validation and authentication
+  app.get("/api/photos/quest/:questId", isAuthenticated, async (req, res) => {
     try {
       const { questId } = req.params;
-      const photos = await storage.getPhotosByQuestId(questId);
+      
+      // Validate questId format (should be UUID or safe string)
+      if (!questId || typeof questId !== 'string' || questId.length > 100) {
+        return res.status(400).json({ message: "Invalid quest ID format" });
+      }
+      
+      // Basic sanitization
+      const sanitizedQuestId = questId.trim();
+      if (!/^[\w\-]+$/.test(sanitizedQuestId)) {
+        return res.status(400).json({ message: "Invalid quest ID characters" });
+      }
+      
+      const photos = await storage.getPhotosByQuestId(sanitizedQuestId);
       res.json(photos);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch quest photos" });
     }
   });
 
-  // Serve uploaded photos
+  // Serve uploaded photos - with path traversal protection
   app.get("/api/photos/:filename", (req, res) => {
     const { filename } = req.params;
+    
+    // Prevent path traversal attacks
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({ message: "Invalid filename" });
+    }
+    
+    // Only allow alphanumeric characters, dots, hyphens, and underscores
+    if (!/^[\w\-\.]+$/.test(filename)) {
+      return res.status(400).json({ message: "Invalid filename format" });
+    }
+    
     const filePath = path.join(uploadDir, filename);
+    
+    // Ensure the resolved path is still within the upload directory
+    const resolvedPath = path.resolve(filePath);
+    const resolvedUploadDir = path.resolve(uploadDir);
+    
+    if (!resolvedPath.startsWith(resolvedUploadDir)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
     
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
@@ -239,8 +299,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Like/unlike a photo - requires authentication
-  app.post("/api/photos/:photoId/like", isAuthenticated, async (req: any, res) => {
+  // Like/unlike a photo - requires authentication and rate limiting
+  app.post("/api/photos/:photoId/like", isAuthenticated, likeRateLimit, async (req: any, res) => {
     try {
       const { photoId } = req.params;
       photoLikeSchema.parse(req.body); // Validate empty body
@@ -249,25 +309,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
+      // Validate photoId format
+      if (!photoId || typeof photoId !== 'string' || photoId.length > 100) {
+        return res.status(400).json({ message: "Invalid photo ID format" });
+      }
+
+      // Basic sanitization for photoId
+      const sanitizedPhotoId = photoId.trim();
+      if (!/^[\w\-]+$/.test(sanitizedPhotoId)) {
+        return res.status(400).json({ message: "Invalid photo ID characters" });
+      }
+
       const voterName = `${req.user.given_name} ${req.user.family_name}`.trim() || req.user.email;
       
-      const photo = await storage.getUploadedPhoto(photoId);
+      const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
 
-      const hasLiked = await storage.hasUserLikedPhoto(photoId, voterName);
+      const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
       
       if (hasLiked) {
         return res.status(400).json({ message: "You have already liked this photo" });
       }
 
       await storage.createPhotoLike({
-        photoId,
+        photoId: sanitizedPhotoId,
         voterName: voterName,
       });
 
-      const updatedPhoto = await storage.updatePhotoLikes(photoId, photo.likes + 1);
+      const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, photo.likes + 1);
       res.json(updatedPhoto);
     } catch (error) {
       if (error instanceof z.ZodError) {
