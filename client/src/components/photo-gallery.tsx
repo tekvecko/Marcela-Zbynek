@@ -85,12 +85,8 @@ export default function PhotoGallery() {
 
   const likePhotoMutation = useMutation({
     mutationFn: async (photoId: string) => {
-      const response = await apiRequest(`/api/photos/${photoId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voterName: user?.email || '' })
-      });
-      return response;
+      const response = await apiRequest('POST', `/api/photos/${photoId}/like`, { voterName: user?.email || '' });
+      return response.json();
     },
     onSuccess: () => {
       toast({
