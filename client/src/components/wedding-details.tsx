@@ -9,13 +9,13 @@ export default function WeddingDetails() {
   const { toast } = useToast(); // Používám toast z useToast hooku
 
   const openGoogleCalendar = () => {
-    const url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Svatba+Marcela+a+Zbyn%C4%9Bk&dates=20251011T100000Z/20251011T160000Z&details=Svatba+ve+Star%C3%A1+Po%C5%A1ta,+Kovalovice+109&location=Kovalovice+109,+%C4%8Cesk%C3%A1+republika";
+    const url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Svatba+Marcela+a+Zbyn%C4%9Bk&dates=20251011T120000Z/20251011T160000Z&details=Svatba+ve+Star%C3%A1+Po%C5%A1ta,+Kovalovice+109&location=Kovalovice+109,+%C4%8Cesk%C3%A1+republika";
     window.open(url, '_blank');
   };
 
   const openAppleCalendar = () => {
     // Apple Calendar uses a different format
-    const url = "data:text/calendar;charset=utf8,BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:20251011T100000Z\nDTEND:20251011T160000Z\nSUMMARY:Svatba Marcela a Zbyněk\nDESCRIPTION:Svatba ve Stará Pošta, Kovalovice 109\nLOCATION:Kovalovice 109, Česká republika\nEND:VEVENT\nEND:VCALENDAR";
+    const url = "data:text/calendar;charset=utf8,BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:20251011T120000Z\nDTEND:20251011T160000Z\nSUMMARY:Svatba Marcela a Zbyněk\nDESCRIPTION:Svatba ve Stará Pošta, Kovalovice 109\nLOCATION:Kovalovice 109, Česká republika\nEND:VEVENT\nEND:VCALENDAR";
     const blob = new Blob([url.replace(/data:text\/calendar;charset=utf8,/, '')], { type: 'text/calendar' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -92,7 +92,7 @@ export default function WeddingDetails() {
                   <div>
                     <p className="font-semibold text-charcoal">Čas</p>
                     <p className="text-charcoal/70">11. října 2025</p>
-                    <p className="text-charcoal/70">10:00 - 16:00</p>
+                    <p className="text-charcoal/70">12:00 - 16:00</p>
                   </div>
                 </div>
 
