@@ -228,7 +228,6 @@ export default function ChallengePage() {
 
     const formData = new FormData();
     formData.append("photo", selectedFile);
-    formData.append("uploaderName", user.email);
     formData.append("questId", challenge.id);
 
     // Scroll to upload progress when analysis starts

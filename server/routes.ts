@@ -36,12 +36,11 @@ const upload = multer({
 });
 
 const photoUploadSchema = z.object({
-  uploaderName: z.string().min(1, "Uploader name is required"),
   questId: z.string().optional(),
 });
 
 const photoLikeSchema = z.object({
-  voterName: z.string().min(1, "Voter name is required"),
+  // voterName will be automatically extracted from authenticated user
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -79,12 +78,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload photo
-  app.post("/api/photos/upload", upload.single('photo'), async (req, res) => {
+  // Upload photo - requires authentication
+  app.post("/api/photos/upload", isAuthenticated, upload.single('photo'), async (req: any, res) => {
     try {
       console.log('Upload request received:', {
         hasFile: !!req.file,
         body: req.body,
+        user: req.user?.email,
         files: req.files
       });
       
@@ -93,7 +93,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No photo uploaded" });
       }
 
+      if (!req.user) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
       const validatedData = photoUploadSchema.parse(req.body);
+      const uploaderName = `${req.user.given_name} ${req.user.family_name}`.trim() || req.user.email;
       
       let isVerified = false;
       let verificationScore = 0;
@@ -149,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
           size: req.file.size,
-          uploaderName: validatedData.uploaderName,
+          uploaderName: uploaderName,
           questId: validatedData.questId || null,
           isVerified,
           verificationScore,
@@ -159,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update quest progress if questId provided
       if (validatedData.questId) {
-        const progress = await storage.getOrCreateQuestProgress(validatedData.questId, validatedData.uploaderName);
+        const progress = await storage.getOrCreateQuestProgress(validatedData.questId, uploaderName);
         
         if (isVerified) {
           // Check if quest is already completed
@@ -234,18 +239,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Like/unlike a photo
-  app.post("/api/photos/:photoId/like", async (req, res) => {
+  // Like/unlike a photo - requires authentication
+  app.post("/api/photos/:photoId/like", isAuthenticated, async (req: any, res) => {
     try {
       const { photoId } = req.params;
-      const validatedData = photoLikeSchema.parse(req.body);
+      photoLikeSchema.parse(req.body); // Validate empty body
+
+      if (!req.user) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const voterName = `${req.user.given_name} ${req.user.family_name}`.trim() || req.user.email;
       
       const photo = await storage.getUploadedPhoto(photoId);
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
 
-      const hasLiked = await storage.hasUserLikedPhoto(photoId, validatedData.voterName);
+      const hasLiked = await storage.hasUserLikedPhoto(photoId, voterName);
       
       if (hasLiked) {
         return res.status(400).json({ message: "You have already liked this photo" });
@@ -253,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createPhotoLike({
         photoId,
-        voterName: validatedData.voterName,
+        voterName: voterName,
       });
 
       const updatedPhoto = await storage.updatePhotoLikes(photoId, photo.likes + 1);
