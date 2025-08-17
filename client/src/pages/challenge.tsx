@@ -106,10 +106,15 @@ export default function ChallengePage() {
       }, 150);
 
       // Call the API
-      const response = await apiRequest("/api/upload-photo", {
+      const response = await fetch("/api/upload-photo", {
         method: "POST",
         body: formData,
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
 
       clearInterval(progressInterval);
 
@@ -135,7 +140,7 @@ export default function ChallengePage() {
       setUploadProgress(100);
       setCurrentStep("Hotovo!");
 
-      return response;
+      return response.json();
     },
     onSuccess: (data) => {
       setAnalysisResult(data);
