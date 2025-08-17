@@ -18,11 +18,11 @@ import type { QuestChallenge } from "@shared/schema";
 const HelpTooltip = ({ content, side, className }: { content: string; side?: "top" | "bottom" | "left" | "right"; className?: string }) => (
   <div className={`group relative ${className}`}>
     <HelpCircle className="text-charcoal/50 w-5 h-5 cursor-pointer" />
-    <div className={`absolute ${side === 'bottom' ? 'top-full left-1/2 -translate-x-1/2 mt-2' : side === 'top' ? 'bottom-full left-1/2 -translate-x-1/2 mb-2' : ''} 
-                    bg-charcoal text-white text-xs rounded-md px-3 py-2 w-64 max-w-xs z-50 opacity-0 invisible 
+    <div className={`absolute ${side === 'bottom' ? 'top-full left-1/2 -translate-x-1/2 mt-2' : side === 'top' ? 'bottom-full left-1/2 -translate-x-1/2 mb-2' : ''}
+                    bg-charcoal text-white text-xs rounded-md px-3 py-2 w-64 max-w-xs z-50 opacity-0 invisible
                     group-hover:opacity-100 group-hover:visible transition-opacity duration-200 pointer-events-none`}>
       {content}
-      <div className={`absolute w-3 h-3 ${side === 'bottom' ? 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45' : side === 'top' ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45' : ''} 
+      <div className={`absolute w-3 h-3 ${side === 'bottom' ? 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45' : side === 'top' ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45' : ''}
                       bg-charcoal`}></div>
     </div>
   </div>
@@ -32,7 +32,7 @@ export default function ChallengePage() {
   const [, params] = useRoute("/challenge/:id");
   const [, setLocation] = useLocation();
   const challengeId = params?.id;
-  
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'analyzing' | 'verifying' | 'complete' | 'error'>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -56,16 +56,16 @@ export default function ChallengePage() {
   });
 
   const isQuestCompleted = (questId: string) => {
-    return questProgress.some((progress: any) => 
-      progress.questId === questId && 
+    return questProgress.some((progress: any) =>
+      progress.questId === questId &&
       progress.participantName === user?.email &&
       progress.isCompleted
     );
   };
 
   const getProgressForQuest = (questId: string): number => {
-    const progress = questProgress.find((p: any) => 
-      p.questId === questId && 
+    const progress = questProgress.find((p: any) =>
+      p.questId === questId &&
       p.participantName === user?.email
     );
     if (!progress) return 0;
@@ -152,11 +152,11 @@ export default function ChallengePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
       toast({
         title: "Fotka byla úspěšně nahrána!",
-        description: data.isVerified 
-          ? "Gratulujeme! Fotka splnila požadavky úkolu." 
+        description: data.isVerified
+          ? "Gratulujeme! Fotka splnila požadavky úkolu."
           : "Fotka byla nahrána, ale možná neodpovídá přesně zadání.",
       });
-      
+
       // Reset for next upload
       setTimeout(() => {
         setSelectedFile(null);
@@ -253,7 +253,7 @@ export default function ChallengePage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Zpět na úkoly
           </GlassButton>
-          
+
           <div className="text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <span className="text-3xl text-white">📸</span>
@@ -270,8 +270,8 @@ export default function ChallengePage() {
         <div className="max-w-2xl mx-auto">
           {/* Progress Card */}
           <div className={`bg-gradient-to-r rounded-2xl p-6 border mb-8 ${
-            isCompleted 
-              ? 'from-emerald-50/80 to-green-50/80 border-emerald-200' 
+            isCompleted
+              ? 'from-emerald-50/80 to-green-50/80 border-emerald-200'
               : 'from-romantic/10 to-love/10 border-white/30'
           }`}>
             <div className="flex items-center justify-between mb-4">
@@ -279,8 +279,8 @@ export default function ChallengePage() {
                 Váš postup
               </span>
               <span className={`text-sm font-semibold px-4 py-2 rounded-full ${
-                isCompleted 
-                  ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200' 
+                isCompleted
+                  ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200'
                   : 'text-romantic bg-white/80 border border-white/40'
               }`}>
                 {isCompleted ? '✓ Splněno' : 'Čeká na splnění'}
@@ -341,10 +341,10 @@ export default function ChallengePage() {
                     <p><strong>JAK:</strong> Všichni musí být viditelní a usmívající se</p>
                   </>
                 )}
-                {!(challenge.title.includes('Ano') || challenge.title.includes('polibek') || 
-                   challenge.title.includes('prstýnek') || challenge.title.includes('Výměna') || 
-                   challenge.title.includes('rukou') || challenge.title.includes('tanec') || 
-                   challenge.title.includes('tančí') || challenge.title.includes('hostů') || 
+                {!(challenge.title.includes('Ano') || challenge.title.includes('polibek') ||
+                   challenge.title.includes('prstýnek') || challenge.title.includes('Výměna') ||
+                   challenge.title.includes('rukou') || challenge.title.includes('tanec') ||
+                   challenge.title.includes('tančí') || challenge.title.includes('hostů') ||
                    challenge.title.includes('skupin')) && (
                   <>
                     <p><strong>CO:</strong> Fotka odpovídající tématu úkolu</p>
@@ -370,7 +370,7 @@ export default function ChallengePage() {
                     <Label htmlFor="photo" className="text-base font-medium text-charcoal/80">
                       Vyberte fotku nebo vyfotografujte
                     </Label>
-                    <HelpTooltip 
+                    <HelpTooltip
                       content="Můžete vybrat existující fotku z galerie nebo použít fotoaparát pro pořízení nové fotky na místě."
                       side="top"
                     />
@@ -470,9 +470,18 @@ export default function ChallengePage() {
 
                 {/* Analysis Result */}
                 {analysisResult && (
-                  <PhotoAnalysisResult 
-                    result={analysisResult}
-                    className="mt-6"
+                  <PhotoAnalysisResult
+                    isValid={analysisResult.isVerified}
+                    confidence={(analysisResult.verificationScore || 0) / 100}
+                    explanation={analysisResult.aiAnalysis || ""}
+                    questTitle={challenge.title}
+                    onViewInGallery={() => setLocation("/gallery")}
+                    onTryAgain={() => {
+                      setAnalysisResult(null);
+                      setSelectedFile(null);
+                      // Assuming previewUrl is managed elsewhere or not directly needed here, if it was, it would need resetting too.
+                      // setPreviewUrl(null);
+                    }}
                   />
                 )}
               </div>

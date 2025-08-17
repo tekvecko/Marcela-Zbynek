@@ -24,7 +24,7 @@ export default function PhotoAnalysisResult({
   onTryAgain,
   className
 }: PhotoAnalysisResultProps) {
-  const confidencePercentage = Math.round(confidence * 100);
+  const confidencePercentage = Math.round((confidence || 0) * 100);
   
   return (
     <Card className={cn("bg-white/90 backdrop-blur-sm border border-white/20 shadow-lg", className)}>
