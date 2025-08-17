@@ -158,12 +158,12 @@ export default function ChallengePage() {
       if (data.isVerified) {
         toast({
           title: "🎉 Úkol splněn!",
-          description: "Gratulujeme! Fotka splnila požadavky úkolu.",
+          description: "Gratulujeme! Fotka splnila požadavky úkolu a byla přidána do galerie.",
         });
       } else {
         toast({
-          title: "📸 Fotka nahrána",
-          description: "Fotka byla přidána do galerie, ale nesplnila požadavky úkolu. Zkuste to znovu s jinou fotkou.",
+          title: "❌ Fotka neschválena",
+          description: "Fotka nesplnila požadavky úkolu a nebyla přidána do galerie. Zkuste to znovu s jinou fotkou.",
           variant: "destructive",
         });
       }

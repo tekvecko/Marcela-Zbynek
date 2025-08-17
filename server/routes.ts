@@ -139,17 +139,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         verificationScore = 85; // Good default score
       }
       
-      const photo = await storage.createUploadedPhoto({
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
-        uploaderName: validatedData.uploaderName,
-        questId: validatedData.questId || null,
-        isVerified,
-        verificationScore,
-        aiAnalysis,
-      });
+      // Only create photo record if it's not for a quest OR if it's verified for a quest
+      const shouldCreatePhoto = !validatedData.questId || (validatedData.questId && isVerified);
+      
+      let photo = null;
+      if (shouldCreatePhoto) {
+        photo = await storage.createUploadedPhoto({
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          size: req.file.size,
+          uploaderName: validatedData.uploaderName,
+          questId: validatedData.questId || null,
+          isVerified,
+          verificationScore,
+          aiAnalysis,
+        });
+      }
 
       // Update quest progress if questId provided
       if (validatedData.questId) {
@@ -174,7 +180,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json(photo);
+      // Return appropriate response based on whether photo was added to gallery
+      if (photo) {
+        res.json(photo);
+      } else {
+        // Photo was not added to gallery because it failed verification for a quest
+        res.json({
+          message: "Fotka byla zpracována, ale nebyla přidána do galerie",
+          isVerified,
+          verificationScore,
+          aiAnalysis,
+          questId: validatedData.questId
+        });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
