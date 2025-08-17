@@ -72,7 +72,9 @@ export default function ChallengePage() {
     );
     if (!progress) return 0;
     if (progress.isCompleted) return 100;
-    return (progress.photosUploaded / (challenge?.targetPhotos || 1)) * 100;
+    // Show partial progress based on uploaded (but not yet verified) photos
+    const targetPhotos = challenge?.targetPhotos || 1;
+    return Math.min((progress.photosUploaded / targetPhotos) * 80, 80); // Max 80% until verified
   };
 
   const uploadPhotoMutation = useMutation({
@@ -313,7 +315,7 @@ export default function ChallengePage() {
             </div>
             <Progress value={progress} className="w-full h-2 mb-3" />
             <div className="text-xs text-charcoal/60 text-center font-light">
-              {isCompleted ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte 1 ověřenou fotku pro splnění"}
+              {isCompleted ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte fotku, která bude schválena AI pro splnění úkolu"}
             </div>
           </div>
 
