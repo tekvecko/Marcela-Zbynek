@@ -45,10 +45,10 @@ Odpovězte ve formátu JSON s těmito poli:
       `Analyzujte tuto fotografii podle zadaného úkolu: "${challengeTitle}" - ${challengeDescription}`,
     ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      config: {
-        systemInstruction: systemPrompt,
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: systemPrompt,
+      generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
           type: "object",
@@ -61,10 +61,11 @@ Odpovězte ve formátu JSON s těmito poli:
           required: ["isValid", "confidence", "explanation"],
         },
       },
-      contents: contents,
     });
 
-    const rawJson = response.text;
+    const response = await model.generateContent(contents);
+
+    const rawJson = response.response.text();
     console.log(`Gemini verification response: ${rawJson}`);
 
     if (rawJson) {
@@ -103,12 +104,13 @@ export async function analyzePhotoContent(imagePath: string): Promise<string> {
       Odpovězte stručně a poeticky.`,
     ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: contents,
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-1.5-flash" 
     });
 
-    return response.text || "Krásná svatební vzpomínka.";
+    const response = await model.generateContent(contents);
+
+    return response.response.text() || "Krásná svatební vzpomínka.";
   } catch (error) {
     console.error('Photo analysis error:', error);
     return "Krásná svatební vzpomínka.";
