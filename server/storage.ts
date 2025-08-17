@@ -1,6 +1,7 @@
 import { 
   type User, 
   type InsertUser,
+  type UpsertUser,
   type QuestChallenge,
   type InsertQuestChallenge,
   type UploadedPhoto,
@@ -10,10 +11,17 @@ import {
   type QuestProgress,
   type InsertQuestProgress
 } from "@shared/schema";
+import { users } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // User operations
+  // (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  // Legacy methods for compatibility
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
@@ -227,15 +235,54 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    if (!userData.id) {
+      throw new Error("User ID is required for upsert");
+    }
+    
+    const existingUser = this.users.get(userData.id);
+    if (existingUser) {
+      const updatedUser: User = {
+        ...existingUser,
+        ...userData,
+        id: userData.id,
+        updatedAt: new Date(),
+      };
+      this.users.set(userData.id, updatedUser);
+      return updatedUser;
+    } else {
+      const newUser: User = {
+        id: userData.id,
+        email: userData.email || null,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        profileImageUrl: userData.profileImageUrl || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.users.set(userData.id, newUser);
+      return newUser;
+    }
+  }
+
+  // Legacy methods for compatibility
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === username, // Using email as username for compatibility
     );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      id,
+      email: insertUser.email || null,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      profileImageUrl: insertUser.profileImageUrl || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
     this.users.set(id, user);
     return user;
   }
@@ -387,4 +434,132 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // User operations
+  // (IMPORTANT) these user operations are mandatory for Replit Auth.
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    if (!userData.id) {
+      throw new Error("User ID is required for upsert");
+    }
+    
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Legacy methods for compatibility
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  // Quest Challenge operations
+  async getQuestChallenges(): Promise<QuestChallenge[]> {
+    // For now, return the default challenges from MemStorage
+    const memStorage = new MemStorage();
+    return memStorage.getQuestChallenges();
+  }
+
+  async getQuestChallenge(id: string): Promise<QuestChallenge | undefined> {
+    const memStorage = new MemStorage();
+    return memStorage.getQuestChallenge(id);
+  }
+
+  async createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge> {
+    const memStorage = new MemStorage();
+    return memStorage.createQuestChallenge(challenge);
+  }
+
+  // Photo operations
+  async getUploadedPhotos(): Promise<UploadedPhoto[]> {
+    const memStorage = new MemStorage();
+    return memStorage.getUploadedPhotos();
+  }
+
+  async getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined> {
+    const memStorage = new MemStorage();
+    return memStorage.getUploadedPhoto(id);
+  }
+
+  async getPhotosByQuestId(questId: string): Promise<UploadedPhoto[]> {
+    const memStorage = new MemStorage();
+    return memStorage.getPhotosByQuestId(questId);
+  }
+
+  async createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto> {
+    const memStorage = new MemStorage();
+    return memStorage.createUploadedPhoto(photo);
+  }
+
+  async updatePhotoLikes(id: string, likes: number): Promise<UploadedPhoto | undefined> {
+    const memStorage = new MemStorage();
+    return memStorage.updatePhotoLikes(id, likes);
+  }
+
+  // Photo Like operations
+  async getPhotoLikes(photoId: string): Promise<PhotoLike[]> {
+    const memStorage = new MemStorage();
+    return memStorage.getPhotoLikes(photoId);
+  }
+
+  async createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike> {
+    const memStorage = new MemStorage();
+    return memStorage.createPhotoLike(like);
+  }
+
+  async hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean> {
+    const memStorage = new MemStorage();
+    return memStorage.hasUserLikedPhoto(photoId, voterName);
+  }
+
+  // Quest Progress operations
+  async getQuestProgress(): Promise<QuestProgress[]> {
+    const memStorage = new MemStorage();
+    return memStorage.getQuestProgress();
+  }
+
+  async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]> {
+    const memStorage = new MemStorage();
+    return memStorage.getQuestProgressByParticipant(participantName);
+  }
+
+  async createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress> {
+    const memStorage = new MemStorage();
+    return memStorage.createQuestProgress(progress);
+  }
+
+  async updateQuestProgress(id: string, photosUploaded: number, isCompleted?: boolean): Promise<QuestProgress | undefined> {
+    const memStorage = new MemStorage();
+    return memStorage.updateQuestProgress(id, photosUploaded, isCompleted);
+  }
+
+  async getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress> {
+    const memStorage = new MemStorage();
+    return memStorage.getOrCreateQuestProgress(questId, participantName);
+  }
+}
+
+export const storage = new DatabaseStorage();
