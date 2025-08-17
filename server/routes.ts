@@ -235,8 +235,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all uploaded photos - requires authentication to prevent data leakage
-  app.get("/api/photos", isAuthenticated, async (req, res) => {
+  // Get all uploaded photos - public for gallery viewing
+  app.get("/api/photos", async (req, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
       res.json(photos);
@@ -245,8 +245,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get photos for a specific quest - with parameter validation and authentication
-  app.get("/api/photos/quest/:questId", isAuthenticated, async (req, res) => {
+  // Get photos for a specific quest - with parameter validation
+  app.get("/api/photos/quest/:questId", async (req, res) => {
     try {
       const { questId } = req.params;
       
