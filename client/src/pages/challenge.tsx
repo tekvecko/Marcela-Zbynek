@@ -40,6 +40,8 @@ export default function ChallengePage() {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [uploadSpeed, setUploadSpeed] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadButtonRef = useRef<HTMLButtonElement>(null);
+  const uploadProgressRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -187,6 +189,14 @@ export default function ChallengePage() {
       setAnalysisResult(null);
       setUploadStage('idle');
       setUploadProgress(0);
+      
+      // Smooth scroll to upload button after file selection
+      setTimeout(() => {
+        uploadButtonRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 300);
     }
   };
 
@@ -211,6 +221,14 @@ export default function ChallengePage() {
     formData.append("photo", selectedFile);
     formData.append("uploaderName", user.email);
     formData.append("questId", challenge.id);
+
+    // Scroll to upload progress when analysis starts
+    setTimeout(() => {
+      uploadProgressRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }, 500);
 
     uploadPhotoMutation.mutate(formData);
   };
@@ -426,22 +444,27 @@ export default function ChallengePage() {
 
                 {/* Upload Button */}
                 <GlassButton
+                  ref={uploadButtonRef}
                   onClick={handleUpload}
                   disabled={!selectedFile || uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
                   variant="primary"
                   size="lg"
-                  className="w-full"
+                  className={`w-full transition-all duration-300 ${
+                    selectedFile && uploadStage === 'idle' 
+                      ? 'animate-pulse ring-4 ring-romantic/30 shadow-lg shadow-romantic/30' 
+                      : ''
+                  }`}
                 >
                   {uploadStage === 'idle' && (
                     <>
                       <Upload className="w-5 h-5" />
-                      <span>Nahrát fotku</span>
+                      <span>Potvrdit a vyhodnotit</span>
                     </>
                   )}
                   {(uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying') && (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Nahrávání...</span>
+                      <span>Vyhodnocování...</span>
                     </>
                   )}
                   {uploadStage === 'complete' && (
@@ -460,12 +483,14 @@ export default function ChallengePage() {
 
                 {/* Upload Progress */}
                 {(uploadStage !== 'idle' && uploadStage !== 'error') && (
-                  <UploadProgress
-                    stage={uploadStage}
-                    progress={uploadProgress}
-                    currentStep={currentStep}
-                    uploadSpeed={uploadSpeed}
-                  />
+                  <div ref={uploadProgressRef}>
+                    <UploadProgress
+                      stage={uploadStage}
+                      progress={uploadProgress}
+                      currentStep={currentStep}
+                      uploadSpeed={uploadSpeed}
+                    />
+                  </div>
                 )}
 
                 {/* Analysis Result */}
