@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
@@ -15,7 +18,7 @@ export default function Navigation() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             <Link 
               href="/" 
               className={`transition-colors ${location === '/' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
@@ -40,6 +43,35 @@ export default function Navigation() {
             >
               Detaily
             </Link>
+            
+            {isAuthenticated && user && (
+              <div className="flex items-center space-x-4 border-l border-blush pl-4">
+                <div className="flex items-center space-x-2">
+                  {user.profileImageUrl ? (
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt={user.firstName || 'User'} 
+                      className="w-8 h-8 rounded-full object-cover"
+                      data-testid="img-avatar"
+                    />
+                  ) : (
+                    <User size={20} className="text-charcoal" />
+                  )}
+                  <span className="text-charcoal text-sm" data-testid="text-username">
+                    {user.firstName || user.email || 'Guest'}
+                  </span>
+                </div>
+                <Button
+                  onClick={() => window.location.href = '/api/logout'}
+                  variant="ghost"
+                  size="sm"
+                  className="text-charcoal hover:text-romantic"
+                  data-testid="button-logout"
+                >
+                  <LogOut size={16} />
+                </Button>
+              </div>
+            )}
           </div>
           
           {/* Mobile Menu Button */}
