@@ -33,6 +33,8 @@ export function handleLogout() {
 export function handlePhotoUploaded(photoName?: string) {
   weddingToast({
     type: 'photo-uploaded',
-    description: photoName ? `Fotka "${photoName}" byla přidána do galerie` : undefined
+    description: photoName ? `Fotka "${photoName}" byla přidána do galerie` : "Fotka byla přidána do galerie"
+  });
+}alerie` : undefined
   });
 }
