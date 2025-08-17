@@ -30,11 +30,14 @@ function getMimeTypeFromPath(imagePath: string): string {
   }
 }
 
-export async function verifyPhotoForChallenge(
+async function attemptGeminiVerification(
   imagePath: string,
   challengeTitle: string,
-  challengeDescription: string
+  challengeDescription: string,
+  retryCount = 0
 ): Promise<PhotoVerificationResult> {
+  const maxRetries = 2;
+  
   try {
     const imageBytes = fs.readFileSync(imagePath);
     const mimeType = getMimeTypeFromPath(imagePath);
@@ -86,30 +89,43 @@ Odpovězte ve formátu JSON s těmito poli:
     const response = await model.generateContent(contents);
 
     const rawJson = response.response.text();
-    console.log(`Gemini verification response: ${rawJson.substring(0, 500)}...`);
+    console.log(`Gemini verification response (attempt ${retryCount + 1}): ${rawJson.substring(0, 500)}...`);
 
     if (rawJson) {
       try {
-        // Clean the JSON response - remove any invalid characters
-        const cleanedJson = rawJson.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+        // Clean the JSON response more aggressively
+        let cleanedJson = rawJson
+          .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
+          .replace(/\t+/g, ' ') // Replace tabs with spaces
+          .replace(/\n+/g, ' ') // Replace newlines with spaces
+          .replace(/\r+/g, ' ') // Replace carriage returns with spaces
+          .replace(/\s+/g, ' ') // Collapse multiple spaces
+          .trim();
         
         // Try to find the JSON object boundaries
         const jsonStart = cleanedJson.indexOf('{');
         const jsonEnd = cleanedJson.lastIndexOf('}') + 1;
         
         if (jsonStart !== -1 && jsonEnd > jsonStart) {
-          const jsonString = cleanedJson.substring(jsonStart, jsonEnd);
+          let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
+          
+          // Additional cleanup for common issues
+          jsonString = jsonString
+            .replace(/,\s*}/g, '}') // Remove trailing commas
+            .replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+          
           const result: PhotoVerificationResult = JSON.parse(jsonString);
           
-          // Validate the result
+          // Validate the result structure and types
           if (typeof result.isValid === 'boolean' && 
               typeof result.confidence === 'number' && 
-              typeof result.explanation === 'string') {
+              typeof result.explanation === 'string' &&
+              result.confidence >= 0 && result.confidence <= 1) {
             return result;
           }
         }
         
-        throw new Error("Invalid JSON structure");
+        throw new Error("Invalid JSON structure or missing required fields");
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
         throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
@@ -118,15 +134,35 @@ Odpovězte ve formátu JSON s těmito poli:
       throw new Error("Empty response from Gemini");
     }
   } catch (error) {
-    console.error('Gemini verification error:', error);
-    // Fallback response in case of error
+    console.error(`Gemini verification error (attempt ${retryCount + 1}):`, error);
+    
+    // Retry for certain types of errors
+    if (retryCount < maxRetries && 
+        (error.message.includes('Failed to parse') || 
+         error.message.includes('Invalid JSON') ||
+         error.message.includes('503') ||
+         error.message.includes('429'))) {
+      console.log(`Retrying Gemini verification (attempt ${retryCount + 2}/${maxRetries + 1})...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+      return attemptGeminiVerification(imagePath, challengeTitle, challengeDescription, retryCount + 1);
+    }
+    
+    // Fallback response in case of error - REJECT photos when AI fails
     return {
-      isValid: true, // Be permissive on errors
-      confidence: 0.5,
-      explanation: "Automatické ověření se nezdařilo, fotka byla přijata.",
-      suggestedImprovements: "Zkuste nahrát fotku znovu pro lepší ověření."
+      isValid: false, // Be strict on errors to prevent random photo approval
+      confidence: 0,
+      explanation: "Automatické ověření se nezdařilo z technických důvodů. Zkuste nahrát fotku znovu.",
+      suggestedImprovements: "Zkuste nahrát fotku znovu. Pokud problém přetrvává, obraťte se na podporu."
     };
   }
+}
+
+export async function verifyPhotoForChallenge(
+  imagePath: string,
+  challengeTitle: string,
+  challengeDescription: string
+): Promise<PhotoVerificationResult> {
+  return attemptGeminiVerification(imagePath, challengeTitle, challengeDescription);
 }
 
 export async function analyzePhotoContent(imagePath: string): Promise<string> {
