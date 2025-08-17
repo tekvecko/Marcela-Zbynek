@@ -14,7 +14,7 @@ export default function Landing() {
             <GlassButton 
               variant="primary" 
               size="md"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/login'}
               data-testid="button-login-nav"
             >
               <Heart size={16} />
@@ -39,7 +39,7 @@ export default function Landing() {
             <GlassButton 
               variant="primary" 
               size="lg"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/login'}
               data-testid="button-login-hero"
             >
               <Heart size={20} />
@@ -157,7 +157,7 @@ export default function Landing() {
           <GlassButton 
             variant="primary" 
             size="lg"
-            onClick={() => window.location.href = '/api/login'}
+            onClick={() => window.location.href = '/login'}
             data-testid="button-login-cta"
           >
             <Heart size={20} />

@@ -9,6 +9,7 @@ import PhotoQuestPage from "@/pages/photo-quest";
 import GalleryPage from "@/pages/gallery";
 import DetailsPage from "@/pages/details";
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,7 +20,10 @@ function Router() {
     <PageTransition>
       <Switch>
         {isLoading || !isAuthenticated ? (
-          <Route path="/" component={Landing} />
+          <>
+            <Route path="/" component={Landing} />
+            <Route path="/login" component={Login} />
+          </>
         ) : (
           <>
             <Route path="/" component={Home} />
