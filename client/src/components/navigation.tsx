@@ -3,11 +3,13 @@ import { Menu, X, LogOut, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import type { User as UserType } from "@shared/schema";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const typedUser = user as UserType;
 
   return (
     <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
@@ -44,13 +46,13 @@ export default function Navigation() {
               Detaily
             </Link>
             
-            {isAuthenticated && user && (
+            {isAuthenticated && typedUser && (
               <div className="flex items-center space-x-4 border-l border-blush pl-4">
                 <div className="flex items-center space-x-2">
-                  {user.profileImageUrl ? (
+                  {typedUser.profileImageUrl ? (
                     <img 
-                      src={user.profileImageUrl} 
-                      alt={user.firstName || 'User'} 
+                      src={typedUser.profileImageUrl} 
+                      alt={typedUser.firstName || 'User'} 
                       className="w-8 h-8 rounded-full object-cover"
                       data-testid="img-avatar"
                     />
@@ -58,7 +60,7 @@ export default function Navigation() {
                     <User size={20} className="text-charcoal" />
                   )}
                   <span className="text-charcoal text-sm" data-testid="text-username">
-                    {user.firstName || user.email || 'Guest'}
+                    {typedUser.firstName || typedUser.email || 'Guest'}
                   </span>
                 </div>
                 <Button
@@ -69,6 +71,7 @@ export default function Navigation() {
                   data-testid="button-logout"
                 >
                   <LogOut size={16} />
+                  Odhlásit
                 </Button>
               </div>
             )}
@@ -115,6 +118,36 @@ export default function Navigation() {
               >
                 Detaily
               </Link>
+              
+              {isAuthenticated && typedUser && (
+                <div className="pt-4 border-t border-blush">
+                  <div className="flex items-center space-x-2 mb-3">
+                    {typedUser.profileImageUrl ? (
+                      <img 
+                        src={typedUser.profileImageUrl} 
+                        alt={typedUser.firstName || 'User'} 
+                        className="w-6 h-6 rounded-full object-cover"
+                        data-testid="img-avatar-mobile"
+                      />
+                    ) : (
+                      <User size={16} className="text-charcoal" />
+                    )}
+                    <span className="text-charcoal text-sm" data-testid="text-username-mobile">
+                      {typedUser.firstName || typedUser.email || 'Guest'}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={() => window.location.href = '/api/logout'}
+                    variant="ghost"
+                    size="sm"
+                    className="text-charcoal hover:text-romantic w-full justify-start"
+                    data-testid="button-logout-mobile"
+                  >
+                    <LogOut size={16} />
+                    Odhlásit se
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
