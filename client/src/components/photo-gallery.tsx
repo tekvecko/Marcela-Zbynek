@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,36 @@ export default function PhotoGallery() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Zachycení ESC klávesy a systémového tlačítka zpět
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedPhoto) {
+        setSelectedPhoto(null);
+        setIsFullscreen(false);
+      }
+    };
+
+    const handlePopState = () => {
+      if (selectedPhoto) {
+        setSelectedPhoto(null);
+        setIsFullscreen(false);
+      }
+    };
+
+    if (selectedPhoto) {
+      document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('popstate', handlePopState);
+      
+      // Přidání historie pro systémové tlačítko zpět
+      window.history.pushState({ photoModal: true }, '');
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [selectedPhoto]);
 
   const { data: photos = [], isLoading } = useQuery<UploadedPhoto[]>({
     queryKey: ["/api/photos"],
@@ -358,15 +388,24 @@ export default function PhotoGallery() {
 
         {/* Photo Detail Modal */}
         {selectedPhoto && (
-          <Dialog open={!!selectedPhoto} onOpenChange={() => {
-            setSelectedPhoto(null);
-            setIsFullscreen(false);
+          <Dialog open={!!selectedPhoto} onOpenChange={(open) => {
+            if (!open) {
+              setSelectedPhoto(null);
+              setIsFullscreen(false);
+            }
           }}>
-            <DialogContent className={`${
-              isFullscreen
-                ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
-                : 'max-w-6xl w-[95vw] max-h-[95vh] p-0'
-            } bg-black/95 border-none transition-all duration-300`}>
+            <DialogContent 
+              className={`${
+                isFullscreen
+                  ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
+                  : 'max-w-6xl w-[95vw] max-h-[95vh] p-0'
+              } bg-black/95 border-none transition-all duration-300`}
+              onInteractOutside={(e) => {
+                // Zavřít dialog při kliknutí mimo obsah
+                setSelectedPhoto(null);
+                setIsFullscreen(false);
+              }}
+            >
               <div className="relative h-full flex flex-col">
                 {/* Top Controls */}
                 <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center">
@@ -392,16 +431,24 @@ export default function PhotoGallery() {
                   </GlassButton>
                 </div>
 
-                {/* Photo Container */}
-                <div className={`${isFullscreen ? 'flex-1' : 'max-h-[70vh]'} flex items-center justify-center p-4`}>
+                {/* Photo Container - kliknutí na fotku ji nezavře */}
+                <div 
+                  className={`${isFullscreen ? 'flex-1' : 'max-h-[70vh]'} flex items-center justify-center p-4`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <OptimizedImage
                     src={`/api/photos/${selectedPhoto.filename}`}
                     alt={selectedPhoto.aiAnalysis || "Wedding photo"}
                     className={`${
                       isFullscreen
-                        ? 'max-w-full max-h-full object-contain'
-                        : 'w-full h-auto max-h-full object-contain'
+                        ? 'max-w-full max-h-full object-contain cursor-pointer'
+                        : 'w-full h-auto max-h-full object-contain cursor-pointer'
                     }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Dvojklik na fotku přepne fullscreen
+                    }}
+                    onDoubleClick={() => setIsFullscreen(!isFullscreen)}
                   />
                 </div>
 
