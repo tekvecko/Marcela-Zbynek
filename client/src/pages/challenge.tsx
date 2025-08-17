@@ -112,7 +112,12 @@ export default function ChallengePage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        let error;
+        try {
+          error = await response.json();
+        } catch {
+          error = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
         throw new Error(error.message || 'Upload failed');
       }
 
