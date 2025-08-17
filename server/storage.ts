@@ -11,7 +11,7 @@ import {
   type QuestProgress,
   type InsertQuestProgress
 } from "@shared/schema";
-import { users } from "@shared/schema";
+import { users, questChallenges, uploadedPhotos, photoLikes, questProgress } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -478,87 +478,322 @@ export class DatabaseStorage implements IStorage {
 
   // Quest Challenge operations
   async getQuestChallenges(): Promise<QuestChallenge[]> {
-    // For now, return the default challenges from MemStorage
-    const memStorage = new MemStorage();
-    return memStorage.getQuestChallenges();
+    const challenges = await db.select().from(questChallenges);
+    
+    // If no challenges exist, initialize with defaults
+    if (challenges.length === 0) {
+      await this.initializeDefaultChallenges();
+      return await db.select().from(questChallenges);
+    }
+    
+    return challenges;
   }
 
   async getQuestChallenge(id: string): Promise<QuestChallenge | undefined> {
-    const memStorage = new MemStorage();
-    return memStorage.getQuestChallenge(id);
+    const [challenge] = await db.select().from(questChallenges).where(eq(questChallenges.id, id));
+    return challenge;
   }
 
   async createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge> {
-    const memStorage = new MemStorage();
-    return memStorage.createQuestChallenge(challenge);
+    const [createdChallenge] = await db.insert(questChallenges).values(challenge).returning();
+    return createdChallenge;
+  }
+
+  private async initializeDefaultChallenges(): Promise<void> {
+    const defaultChallenges: InsertQuestChallenge[] = [
+      // Obřadní momenty - vysoké body
+      {
+        title: 'Okamžik "Ano" 💍',
+        description: 'Zachyťte moment výměny slibů nebo "ano"',
+        targetPhotos: 1,
+        points: 25,
+        isActive: true,
+      },
+      {
+        title: 'První manželský polibek 💋',
+        description: 'Ten magický první polibek jako manželé',
+        targetPhotos: 1,
+        points: 25,
+        isActive: true,
+      },
+      {
+        title: 'Výměna prstenů ✨',
+        description: 'Detail snubních prstenů na rukou',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Gratulace novomanželům 🎉',
+        description: 'Moment gratulací a objímání po obřadu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Rodinné a skupinové fotky
+      {
+        title: 'Rodinné foto nevěsty 👨‍👩‍👧‍👦',
+        description: 'Rodina nevěsty pohromadě',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Rodinné foto ženicha 👨‍👩‍👧‍👦',
+        description: 'Rodina ženicha pohromadě',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Skupinové foto všech hostů 📸',
+        description: 'Všichni svatební hosté na jedné fotce',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Svědci v akci 🤵‍♂️👰‍♀️',
+        description: 'Svědci během obřadu nebo při podpisu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Večerní zábava
+      {
+        title: 'První tanec 💃',
+        description: 'Náš speciální první tanec jako manželé',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Tanec s rodiči 👫',
+        description: 'Nevěsta s tatínkem nebo ženich s maminkou',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Zábava na parketu 🕺',
+        description: 'Hosté si užívají na tanečním parketu',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Krájení dortu 🎂',
+        description: 'Společné krájení svatebního dortu',
+        targetPhotos: 1,
+        points: 18,
+        isActive: true,
+      },
+
+      // Emotivní momenty
+      {
+        title: 'Šťastné slzy 😭',
+        description: 'Emoce a dojetí během svatby',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Smích a radost 😊',
+        description: 'Upřímné momenty štěstí a smíchu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Detaily a přípravy
+      {
+        title: 'Svatební šaty detail 👗',
+        description: 'Krásný detail svatebních šatů',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Svatební kytice 💐',
+        description: 'Nevěstina kytice v plné kráse',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Svatební dort 🍰',
+        description: 'Náš krásný svatební dort',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Dekorace a výzdoba 🎀',
+        description: 'Svatební dekorace a výzdoba prostoru',
+        targetPhotos: 1,
+        points: 10,
+        isActive: true,
+      },
+      {
+        title: 'Přípravy před obřadem 💄',
+        description: 'Nevěsta nebo ženich se připravují',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Zábavné a kreativní
+      {
+        title: 'Házen kytice 🎯',
+        description: 'Házení svatební kytice svobodným',
+        targetPhotos: 1,
+        points: 18,
+        isActive: true,
+      },
+      {
+        title: 'Děti na svatbě 👶',
+        description: 'Roztomilé momenty s dětmi hostů',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Nečekané okamžiky 😄',
+        description: 'Vtipné, spontánní nebo nečekané situace',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Toast a přípitek 🥂',
+        description: 'Projevy a přípitek na novomanžele',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+
+      // Kreativní úhly
+      {
+        title: 'Černobílá klasika ⚫⚪',
+        description: 'Artistic černobílá fotka z jakéhokoliv momentu',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Detail rukou 🤝',
+        description: 'Krásný detail propojených rukou novomanželů',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+    ];
+
+    await db.insert(questChallenges).values(defaultChallenges);
   }
 
   // Photo operations
   async getUploadedPhotos(): Promise<UploadedPhoto[]> {
-    const memStorage = new MemStorage();
-    return memStorage.getUploadedPhotos();
+    return await db.select().from(uploadedPhotos);
   }
 
   async getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined> {
-    const memStorage = new MemStorage();
-    return memStorage.getUploadedPhoto(id);
+    const [photo] = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+    return photo;
   }
 
   async getPhotosByQuestId(questId: string): Promise<UploadedPhoto[]> {
-    const memStorage = new MemStorage();
-    return memStorage.getPhotosByQuestId(questId);
+    return await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.questId, questId));
   }
 
   async createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto> {
-    const memStorage = new MemStorage();
-    return memStorage.createUploadedPhoto(photo);
+    const [createdPhoto] = await db.insert(uploadedPhotos).values(photo).returning();
+    return createdPhoto;
   }
 
   async updatePhotoLikes(id: string, likes: number): Promise<UploadedPhoto | undefined> {
-    const memStorage = new MemStorage();
-    return memStorage.updatePhotoLikes(id, likes);
+    const [updatedPhoto] = await db
+      .update(uploadedPhotos)
+      .set({ likes })
+      .where(eq(uploadedPhotos.id, id))
+      .returning();
+    return updatedPhoto;
   }
 
   // Photo Like operations
   async getPhotoLikes(photoId: string): Promise<PhotoLike[]> {
-    const memStorage = new MemStorage();
-    return memStorage.getPhotoLikes(photoId);
+    return await db.select().from(photoLikes).where(eq(photoLikes.photoId, photoId));
   }
 
   async createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike> {
-    const memStorage = new MemStorage();
-    return memStorage.createPhotoLike(like);
+    const [createdLike] = await db.insert(photoLikes).values(like).returning();
+    return createdLike;
   }
 
   async hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean> {
-    const memStorage = new MemStorage();
-    return memStorage.hasUserLikedPhoto(photoId, voterName);
+    const [existingLike] = await db
+      .select()
+      .from(photoLikes)
+      .where(eq(photoLikes.photoId, photoId))
+      .where(eq(photoLikes.voterName, voterName));
+    return !!existingLike;
   }
 
   // Quest Progress operations
   async getQuestProgress(): Promise<QuestProgress[]> {
-    const memStorage = new MemStorage();
-    return memStorage.getQuestProgress();
+    return await db.select().from(questProgress);
   }
 
   async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]> {
-    const memStorage = new MemStorage();
-    return memStorage.getQuestProgressByParticipant(participantName);
+    return await db.select().from(questProgress).where(eq(questProgress.participantName, participantName));
   }
 
   async createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress> {
-    const memStorage = new MemStorage();
-    return memStorage.createQuestProgress(progress);
+    const [createdProgress] = await db.insert(questProgress).values(progress).returning();
+    return createdProgress;
   }
 
   async updateQuestProgress(id: string, photosUploaded: number, isCompleted?: boolean): Promise<QuestProgress | undefined> {
-    const memStorage = new MemStorage();
-    return memStorage.updateQuestProgress(id, photosUploaded, isCompleted);
+    const updateData: any = { photosUploaded };
+    if (isCompleted !== undefined) {
+      updateData.isCompleted = isCompleted;
+      if (isCompleted) {
+        updateData.completedAt = new Date();
+      }
+    }
+
+    const [updatedProgress] = await db
+      .update(questProgress)
+      .set(updateData)
+      .where(eq(questProgress.id, id))
+      .returning();
+    return updatedProgress;
   }
 
   async getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress> {
-    const memStorage = new MemStorage();
-    return memStorage.getOrCreateQuestProgress(questId, participantName);
+    const [existingProgress] = await db
+      .select()
+      .from(questProgress)
+      .where(eq(questProgress.questId, questId))
+      .where(eq(questProgress.participantName, participantName));
+
+    if (existingProgress) {
+      return existingProgress;
+    }
+
+    const [newProgress] = await db
+      .insert(questProgress)
+      .values({
+        questId,
+        participantName,
+        photosUploaded: 0,
+        isCompleted: false,
+      })
+      .returning();
+
+    return newProgress;
   }
 }
 
