@@ -9,7 +9,7 @@ interface HelpTooltipProps {
   side?: "top" | "right" | "bottom" | "left";
 }
 
-export default function HelpTooltip({ content, className, side = "top" }: HelpTooltipProps) {
+function HelpTooltip({ content, className, side = "top" }: HelpTooltipProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -29,3 +29,6 @@ export default function HelpTooltip({ content, className, side = "top" }: HelpTo
     </Tooltip>
   );
 }
+
+export default HelpTooltip;
+export { HelpTooltip };
