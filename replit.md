@@ -4,6 +4,8 @@
 
 This is a wedding website application for Marcela and Zbyněk's wedding on October 11, 2025. The website features a romantic design with a wedding countdown timer, photo sharing capabilities, and a gamified "Photo Quest" system where guests can complete photography challenges. The application includes a photo gallery where guests can upload images, like photos from other guests, and track their progress through various wedding-related photo challenges. Advanced AI verification using Google Gemini ensures that uploaded photos match challenge requirements automatically.
 
+**Recently Added**: Replit Authentication system with protected routes, landing page for unauthenticated users, and user profile integration in the navigation.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -33,15 +35,19 @@ Preferred communication style: Simple, everyday language.
 - **Storage Interface**: Abstracted storage layer with in-memory fallback for development
 
 ### Database Schema Design
-- **Users**: Authentication with username/password
+- **Users**: Replit user profiles with ID, email, first/last name, and profile image URL
+- **Sessions**: Express session storage for authentication state management
 - **Quest Challenges**: Photography challenges with points, target photo counts, and active status
 - **Uploaded Photos**: Photo metadata with uploader information, quest association, and like counts
 - **Photo Likes**: Voting system linking photos to voter names
 - **Quest Progress**: Tracks participant progress through challenges with completion status
 
 ### Authentication and Authorization
+- **Replit Auth**: OpenID Connect authentication via Replit OAuth provider
 - **Session Management**: Express sessions with PostgreSQL session store (connect-pg-simple)
-- **User Context**: Name-based identification system for wedding guests
+- **User Data**: Profile information from Replit (ID, email, name, profile image)
+- **Route Protection**: Authentication middleware protecting API endpoints and pages
+- **Database Integration**: User profiles stored in PostgreSQL with automatic upsert on login
 - **File Security**: Upload validation for image file types (JPEG, PNG, HEIC) with size limits
 
 ## External Dependencies
