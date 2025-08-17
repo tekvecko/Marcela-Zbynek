@@ -106,7 +106,7 @@ export default function ChallengePage() {
       }, 150);
 
       // Call the API
-      const response = await fetch("/api/upload-photo", {
+      const response = await fetch("/api/photos/upload", {
         method: "POST",
         body: formData,
       });
