@@ -11,6 +11,25 @@ export interface PhotoVerificationResult {
   suggestedImprovements?: string;
 }
 
+function getMimeTypeFromPath(imagePath: string): string {
+  const ext = imagePath.toLowerCase().split('.').pop();
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+    case 'heif':
+      // Gemini supports HEIC/HEIF, use appropriate MIME type
+      return 'image/heic';
+    default:
+      return 'image/jpeg'; // Default fallback
+  }
+}
+
 export async function verifyPhotoForChallenge(
   imagePath: string,
   challengeTitle: string,
@@ -18,6 +37,7 @@ export async function verifyPhotoForChallenge(
 ): Promise<PhotoVerificationResult> {
   try {
     const imageBytes = fs.readFileSync(imagePath);
+    const mimeType = getMimeTypeFromPath(imagePath);
 
     const systemPrompt = `Jste expert na hodnocení svatebních fotografií. Analyzujte poskytnutou fotografii a určete, zda splňuje požadavky zadaného úkolu.
 
@@ -39,7 +59,7 @@ Odpovězte ve formátu JSON s těmito poli:
       {
         inlineData: {
           data: imageBytes.toString("base64"),
-          mimeType: "image/jpeg",
+          mimeType: mimeType,
         },
       },
       `Analyzujte tuto fotografii podle zadaného úkolu: "${challengeTitle}" - ${challengeDescription}`,
@@ -112,12 +132,13 @@ Odpovězte ve formátu JSON s těmito poli:
 export async function analyzePhotoContent(imagePath: string): Promise<string> {
   try {
     const imageBytes = fs.readFileSync(imagePath);
+    const mimeType = getMimeTypeFromPath(imagePath);
 
     const contents = [
       {
         inlineData: {
           data: imageBytes.toString("base64"),
-          mimeType: "image/jpeg",
+          mimeType: mimeType,
         },
       },
       `Popište tuto svatební fotografii v češtině. Zaměřte se na:

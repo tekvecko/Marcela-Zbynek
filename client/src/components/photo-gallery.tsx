@@ -115,7 +115,7 @@ export default function PhotoGallery() {
 
   const likePhotoMutation = useMutation({
     mutationFn: async (photoId: string) => {
-      const response = await apiRequest('POST', `/api/photos/${photoId}/like`, { voterName: user?.email || '' });
+      const response = await apiRequest('POST', `/api/photos/${photoId}/like`, {});
       return response.json();
     },
     onSuccess: () => {
@@ -171,7 +171,6 @@ export default function PhotoGallery() {
 
     const formData = new FormData();
     formData.append('photo', selectedFile);
-    formData.append('uploaderName', user.email);
 
     uploadPhotoMutation.mutate(formData);
   };
