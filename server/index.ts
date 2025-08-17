@@ -21,8 +21,20 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      
+      // Only log response data in development and sanitize sensitive data
+      if (capturedJsonResponse && process.env.NODE_ENV === 'development') {
+        const sanitizedResponse = { ...capturedJsonResponse };
+        
+        // Remove sensitive fields from logs
+        if (sanitizedResponse.email) sanitizedResponse.email = '***@***.***';
+        if (sanitizedResponse.access_token) sanitizedResponse.access_token = '[REDACTED]';
+        if (sanitizedResponse.refresh_token) sanitizedResponse.refresh_token = '[REDACTED]';
+        if (sanitizedResponse.id && sanitizedResponse.id.length > 10) {
+          sanitizedResponse.id = sanitizedResponse.id.substring(0, 6) + '***';
+        }
+        
+        logLine += ` :: ${JSON.stringify(sanitizedResponse)}`;
       }
 
       if (logLine.length > 80) {
