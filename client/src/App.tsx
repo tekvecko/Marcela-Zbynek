@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PageTransition from "@/components/ui/page-transition";
 import Home from "@/pages/home";
 import PhotoQuestPage from "@/pages/photo-quest";
+import ChallengePage from "@/pages/challenge";
 import GalleryPage from "@/pages/gallery";
 import DetailsPage from "@/pages/details";
 import Landing from "@/pages/landing";
@@ -28,6 +29,7 @@ function Router() {
           <>
             <Route path="/" component={Home} />
             <Route path="/photo-quest" component={PhotoQuestPage} />
+            <Route path="/challenge/:id" component={ChallengePage} />
             <Route path="/gallery" component={GalleryPage} />
             <Route path="/details" component={DetailsPage} />
           </>
