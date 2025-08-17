@@ -202,7 +202,7 @@ export default function PhotoQuest() {
                     </div>
                     <Progress value={progress} className="w-full h-2 mb-3" />
                     <div className="text-xs text-charcoal/60 text-center font-light">
-                      {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte 1 ověřenou fotku pro splnění"}
+                      {isQuestCompleted(quest.id) ? "🎉 Úkol dokončen! Každou výzvu lze splnit jen jednou." : "Nahrajte fotku, která bude schválena AI pro splnění úkolu"}
                     </div>
                   </div>
 

@@ -151,22 +151,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiAnalysis,
       });
 
-      // Update quest progress if questId provided and photo is verified
-      if (validatedData.questId && isVerified) {
+      // Update quest progress if questId provided
+      if (validatedData.questId) {
         const progress = await storage.getOrCreateQuestProgress(validatedData.questId, validatedData.uploaderName);
         
-        // Check if quest is already completed
-        if (progress.isCompleted) {
-          return res.status(400).json({ 
-            message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou." 
-          });
+        if (isVerified) {
+          // Check if quest is already completed
+          if (progress.isCompleted) {
+            return res.status(400).json({ 
+              message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou." 
+            });
+          }
+          
+          // For quest challenges, mark as completed when photo is verified by AI
+          await storage.updateQuestProgress(progress.id, 1, true);
+          console.log(`Quest completed with AI-verified photo`);
+        } else {
+          // Photo not verified - increment photos uploaded but don't complete quest
+          const newPhotosCount = progress.photosUploaded + 1;
+          await storage.updateQuestProgress(progress.id, newPhotosCount, false);
+          console.log(`Photo uploaded but not verified - quest still in progress (${newPhotosCount} photos uploaded)`);
         }
-        
-        // For quest challenges, mark as completed immediately after first verified photo
-        await storage.updateQuestProgress(progress.id, 1, true);
-        console.log(`Quest completed with verified photo`);
-      } else if (validatedData.questId && !isVerified) {
-        console.log('Photo not verified - quest progress not updated');
       }
 
       res.json(photo);
