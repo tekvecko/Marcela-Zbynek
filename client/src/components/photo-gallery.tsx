@@ -13,6 +13,7 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import GlassButton from "@/components/ui/glass-button";
 import type { UploadedPhoto } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
+import HelpTooltip from "@/components/ui/help-tooltip";
 
 export default function PhotoGallery() {
   const [uploaderName, setUploaderName] = useState("");
@@ -169,7 +170,13 @@ export default function PhotoGallery() {
         {/* Photo upload section */}
         <Card className="bg-gradient-to-r from-blush to-cream rounded-3xl mb-12">
           <CardContent className="p-8 text-center">
-            <h3 className="font-display text-2xl font-bold text-charcoal mb-4">Nahrajte své fotky</h3>
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <h3 className="font-display text-2xl font-bold text-charcoal">Nahrajte své fotky</h3>
+              <HelpTooltip 
+                content="Nahrajte svoje nejkrásnější fotky ze svatby. Fotky budou automaticky analyzovány AI a ostatní hosté je mohou ohodnotit lajky." 
+                side="bottom"
+              />
+            </div>
             <p className="text-charcoal/70 mb-6">Sdílejte s námi své vzpomínky z naší svatby</p>
 
             <Dialog>
@@ -262,7 +269,13 @@ export default function PhotoGallery() {
 
         {/* Voter name input */}
         <div className="mb-8 max-w-md mx-auto">
-          <Label htmlFor="voterName">Vaše jméno (pro hodnocení fotek)</Label>
+          <div className="flex items-center gap-2 mb-2">
+            <Label htmlFor="voterName">Vaše jméno (pro hodnocení fotek)</Label>
+            <HelpTooltip 
+              content="Zadejte své jméno abychom mohli rozlišit jednotlivé hlasy při hodnocení fotek. Každý může hlasovat pouze jednou pro každou fotku." 
+              side="right"
+            />
+          </div>
           <Input
             id="voterName"
             value={voterName}
@@ -294,22 +307,36 @@ export default function PhotoGallery() {
                     {/* AI Verification Badge */}
                     {photo.isVerified && (
                       <div className="absolute top-2 left-2">
-                        <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg">
-                          <span>✓</span>
-                          <span>AI Ověřeno</span>
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg cursor-help">
+                              <span>✓</span>
+                              <span>AI Ověřeno</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Fotka byla automaticky ověřena umělou inteligencí</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     )}
 
                     {/* Verification Score Badge */}
                     {photo.verificationScore && photo.verificationScore > 0 && (
                       <div className="absolute top-2 right-2">
-                        <div className={`text-white text-xs px-2 py-1 rounded-full shadow-lg ${
-                          photo.verificationScore >= 80 ? 'bg-green-500' :
-                          photo.verificationScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`}>
-                          {photo.verificationScore}%
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className={`text-white text-xs px-2 py-1 rounded-full shadow-lg cursor-help ${
+                              photo.verificationScore >= 80 ? 'bg-green-500' :
+                              photo.verificationScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}>
+                              {photo.verificationScore}%
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>AI spolehlivost: {photo.verificationScore >= 80 ? 'Vysoká' : photo.verificationScore >= 60 ? 'Střední' : 'Nízká'}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     )}
 
