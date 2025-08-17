@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
 interface GlassButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "accent";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
 }
@@ -15,7 +15,8 @@ const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
       primary: "bg-white/20 hover:bg-white/30 text-charcoal hover:text-charcoal/80 shadow-[0_8px_32px_rgba(31,38,135,0.37)]",
       secondary: "bg-white/15 hover:bg-white/25 text-charcoal/80 hover:text-charcoal shadow-[0_4px_16px_rgba(31,38,135,0.25)]",
       outline: "bg-white/10 hover:bg-white/20 text-charcoal/70 hover:text-charcoal border-charcoal/20 hover:border-charcoal/30",
-      ghost: "bg-white/5 hover:bg-white/15 text-charcoal/60 hover:text-charcoal/80 shadow-[0_2px_8px_rgba(31,38,135,0.15)]"
+      ghost: "bg-white/5 hover:bg-white/15 text-charcoal/60 hover:text-charcoal/80 shadow-[0_2px_8px_rgba(31,38,135,0.15)]",
+      accent: "bg-sage/20 hover:bg-sage/30 text-charcoal hover:text-charcoal/80 shadow-[0_8px_32px_rgba(135,160,121,0.37)]"
     };
     
     const sizes = {
