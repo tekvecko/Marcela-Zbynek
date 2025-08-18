@@ -201,9 +201,9 @@ export default function ChallengePage() {
 
       // Smooth scroll to upload button after file selection
       setTimeout(() => {
-        uploadButtonRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
+        uploadButtonRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
         });
       }, 300);
     }
@@ -232,9 +232,9 @@ export default function ChallengePage() {
 
     // Scroll to upload progress when analysis starts
     setTimeout(() => {
-      uploadProgressRef.current?.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center' 
+      uploadProgressRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
       });
     }, 500);
 
@@ -464,8 +464,8 @@ export default function ChallengePage() {
                   variant="primary"
                   size="lg"
                   className={`w-full transition-all duration-300 ${
-                    selectedFile && uploadStage === 'idle' 
-                      ? 'animate-pulse ring-4 ring-romantic/30 shadow-lg shadow-romantic/30' 
+                    selectedFile && uploadStage === 'idle'
+                      ? 'animate-pulse ring-4 ring-romantic/30 shadow-lg shadow-romantic/30'
                       : ''
                   }`}
                 >

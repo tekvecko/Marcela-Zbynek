@@ -7,6 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 import GlassButton from "@/components/ui/glass-button";
 import type { QuestChallenge } from "@shared/schema";
 
+// Helper function to get display name from email
+const getDisplayName = (email: string) => {
+  // Extract first part of email as fallback display name
+  return email.split('@')[0];
+};
+
 // Import wedding photos for decoration
 import landscapePhoto from "../assets/IMG-20240620-WA0008.jpg";
 import coupleEventPhoto from "../assets/IMG-20250707-WA0006.jpg";
@@ -75,7 +81,7 @@ export default function PhotoQuest() {
   const isQuestCompleted = (questId: string) => {
     return questProgress.some((progress: any) => 
       progress.questId === questId && 
-      progress.participantName === (user?.firstName || user?.given_name || user?.email) &&
+      progress.participantName === user?.email &&
       progress.isCompleted
     );
   };
@@ -296,7 +302,7 @@ export default function PhotoQuest() {
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-semibold text-charcoal text-lg">{entry.participantName}</p>
+                      <p className="font-semibold text-charcoal text-lg">{getDisplayName(entry.participantName)}</p>
                       <p className="text-charcoal/60 font-light">{entry.completedQuests} splněných úkolů</p>
                     </div>
                   </div>

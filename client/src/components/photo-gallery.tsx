@@ -17,6 +17,20 @@ import type { UploadedPhoto } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
 
+// Helper function to get display name from email
+const getDisplayName = (email: string) => {
+  // Extract first part of email as fallback display name
+  return email.split('@')[0];
+};
+
+// Helper function to get profile image or generate initials
+const getProfileImage = (email: string, profileUrl?: string) => {
+  if (profileUrl) return profileUrl;
+  // Generate initials from email
+  const name = getDisplayName(email);
+  return name.charAt(0).toUpperCase();
+};
+
 export default function PhotoGallery() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -357,10 +371,10 @@ export default function PhotoGallery() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">
-                              {photo.uploaderName.charAt(0).toUpperCase()}
+                              {getProfileImage(photo.uploaderName)}
                             </div>
                             <span className="text-sm font-medium">
-                              {photo.uploaderName}
+                              {getDisplayName(photo.uploaderName)}
                             </span>
                           </div>
                           <button
@@ -471,10 +485,10 @@ export default function PhotoGallery() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-lg font-bold">
-                          {selectedPhoto.uploaderName.charAt(0).toUpperCase()}
+                          {getProfileImage(selectedPhoto.uploaderName)}
                         </div>
                         <div>
-                          <h3 className="text-xl font-semibold">{selectedPhoto.uploaderName}</h3>
+                          <h3 className="text-xl font-semibold">{getDisplayName(selectedPhoto.uploaderName)}</h3>
                           <p className="text-white/80 text-sm">
                             {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
                               day: 'numeric',
