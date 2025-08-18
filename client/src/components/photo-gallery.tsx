@@ -355,9 +355,14 @@ export default function PhotoGallery() {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-xl">
                       <div className="text-white space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {photo.uploaderName}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">
+                              {photo.uploaderName.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium">
+                              {photo.uploaderName}
+                            </span>
+                          </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -464,17 +469,22 @@ export default function PhotoGallery() {
                 } p-6`}>
                   <div className="text-white space-y-4">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold">{selectedPhoto.uploaderName}</h3>
-                        <p className="text-white/80 text-sm">
-                          {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-lg font-bold">
+                          {selectedPhoto.uploaderName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold">{selectedPhoto.uploaderName}</h3>
+                          <p className="text-white/80 text-sm">
+                            {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center space-x-4">
                         <GlassButton

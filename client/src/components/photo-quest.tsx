@@ -75,7 +75,7 @@ export default function PhotoQuest() {
   const isQuestCompleted = (questId: string) => {
     return questProgress.some((progress: any) => 
       progress.questId === questId && 
-      progress.participantName === user?.email &&
+      progress.participantName === (user?.firstName || user?.given_name || user?.email) &&
       progress.isCompleted
     );
   };
