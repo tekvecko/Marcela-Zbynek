@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, Heart, Eye, Shield, AlertTriangle } from "lucide-react";
+import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, Heart, Eye, Shield, AlertTriangle, CheckSquare, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -40,6 +41,10 @@ export default function AdminPage() {
   const { isAdmin, isLoading: adminLoading, canAccessAdmin } = useAdmin();
   const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // Bulk selection states
+  const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
   // Show loading while checking admin status
   if (adminLoading) {
@@ -151,6 +156,46 @@ export default function AdminPage() {
     },
   });
 
+  const bulkDeletePhotosMutation = useMutation({
+    mutationFn: (photoIds: string[]) =>
+      apiRequest("/api/admin/photos/bulk-delete", { method: "POST", body: { photoIds } }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      setSelectedPhotos([]);
+      toast({ 
+        title: "Hromadné mazání dokončeno", 
+        description: data.message 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Chyba", 
+        description: error.message || "Nepodařilo se smazat fotky",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const bulkDeleteChallengesMutation = useMutation({
+    mutationFn: (challengeIds: string[]) =>
+      apiRequest("/api/admin/challenges/bulk-delete", { method: "POST", body: { challengeIds } }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      setSelectedChallenges([]);
+      toast({ 
+        title: "Hromadné mazání dokončeno", 
+        description: data.message 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Chyba", 
+        description: error.message || "Nepodařilo se smazat výzvy",
+        variant: "destructive"
+      });
+    },
+  });
+
   // Handle form submission
   const onSubmit = (data: ChallengeFormData) => {
     if (editingChallenge) {
@@ -178,6 +223,55 @@ export default function AdminPage() {
     setIsDialogOpen(true);
   };
 
+  // Bulk selection handlers
+  const toggleChallengeSelection = (id: string) => {
+    setSelectedChallenges(prev => 
+      prev.includes(id) 
+        ? prev.filter(x => x !== id)
+        : [...prev, id]
+    );
+  };
+
+  const togglePhotoSelection = (id: string) => {
+    setSelectedPhotos(prev => 
+      prev.includes(id) 
+        ? prev.filter(x => x !== id)
+        : [...prev, id]
+    );
+  };
+
+  const selectAllChallenges = () => {
+    setSelectedChallenges(challenges.map(c => c.id));
+  };
+
+  const clearChallengeSelection = () => {
+    setSelectedChallenges([]);
+  };
+
+  const selectAllPhotos = () => {
+    setSelectedPhotos(photos.map(p => p.id));
+  };
+
+  const clearPhotoSelection = () => {
+    setSelectedPhotos([]);
+  };
+
+  const handleBulkDeleteChallenges = () => {
+    if (selectedChallenges.length === 0) return;
+    
+    if (confirm(`Opravdu chcete smazat ${selectedChallenges.length} výzev?`)) {
+      bulkDeleteChallengesMutation.mutate(selectedChallenges);
+    }
+  };
+
+  const handleBulkDeletePhotos = () => {
+    if (selectedPhotos.length === 0) return;
+    
+    if (confirm(`Opravdu chcete smazat ${selectedPhotos.length} fotek?`)) {
+      bulkDeletePhotosMutation.mutate(selectedPhotos);
+    }
+  };
+
   // Statistics
   const stats = {
     totalChallenges: challenges.length,
@@ -201,7 +295,7 @@ export default function AdminPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
           <Card data-testid="card-stat-challenges">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Výzvy</CardTitle>
@@ -403,54 +497,111 @@ export default function AdminPage() {
                 {challengesLoading ? (
                   <div className="text-center py-8">Načítání výzev...</div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Název</TableHead>
-                        <TableHead>Popis</TableHead>
-                        <TableHead>Fotky/Body</TableHead>
-                        <TableHead>Stav</TableHead>
-                        <TableHead>Akce</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {challenges.map((challenge) => (
-                        <TableRow key={challenge.id} data-testid={`row-challenge-${challenge.id}`}>
-                          <TableCell className="font-medium">{challenge.title}</TableCell>
-                          <TableCell className="max-w-xs truncate">{challenge.description}</TableCell>
-                          <TableCell>
-                            {challenge.targetPhotos} / {challenge.points}b
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={challenge.isActive ? "default" : "secondary"}>
-                              {challenge.isActive ? "Aktivní" : "Neaktivní"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(challenge)}
-                                data-testid={`button-edit-${challenge.id}`}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => deleteChallengeMutation.mutate(challenge.id)}
-                                disabled={deleteChallengeMutation.isPending}
-                                data-testid={`button-delete-${challenge.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-4">
+                    {/* Bulk actions toolbar */}
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-4">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedChallenges.length === challenges.length && challenges.length > 0}
+                          onCheckedChange={(checked) => 
+                            checked ? selectAllChallenges() : clearChallengeSelection()
+                          }
+                          data-testid="checkbox-select-all-challenges"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {selectedChallenges.length > 0 
+                            ? `Vybráno: ${selectedChallenges.length}` 
+                            : 'Vybrat vše'
+                          }
+                        </span>
+                      </div>
+                      
+                      {selectedChallenges.length > 0 && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearChallengeSelection}
+                            data-testid="button-clear-selection"
+                          >
+                            Zrušit výběr
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleBulkDeleteChallenges}
+                            disabled={bulkDeleteChallengesMutation.isPending}
+                            data-testid="button-bulk-delete-challenges"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Smazat vybrané ({selectedChallenges.length})
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Responsive table */}
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12"></TableHead>
+                            <TableHead>Název</TableHead>
+                            <TableHead className="hidden md:table-cell">Popis</TableHead>
+                            <TableHead className="hidden sm:table-cell">Fotky/Body</TableHead>
+                            <TableHead>Stav</TableHead>
+                            <TableHead>Akce</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {challenges.map((challenge) => (
+                            <TableRow key={challenge.id} data-testid={`row-challenge-${challenge.id}`}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedChallenges.includes(challenge.id)}
+                                  onCheckedChange={() => toggleChallengeSelection(challenge.id)}
+                                  data-testid={`checkbox-challenge-${challenge.id}`}
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">{challenge.title}</TableCell>
+                              <TableCell className="hidden md:table-cell max-w-xs truncate">
+                                {challenge.description}
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                {challenge.targetPhotos} / {challenge.points}b
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={challenge.isActive ? "default" : "secondary"}>
+                                  {challenge.isActive ? "Aktivní" : "Neaktivní"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(challenge)}
+                                    data-testid={`button-edit-${challenge.id}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => deleteChallengeMutation.mutate(challenge.id)}
+                                    disabled={deleteChallengeMutation.isPending}
+                                    data-testid={`button-delete-${challenge.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -469,95 +620,150 @@ export default function AdminPage() {
                 {photosLoading ? (
                   <div className="text-center py-8">Načítání fotek...</div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Náhled</TableHead>
-                        <TableHead>Nahráno od</TableHead>
-                        <TableHead>Výzva</TableHead>
-                        <TableHead>Ověření</TableHead>
-                        <TableHead>Srdíčka</TableHead>
-                        <TableHead>Datum</TableHead>
-                        <TableHead>Akce</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {photos.map((photo) => (
-                        <TableRow key={photo.id} data-testid={`row-photo-${photo.id}`}>
-                          <TableCell>
-                            <img
-                              src={`/api/photos/${photo.filename}`}
-                              alt="Náhled"
-                              className="w-16 h-16 object-cover rounded"
-                              data-testid={`img-photo-${photo.id}`}
-                            />
-                          </TableCell>
-                          <TableCell>{photo.uploaderName}</TableCell>
-                          <TableCell>
-                            {photo.questId ? (
-                              <Badge variant="outline">
-                                {challenges.find(c => c.id === photo.questId)?.title || "Neznámá výzva"}
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">Galerie</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {photo.isVerified ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <XCircle className="h-4 w-4 text-red-500" />
-                              )}
-                              <span className="text-sm">
-                                {photo.verificationScore}%
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Heart className="h-4 w-4" />
-                              {photo.likes}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {format(new Date(photo.createdAt), "d.M.yyyy HH:mm", { locale: cs })}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => 
-                                  togglePhotoVerificationMutation.mutate({
-                                    id: photo.id,
-                                    isVerified: !photo.isVerified
-                                  })
-                                }
-                                disabled={togglePhotoVerificationMutation.isPending}
-                                data-testid={`button-verify-${photo.id}`}
-                              >
-                                {photo.isVerified ? (
-                                  <XCircle className="h-4 w-4" />
+                  <div className="space-y-4">
+                    {/* Bulk actions toolbar */}
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-4">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedPhotos.length === photos.length && photos.length > 0}
+                          onCheckedChange={(checked) => 
+                            checked ? selectAllPhotos() : clearPhotoSelection()
+                          }
+                          data-testid="checkbox-select-all-photos"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {selectedPhotos.length > 0 
+                            ? `Vybráno: ${selectedPhotos.length}` 
+                            : 'Vybrat vše'
+                          }
+                        </span>
+                      </div>
+                      
+                      {selectedPhotos.length > 0 && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearPhotoSelection}
+                            data-testid="button-clear-photo-selection"
+                          >
+                            Zrušit výběr
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleBulkDeletePhotos}
+                            disabled={bulkDeletePhotosMutation.isPending}
+                            data-testid="button-bulk-delete-photos"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Smazat vybrané ({selectedPhotos.length})
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Responsive table */}
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12"></TableHead>
+                            <TableHead>Náhled</TableHead>
+                            <TableHead className="hidden md:table-cell">Od</TableHead>
+                            <TableHead className="hidden lg:table-cell">Výzva</TableHead>
+                            <TableHead>Ověření</TableHead>
+                            <TableHead className="hidden sm:table-cell">Srdíčka</TableHead>
+                            <TableHead className="hidden lg:table-cell">Datum</TableHead>
+                            <TableHead>Akce</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {photos.map((photo) => (
+                            <TableRow key={photo.id} data-testid={`row-photo-${photo.id}`}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedPhotos.includes(photo.id)}
+                                  onCheckedChange={() => togglePhotoSelection(photo.id)}
+                                  data-testid={`checkbox-photo-${photo.id}`}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <img
+                                  src={`/api/photos/${photo.filename}`}
+                                  alt="Náhled"
+                                  className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
+                                  data-testid={`img-photo-${photo.id}`}
+                                />
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">{photo.uploaderName}</TableCell>
+                              <TableCell className="hidden lg:table-cell">
+                                {photo.questId ? (
+                                  <Badge variant="outline">
+                                    {challenges.find(c => c.id === photo.questId)?.title || "Neznámá výzva"}
+                                  </Badge>
                                 ) : (
-                                  <CheckCircle className="h-4 w-4" />
+                                  <Badge variant="secondary">Galerie</Badge>
                                 )}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => deletePhotoMutation.mutate(photo.id)}
-                                disabled={deletePhotoMutation.isPending}
-                                data-testid={`button-delete-photo-${photo.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  {photo.isVerified ? (
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-red-500" />
+                                  )}
+                                  <span className="text-sm hidden sm:inline">
+                                    {photo.verificationScore}%
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <div className="flex items-center gap-1">
+                                  <Heart className="h-4 w-4" />
+                                  {photo.likes}
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell">
+                                {format(new Date(photo.createdAt), "d.M.yyyy HH:mm", { locale: cs })}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => 
+                                      togglePhotoVerificationMutation.mutate({
+                                        id: photo.id,
+                                        isVerified: !photo.isVerified
+                                      })
+                                    }
+                                    disabled={togglePhotoVerificationMutation.isPending}
+                                    data-testid={`button-verify-${photo.id}`}
+                                  >
+                                    {photo.isVerified ? (
+                                      <XCircle className="h-4 w-4" />
+                                    ) : (
+                                      <CheckCircle className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => deletePhotoMutation.mutate(photo.id)}
+                                    disabled={deletePhotoMutation.isPending}
+                                    data-testid={`button-delete-photo-${photo.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
