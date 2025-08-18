@@ -17,6 +17,8 @@ export async function apiRequest(
     method,
     headers: {
       "Content-Type": "application/json",
+      "X-App-Name": "Marcela ❤️ Zbyněk",
+      "User-Agent": "Marcela ❤️ Zbyněk Wedding App",
       ...fetchOptions.headers,
     },
     credentials: "include",
