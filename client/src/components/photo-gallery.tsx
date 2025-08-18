@@ -313,15 +313,18 @@ export default function PhotoGallery() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {photos.map((photo) => (
-              <Card key={photo.id} className="group relative overflow-hidden rounded-2xl aspect-square cursor-pointer hover:scale-105 transition-transform duration-300">
+              <Card 
+                key={photo.id} 
+                className="group relative overflow-hidden rounded-2xl aspect-square cursor-pointer hover:scale-105 transition-transform duration-300"
+                onClick={() => setSelectedPhoto(photo)}
+              >
                 <CardContent className="p-0">
                   <img
                     src={`/api/photos/${photo.filename}`}
                     alt={`Nahrál ${photo.uploaderName}`}
-                    className="w-full h-full object-cover"
-                    onClick={() => setSelectedPhoto(photo)}
+                    className="w-full h-full object-cover pointer-events-none"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl pointer-events-none">
                     {/* AI Verification Badge */}
                     {photo.aiVerified && (
                       <div className="absolute top-2 left-2">
