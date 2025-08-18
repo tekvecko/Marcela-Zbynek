@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import type { User as UserType } from "@shared/schema";
 
@@ -9,6 +10,7 @@ export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { canAccessAdmin } = useAdmin();
   const typedUser = user as UserType;
 
   return (
@@ -45,12 +47,14 @@ export default function Navigation() {
             >
               Detaily
             </Link>
-            <Link 
-              href="/admin" 
-              className={`transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Admin
-            </Link>
+            {canAccessAdmin && (
+              <Link 
+                href="/admin" 
+                className={`transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+              >
+                Admin
+              </Link>
+            )}
             
             {isAuthenticated && typedUser && (
               <div className="flex items-center space-x-4 border-l border-blush pl-4">
@@ -124,13 +128,15 @@ export default function Navigation() {
               >
                 Detaily
               </Link>
-              <Link 
-                href="/admin"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Admin
-              </Link>
+              {canAccessAdmin && (
+                <Link 
+                  href="/admin"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`text-left transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+                >
+                  Admin
+                </Link>
+              )}
               
               {isAuthenticated && typedUser && (
                 <div className="pt-4 border-t border-blush">

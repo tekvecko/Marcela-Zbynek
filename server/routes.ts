@@ -428,14 +428,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Routes
-  // Check if user is admin (for now, just check if authenticated - in production add proper admin role check)
-  const isAdmin = (req: any, res: any, next: any) => {
+  // Check if user is admin
+  const isAdmin = async (req: any, res: any, next: any) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Neautorizovaný přístup" });
     }
-    // For now, all authenticated users can access admin - in production add role check
-    next();
+    
+    try {
+      // Get user from database to check admin status
+      const user = await storage.getUserByEmail(req.user.email);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ message: "Přístup povolen pouze administrátorům" });
+      }
+      next();
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return res.status(500).json({ message: "Chyba při ověřování oprávnění" });
+    }
   };
+
+  // Check admin status
+  app.get("/api/admin/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUserByEmail(req.user.email);
+      res.json({ isAdmin: user?.isAdmin || false });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check admin status" });
+    }
+  });
 
   // Get all quest progress for admin
   app.get("/api/quest-progress", isAuthenticated, async (req, res) => {
