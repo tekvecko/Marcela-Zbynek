@@ -240,7 +240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos", async (req, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
-      res.json(photos);
+      // Sort photos by creation date descending (newest first)
+      const sortedPhotos = photos.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      res.json(sortedPhotos);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch photos" });
     }
