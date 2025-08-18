@@ -154,7 +154,7 @@ export default function ChallengePage() {
     onSuccess: (data) => {
       setAnalysisResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
-      
+
       if (data.isVerified) {
         toast({
           title: "🎉 Úkol splněn!",
@@ -198,7 +198,7 @@ export default function ChallengePage() {
       setAnalysisResult(null);
       setUploadStage('idle');
       setUploadProgress(0);
-      
+
       // Smooth scroll to upload button after file selection
       setTimeout(() => {
         uploadButtonRef.current?.scrollIntoView({ 
@@ -264,6 +264,12 @@ export default function ChallengePage() {
 
   const isCompleted = isQuestCompleted(challenge.id);
   const progress = getProgressForQuest(challenge.id);
+
+  // Dummy userProgress for example, replace with actual data fetching if available
+  const userProgress = questProgress.find((p: any) =>
+    p.questId === challenge.id && p.participantName === user?.email
+  ) || { completedPhotos: 0 };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love">
