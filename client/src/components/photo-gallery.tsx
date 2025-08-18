@@ -17,18 +17,24 @@ import type { UploadedPhoto } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
 
-// Helper function to get display name from email
-const getDisplayName = (email: string) => {
-  // Extract first part of email as fallback display name
-  return email.split('@')[0];
+// Helper function to get display name - use firstName from user data or fallback to email
+const getDisplayName = (uploaderEmail: string, users?: Record<string, any>) => {
+  if (users?.[uploaderEmail]?.firstName) {
+    return users[uploaderEmail].firstName;
+  }
+  // Fallback to email part before @
+  return uploaderEmail.split('@')[0];
 };
 
 // Helper function to get profile image or generate initials
-const getProfileImage = (email: string, profileUrl?: string) => {
-  if (profileUrl) return profileUrl;
-  // Generate initials from email
-  const name = getDisplayName(email);
-  return name.charAt(0).toUpperCase();
+const getProfileImage = (uploaderEmail: string, users?: Record<string, any>) => {
+  const userData = users?.[uploaderEmail];
+  if (userData?.profileImageUrl) {
+    return userData.profileImageUrl;
+  }
+  // Generate initials from firstName or email
+  const displayName = userData?.firstName || uploaderEmail.split('@')[0];
+  return displayName.charAt(0).toUpperCase();
 };
 
 export default function PhotoGallery() {
@@ -72,6 +78,30 @@ export default function PhotoGallery() {
 
   const { data: photos = [], isLoading } = useQuery<UploadedPhoto[]>({
     queryKey: ["/api/photos"],
+  });
+
+  // Fetch user data for all photo uploaders
+  const uploaderEmails = [...new Set(photos.map(photo => photo.uploaderName))];
+  const { data: users = {} } = useQuery({
+    queryKey: ["/api/users/batch", uploaderEmails],
+    queryFn: async () => {
+      if (uploaderEmails.length === 0) return {};
+      
+      const userPromises = uploaderEmails.map(async (email) => {
+        try {
+          const response = await apiRequest('GET', `/api/users/${encodeURIComponent(email)}`, {});
+          const userData = await response.json();
+          return [email, userData];
+        } catch (error) {
+          console.error(`Failed to fetch user data for ${email}:`, error);
+          return [email, null];
+        }
+      });
+      
+      const userResults = await Promise.all(userPromises);
+      return Object.fromEntries(userResults.filter(([_, userData]) => userData !== null));
+    },
+    enabled: uploaderEmails.length > 0,
   });
 
   const uploadPhotoMutation = useMutation({
@@ -373,11 +403,19 @@ export default function PhotoGallery() {
                       <div className="text-white space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">
-                              {getProfileImage(photo.uploaderName)}
+                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs overflow-hidden">
+                              {users[photo.uploaderName]?.profileImageUrl ? (
+                                <img 
+                                  src={users[photo.uploaderName].profileImageUrl} 
+                                  alt={getDisplayName(photo.uploaderName, users)}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : (
+                                getProfileImage(photo.uploaderName, users)
+                              )}
                             </div>
                             <span className="text-sm font-medium">
-                              {getDisplayName(photo.uploaderName)}
+                              {getDisplayName(photo.uploaderName, users)}
                             </span>
                           </div>
                           <button
@@ -437,10 +475,10 @@ export default function PhotoGallery() {
             >
               {/* Hidden accessibility elements */}
               <DialogTitle className="sr-only">
-                Fotka od {getDisplayName(selectedPhoto.uploaderName)}
+                Fotka od {getDisplayName(selectedPhoto.uploaderName, users)}
               </DialogTitle>
               <div id="photo-description" className="sr-only">
-                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName)} dne {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')}
+                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName, users)} dne {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')}
                 {selectedPhoto.aiAnalysis && `. AI popis: ${selectedPhoto.aiAnalysis}`}
               </div>
               <div className="relative h-full flex flex-col">
@@ -502,11 +540,19 @@ export default function PhotoGallery() {
                   <div className="text-white space-y-3 sm:space-y-4">
                     <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-lg font-bold flex-shrink-0">
-                          {getProfileImage(selectedPhoto.uploaderName)}
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-lg font-bold flex-shrink-0 overflow-hidden">
+                          {users[selectedPhoto.uploaderName]?.profileImageUrl ? (
+                            <img 
+                              src={users[selectedPhoto.uploaderName].profileImageUrl} 
+                              alt={getDisplayName(selectedPhoto.uploaderName, users)}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            getProfileImage(selectedPhoto.uploaderName, users)
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-xl font-semibold truncate">{getDisplayName(selectedPhoto.uploaderName)}</h3>
+                          <h3 className="text-base sm:text-xl font-semibold truncate">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
                           <p className="text-white/80 text-xs sm:text-sm">
                             {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
                               day: 'numeric',
