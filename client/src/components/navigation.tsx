@@ -45,6 +45,12 @@ export default function Navigation() {
             >
               Detaily
             </Link>
+            <Link 
+              href="/admin" 
+              className={`transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+            >
+              Admin
+            </Link>
             
             {isAuthenticated && typedUser && (
               <div className="flex items-center space-x-4 border-l border-blush pl-4">
@@ -117,6 +123,13 @@ export default function Navigation() {
                 className={`text-left transition-colors ${location === '/details' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
                 Detaily
+              </Link>
+              <Link 
+                href="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+              >
+                Admin
               </Link>
               
               {isAuthenticated && typedUser && (

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupGoogleAuth, isAuthenticated } from "./googleAuth";
 import { z } from "zod";
+import { insertQuestChallengeSchema } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -423,6 +424,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(leaderboard);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Admin Routes
+  // Check if user is admin (for now, just check if authenticated - in production add proper admin role check)
+  const isAdmin = (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    // For now, all authenticated users can access admin - in production add role check
+    next();
+  };
+
+  // Get all quest progress for admin
+  app.get("/api/quest-progress", isAuthenticated, async (req, res) => {
+    try {
+      const progress = await storage.getQuestProgress();
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch quest progress" });
+    }
+  });
+
+  // Admin: Create new challenge
+  app.post("/api/admin/challenges", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertQuestChallengeSchema.parse(req.body);
+      const challenge = await storage.createQuestChallenge(validatedData);
+      res.json(challenge);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Failed to create challenge" });
+    }
+  });
+
+  // Admin: Update challenge
+  app.put("/api/admin/challenges/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertQuestChallengeSchema.parse(req.body);
+      const challenge = await storage.updateQuestChallenge(id, validatedData);
+      
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      
+      res.json(challenge);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Failed to update challenge" });
+    }
+  });
+
+  // Admin: Delete challenge
+  app.delete("/api/admin/challenges/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteQuestChallenge(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      
+      res.json({ message: "Challenge deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete challenge" });
+    }
+  });
+
+  // Admin: Delete photo
+  app.delete("/api/admin/photos/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const photo = await storage.getUploadedPhoto(id);
+      
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+      
+      // Delete file from filesystem
+      const filePath = path.join(uploadDir, photo.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      
+      // Delete from database
+      const success = await storage.deleteUploadedPhoto(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+      
+      res.json({ message: "Photo deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete photo" });
+    }
+  });
+
+  // Admin: Toggle photo verification
+  app.post("/api/admin/photos/:id/verify", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isVerified } = req.body;
+      
+      if (typeof isVerified !== 'boolean') {
+        return res.status(400).json({ message: "isVerified must be a boolean" });
+      }
+      
+      const photo = await storage.updatePhotoVerification(id, isVerified);
+      
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+      
+      res.json(photo);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update photo verification" });
     }
   });
 

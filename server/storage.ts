@@ -28,12 +28,16 @@ export interface IStorage {
   getQuestChallenges(): Promise<QuestChallenge[]>;
   getQuestChallenge(id: string): Promise<QuestChallenge | undefined>;
   createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge>;
+  updateQuestChallenge(id: string, challenge: InsertQuestChallenge): Promise<QuestChallenge | undefined>;
+  deleteQuestChallenge(id: string): Promise<boolean>;
 
   getUploadedPhotos(): Promise<UploadedPhoto[]>;
   getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined>;
   getPhotosByQuestId(questId: string): Promise<UploadedPhoto[]>;
   createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto>;
   updatePhotoLikes(id: string, likes: number): Promise<UploadedPhoto | undefined>;
+  updatePhotoVerification(id: string, isVerified: boolean): Promise<UploadedPhoto | undefined>;
+  deleteUploadedPhoto(id: string): Promise<boolean>;
 
   getPhotoLikes(photoId: string): Promise<PhotoLike[]>;
   createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike>;
@@ -310,6 +314,27 @@ export class MemStorage implements IStorage {
     return questChallenge;
   }
 
+  async updateQuestChallenge(id: string, challenge: InsertQuestChallenge): Promise<QuestChallenge | undefined> {
+    const existingChallenge = this.questChallenges.get(id);
+    if (existingChallenge) {
+      const updatedChallenge: QuestChallenge = {
+        ...existingChallenge,
+        title: challenge.title,
+        description: challenge.description,
+        targetPhotos: challenge.targetPhotos ?? existingChallenge.targetPhotos,
+        points: challenge.points ?? existingChallenge.points,
+        isActive: challenge.isActive ?? existingChallenge.isActive,
+      };
+      this.questChallenges.set(id, updatedChallenge);
+      return updatedChallenge;
+    }
+    return undefined;
+  }
+
+  async deleteQuestChallenge(id: string): Promise<boolean> {
+    return this.questChallenges.delete(id);
+  }
+
   async getUploadedPhotos(): Promise<UploadedPhoto[]> {
     return Array.from(this.uploadedPhotos.values()).sort((a, b) =>
       b.createdAt.getTime() - a.createdAt.getTime()
@@ -354,6 +379,26 @@ export class MemStorage implements IStorage {
       return photo;
     }
     return undefined;
+  }
+
+  async updatePhotoVerification(id: string, isVerified: boolean): Promise<UploadedPhoto | undefined> {
+    const photo = this.uploadedPhotos.get(id);
+    if (photo) {
+      photo.isVerified = isVerified;
+      this.uploadedPhotos.set(id, photo);
+      return photo;
+    }
+    return undefined;
+  }
+
+  async deleteUploadedPhoto(id: string): Promise<boolean> {
+    // Also delete related likes
+    Array.from(this.photoLikes.entries()).forEach(([likeId, like]) => {
+      if (like.photoId === id) {
+        this.photoLikes.delete(likeId);
+      }
+    });
+    return this.uploadedPhotos.delete(id);
   }
 
   async getPhotoLikes(photoId: string): Promise<PhotoLike[]> {
@@ -512,6 +557,20 @@ export class DatabaseStorage implements IStorage {
   async createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge> {
     const [createdChallenge] = await db.insert(questChallenges).values(challenge).returning();
     return createdChallenge;
+  }
+
+  async updateQuestChallenge(id: string, challenge: InsertQuestChallenge): Promise<QuestChallenge | undefined> {
+    const [updatedChallenge] = await db
+      .update(questChallenges)
+      .set(challenge)
+      .where(eq(questChallenges.id, id))
+      .returning();
+    return updatedChallenge;
+  }
+
+  async deleteQuestChallenge(id: string): Promise<boolean> {
+    const result = await db.delete(questChallenges).where(eq(questChallenges.id, id));
+    return result.rowCount > 0;
   }
 
   private async initializeDefaultChallenges(): Promise<void> {
@@ -735,6 +794,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(uploadedPhotos.id, id))
       .returning();
     return updatedPhoto;
+  }
+
+  async updatePhotoVerification(id: string, isVerified: boolean): Promise<UploadedPhoto | undefined> {
+    const [updatedPhoto] = await db
+      .update(uploadedPhotos)
+      .set({ isVerified })
+      .where(eq(uploadedPhotos.id, id))
+      .returning();
+    return updatedPhoto;
+  }
+
+  async deleteUploadedPhoto(id: string): Promise<boolean> {
+    // Delete associated likes first
+    await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
+    
+    // Delete the photo
+    const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+    return result.rowCount > 0;
   }
 
   // Photo Like operations

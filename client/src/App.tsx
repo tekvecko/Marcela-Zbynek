@@ -9,6 +9,7 @@ import PhotoQuestPage from "@/pages/photo-quest";
 import ChallengePage from "@/pages/challenge";
 import GalleryPage from "@/pages/gallery";
 import DetailsPage from "@/pages/details";
+import AdminPage from "@/pages/admin";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -32,6 +33,7 @@ function Router() {
             <Route path="/challenge/:id" component={ChallengePage} />
             <Route path="/gallery" component={GalleryPage} />
             <Route path="/details" component={DetailsPage} />
+            <Route path="/admin" component={AdminPage} />
           </>
         )}
         <Route component={NotFound} />
