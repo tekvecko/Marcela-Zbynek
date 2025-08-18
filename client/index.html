@@ -17,14 +17,14 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then((registration) => {
-              console.log('SW registered: ', registration);
+              console.log('SW registered successfully:', registration.scope);
             })
             .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+              console.warn('SW registration failed:', registrationError.message);
             });
         });
       }

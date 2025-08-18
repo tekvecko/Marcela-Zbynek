@@ -51,7 +51,12 @@ export const uploadedPhotos = pgTable("uploaded_photos", {
   verificationScore: integer("verification_score").default(0), // 0-100
   aiAnalysis: text("ai_analysis"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
-});
+}, (table) => [
+  index("idx_photos_created_at").on(table.createdAt),
+  index("idx_photos_quest_id").on(table.questId),
+  index("idx_photos_uploader").on(table.uploaderName),
+  index("idx_photos_verified").on(table.isVerified),
+]);
 
 export const photoLikes = pgTable("photo_likes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -68,7 +73,11 @@ export const questProgress = pgTable("quest_progress", {
   isCompleted: boolean("is_completed").notNull().default(false),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
-});
+}, (table) => [
+  index("idx_progress_participant").on(table.participantName),
+  index("idx_progress_quest_participant").on(table.questId, table.participantName),
+  index("idx_progress_completed").on(table.isCompleted),
+]);
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
