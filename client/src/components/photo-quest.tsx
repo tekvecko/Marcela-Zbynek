@@ -104,7 +104,7 @@ export default function PhotoQuest() {
       {/* Hero Section */}
       <div className="text-center space-y-6 relative">
         <div className="absolute inset-0 bg-gradient-to-r from-romantic/5 to-love/5 rounded-3xl -z-10"></div>
-        
+
         {/* Wedding Photo Collage */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 opacity-20">
           <img src={landscapePhoto} alt="Wedding" className="w-full h-24 object-cover rounded-xl shadow-lg" />
@@ -118,12 +118,33 @@ export default function PhotoQuest() {
           <div className="w-24 h-24 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
             <Camera className="text-white drop-shadow-lg" size={32} />
           </div>
-          <h2 className="text-4xl sm:text-5xl font-display font-bold bg-gradient-to-r from-romantic to-love bg-clip-text text-transparent leading-tight mb-6">
-            Fotosoutěž
-          </h2>
-          <p className="text-xl text-charcoal/70 max-w-3xl mx-auto font-light leading-relaxed">
-            Zachyťte kouzelné momenty svatby a vyhrajte skvělé ceny! Každý úkol přináší body a nezapomenutelné vzpomínky.
-          </p>
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <h1 className="text-4xl md:text-5xl font-bold text-charcoal font-serif">
+                📸 Svatební Fotovýzvy
+              </h1>
+              <div className="group relative">
+                <div className="w-8 h-8 rounded-full bg-charcoal/10 flex items-center justify-center cursor-help">
+                  <span className="text-sm text-charcoal/60 font-bold">i</span>
+                </div>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-charcoal text-white text-sm rounded-md px-4 py-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 pointer-events-none z-50">
+                  <div className="text-center">
+                    <div className="font-medium mb-2">Jak fungují fotovýzvy:</div>
+                    <div className="text-xs space-y-1">
+                      <div>• Vyberte si výzvu a nahrajte fotky</div>
+                      <div>• AI automaticky ověří, zda fotka splňuje požadavky</div>
+                      <div>• Za dokončené výzvy získáte body</div>
+                      <div>• Sledujte spolehlivost AI hodnocení v %</div>
+                    </div>
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-charcoal rotate-45"></div>
+                </div>
+              </div>
+            </div>
+            <p className="text-xl text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
+              Zachyťte kouzelné okamžiky naší svatby a sbírejte body za splnění fotografických výzev!
+            </p>
+          </div>
         </div>
       </div>
 

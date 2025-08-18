@@ -45,7 +45,7 @@ export default function PhotoGallery() {
     if (selectedPhoto) {
       document.addEventListener('keydown', handleKeyDown);
       window.addEventListener('popstate', handlePopState);
-      
+
       // Přidání historie pro systémové tlačítko zpět
       window.history.pushState({ photoModal: true }, '');
     }
@@ -201,8 +201,8 @@ export default function PhotoGallery() {
           <CardContent className="p-8 text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
               <h3 className="font-display text-2xl font-bold text-charcoal">Nahrajte své fotky</h3>
-              <HelpTooltip 
-                content="Nahrajte svoje nejkrásnější fotky ze svatby. Fotky budou automaticky analyzovány AI a ostatní hosté je mohou ohodnotit lajky." 
+              <HelpTooltip
+                content="Nahrajte svoje nejkrásnější fotky ze svatby. Fotky budou automaticky analyzovány AI a ostatní hosté je mohou ohodnotit lajky."
                 side="bottom"
               />
             </div>
@@ -309,17 +309,24 @@ export default function PhotoGallery() {
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl">
                     {/* AI Verification Badge */}
-                    {photo.isVerified && (
+                    {photo.aiVerified && (
                       <div className="absolute top-2 left-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg cursor-help">
                               <span>✓</span>
                               <span>AI Ověřeno</span>
+                              <div className="ml-1 w-3 h-3 rounded-full bg-white/20 flex items-center justify-center">
+                                <span className="text-[8px] font-bold">i</span>
+                              </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Fotka byla automaticky ověřena umělou inteligencí</p>
+                            <div className="text-center">
+                              <div className="font-medium mb-1">AI Ověření:</div>
+                              <div className="text-xs">Fotka automaticky prošla kontrolou umělé inteligence</div>
+                              <div className="text-xs mt-1">a splňuje požadavky výzvy</div>
+                            </div>
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -393,7 +400,7 @@ export default function PhotoGallery() {
               setIsFullscreen(false);
             }
           }}>
-            <DialogContent 
+            <DialogContent
               className={`${
                 isFullscreen
                   ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
@@ -431,7 +438,7 @@ export default function PhotoGallery() {
                 </div>
 
                 {/* Photo Container - kliknutí na fotku ji nezavře */}
-                <div 
+                <div
                   className={`${isFullscreen ? 'flex-1' : 'max-h-[70vh]'} flex items-center justify-center p-4`}
                   onClick={(e) => e.stopPropagation()}
                 >
