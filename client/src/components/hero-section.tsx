@@ -30,32 +30,45 @@ export default function HeroSection() {
       </div>
       
       <div className="text-center z-10 px-4 w-full mx-auto">
-        {/* Wedding couple silhouette with parallax effect that slides under the page */}
+        {/* Fixed circular image that gets covered by page content */}
         <div 
-          className="relative mx-auto mb-8 overflow-hidden"
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0"
           style={{
             width: `${currentSize}vw`,
-            height: `${currentSize - scrollProgress * 20}vw`, // Gradually reduce height as user scrolls
+            height: `${currentSize}vw`,
             maxWidth: '90vw',
             maxHeight: '90vw',
-            clipPath: scrollY > 50 ? `inset(0 0 ${scrollProgress * 40}% 0)` : 'none', // Clip from bottom
           }}
         >
           <img 
             src={flowerArchPhoto} 
             alt="Marcela a Zbyněk pod květinovou branou" 
-            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square"
+            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square w-full h-full"
+          />
+          
+          {/* Gradient overlay that appears on scroll */}
+          <div 
+            className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-300"
             style={{
-              width: `${currentSize}vw`,
-              height: `${currentSize}vw`,
-              maxWidth: '90vw',
-              maxHeight: '90vw',
-              transform: `translateY(${scrollY * 0.3}px)`, // Parallax effect - moves slower than scroll
+              background: `radial-gradient(circle, transparent ${60 - scrollProgress * 40}%, rgba(255, 245, 235, ${scrollProgress * 0.8}) ${80 - scrollProgress * 20}%, rgba(255, 245, 235, ${Math.min(scrollProgress * 1.2, 1)}) 100%)`,
+              opacity: scrollY > 100 ? 1 : 0,
             }}
           />
         </div>
         
-        <div className="flex flex-col items-center">
+        {/* Spacer to maintain layout */}
+        <div 
+          className="mb-8"
+          style={{
+            height: `${currentSize}vw`,
+            maxHeight: '90vw',
+            width: `${currentSize}vw`,
+            maxWidth: '90vw',
+            margin: '0 auto',
+          }}
+        />
+        
+        <div className="flex flex-col items-center relative z-20">
           <h1 className="font-display text-5xl md:text-7xl font-bold text-charcoal mb-6 animate-fade-in text-center">
             Marcela <span className="heart-decoration text-6xl md:text-8xl animate-heart-beat">❤️</span> Zbyněk
           </h1>
