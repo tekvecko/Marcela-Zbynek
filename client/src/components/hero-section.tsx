@@ -30,18 +30,28 @@ export default function HeroSection() {
       </div>
       
       <div className="text-center z-10 px-4 w-full mx-auto">
-        {/* Wedding couple silhouette with parallax effect */}
-        <img 
-          src={flowerArchPhoto} 
-          alt="Marcela a Zbyněk pod květinovou branou" 
-          className="rounded-full mx-auto mb-8 shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square"
+        {/* Wedding couple silhouette with parallax effect that slides under the page */}
+        <div 
+          className="relative mx-auto mb-8 overflow-hidden"
           style={{
             width: `${currentSize}vw`,
-            height: `${currentSize}vw`,
+            height: `${Math.min(currentSize * 0.7, 60)}vw`, // Clip the bottom part as it scrolls
             maxWidth: '90vw',
-            maxHeight: '90vw'
+            maxHeight: '60vw'
           }}
-        />
+        >
+          <img 
+            src={flowerArchPhoto} 
+            alt="Marcela a Zbyněk pod květinovou branou" 
+            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square absolute top-0 left-1/2 transform -translate-x-1/2"
+            style={{
+              width: `${currentSize}vw`,
+              height: `${currentSize}vw`,
+              maxWidth: '90vw',
+              maxHeight: '90vw'
+            }}
+          />
+        </div>
         
         <div className="flex flex-col items-center">
           <h1 className="font-display text-5xl md:text-7xl font-bold text-charcoal mb-6 animate-fade-in text-center">
