@@ -568,6 +568,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Bulk delete photos
+  app.post("/api/admin/photos/bulk-delete", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { photoIds } = req.body;
+      
+      if (!Array.isArray(photoIds) || photoIds.length === 0) {
+        return res.status(400).json({ message: "photoIds must be a non-empty array" });
+      }
+      
+      let deletedCount = 0;
+      const errors: string[] = [];
+      
+      for (const id of photoIds) {
+        try {
+          const photo = await storage.getUploadedPhoto(id);
+          if (photo) {
+            // Delete file from filesystem
+            const filePath = path.join(uploadDir, photo.filename);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+            
+            // Delete from database
+            const success = await storage.deleteUploadedPhoto(id);
+            if (success) {
+              deletedCount++;
+            }
+          }
+        } catch (error) {
+          errors.push(`Chyba při mazání fotky ${id}: ${error instanceof Error ? error.message : 'Neznámá chyba'}`);
+        }
+      }
+      
+      res.json({ 
+        message: `Úspěšně smazáno ${deletedCount} z ${photoIds.length} fotek`,
+        deletedCount,
+        errors 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to bulk delete photos" });
+    }
+  });
+
+  // Admin: Bulk delete challenges
+  app.post("/api/admin/challenges/bulk-delete", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { challengeIds } = req.body;
+      
+      if (!Array.isArray(challengeIds) || challengeIds.length === 0) {
+        return res.status(400).json({ message: "challengeIds must be a non-empty array" });
+      }
+      
+      let deletedCount = 0;
+      const errors: string[] = [];
+      
+      for (const id of challengeIds) {
+        try {
+          const success = await storage.deleteQuestChallenge(id);
+          if (success) {
+            deletedCount++;
+          }
+        } catch (error) {
+          errors.push(`Chyba při mazání výzvy ${id}: ${error instanceof Error ? error.message : 'Neznámá chyba'}`);
+        }
+      }
+      
+      res.json({ 
+        message: `Úspěšně smazáno ${deletedCount} z ${challengeIds.length} výzev`,
+        deletedCount,
+        errors 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to bulk delete challenges" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
