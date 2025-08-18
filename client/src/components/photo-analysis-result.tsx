@@ -56,12 +56,28 @@ export default function PhotoAnalysisResult({
 
           {/* Confidence Score */}
           <div className="text-center">
-            <div className={cn(
-              "text-2xl font-bold",
-              confidencePercentage >= 80 ? "text-green-600" :
-              confidencePercentage >= 60 ? "text-orange-500" : "text-red-500"
-            )}>
-              {confidencePercentage}%
+            <div className="flex items-center justify-center gap-1">
+              <div className={cn(
+                "text-2xl font-bold",
+                confidencePercentage >= 80 ? "text-green-600" :
+                confidencePercentage >= 60 ? "text-orange-500" : "text-red-500"
+              )}>
+                {confidencePercentage}%
+              </div>
+              <div className="group relative">
+                <div className="w-4 h-4 rounded-full bg-charcoal/20 flex items-center justify-center cursor-help">
+                  <span className="text-[10px] text-charcoal/60 font-bold">i</span>
+                </div>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-charcoal text-white text-xs rounded-md px-3 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 pointer-events-none z-50">
+                  <div className="text-center">
+                    <div className="font-medium mb-1">Spolehlivost AI hodnocení:</div>
+                    <div className="text-green-300">80-100%: Vysoká spolehlivost</div>
+                    <div className="text-orange-300">60-79%: Střední spolehlivost</div>
+                    <div className="text-red-300">0-59%: Nízká spolehlivost</div>
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-charcoal rotate-45"></div>
+                </div>
+              </div>
             </div>
             <div className="text-xs text-charcoal/50">Spolehlivost</div>
           </div>
