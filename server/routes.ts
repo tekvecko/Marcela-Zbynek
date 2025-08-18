@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = photoUploadSchema.parse(req.body);
-      const uploaderName = `${req.user.given_name} ${req.user.family_name}`.trim() || req.user.email;
+      const uploaderName = req.user.email; // Use email as DB identifier
       
       let isVerified = false;
       let verificationScore = 0;
@@ -193,7 +193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update quest progress if questId provided
       if (validatedData.questId) {
-        const progress = await storage.getOrCreateQuestProgress(validatedData.questId, uploaderName);
+        const participantName = req.user.email; // Use email as DB identifier
+        const progress = await storage.getOrCreateQuestProgress(validatedData.questId, participantName);
         
         if (isVerified) {
           // Check if quest is already completed
@@ -239,7 +240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos", async (req, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
-      res.json(photos);
+      // Sort photos by creation date descending (newest first)
+      const sortedPhotos = photos.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      res.json(sortedPhotos);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch photos" });
     }
@@ -320,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid photo ID characters" });
       }
 
-      const voterName = `${req.user.given_name} ${req.user.family_name}`.trim() || req.user.email;
+      const voterName = req.user.email; // Use email as DB identifier
       
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
@@ -345,6 +350,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: error.errors[0].message });
       }
       res.status(500).json({ message: "Failed to like photo" });
+    }
+  });
+
+  // Get user data by email for frontend display
+  app.get("/api/users/:email", async (req, res) => {
+    try {
+      const { email } = req.params;
+      
+      // For security, only allow authenticated users to query user data
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Find user by email (this would be more efficient with a proper user lookup)
+      // For now, we'll return mock data since we don't store user profiles separately
+      // In a real app, you'd query your users table
+      const userData = {
+        email: email,
+        firstName: email.split('@')[0], // Fallback: use part before @ as firstName
+        profileImageUrl: null // Will be populated from authenticated user data when available
+      };
+      
+      res.json(userData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user data" });
     }
   });
 

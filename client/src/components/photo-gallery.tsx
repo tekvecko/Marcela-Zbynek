@@ -17,6 +17,20 @@ import type { UploadedPhoto } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
 
+// Helper function to get display name from email
+const getDisplayName = (email: string) => {
+  // Extract first part of email as fallback display name
+  return email.split('@')[0];
+};
+
+// Helper function to get profile image or generate initials
+const getProfileImage = (email: string, profileUrl?: string) => {
+  if (profileUrl) return profileUrl;
+  // Generate initials from email
+  const name = getDisplayName(email);
+  return name.charAt(0).toUpperCase();
+};
+
 export default function PhotoGallery() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -299,15 +313,18 @@ export default function PhotoGallery() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {photos.map((photo) => (
-              <Card key={photo.id} className="group relative overflow-hidden rounded-2xl aspect-square cursor-pointer hover:scale-105 transition-transform duration-300">
+              <Card 
+                key={photo.id} 
+                className="group relative overflow-hidden rounded-2xl aspect-square cursor-pointer hover:scale-105 transition-transform duration-300"
+                onClick={() => setSelectedPhoto(photo)}
+              >
                 <CardContent className="p-0">
                   <img
                     src={`/api/photos/${photo.filename}`}
                     alt={`Nahrál ${photo.uploaderName}`}
-                    className="w-full h-full object-cover"
-                    onClick={() => setSelectedPhoto(photo)}
+                    className="w-full h-full object-cover pointer-events-none"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl pointer-events-none">
                     {/* AI Verification Badge */}
                     {photo.aiVerified && (
                       <div className="absolute top-2 left-2">
@@ -355,9 +372,14 @@ export default function PhotoGallery() {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-xl">
                       <div className="text-white space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {photo.uploaderName}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">
+                              {getProfileImage(photo.uploaderName)}
+                            </div>
+                            <span className="text-sm font-medium">
+                              {getDisplayName(photo.uploaderName)}
+                            </span>
+                          </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -404,24 +426,33 @@ export default function PhotoGallery() {
               className={`${
                 isFullscreen
                   ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
-                  : 'max-w-6xl w-[95vw] max-h-[95vh] p-0'
+                  : 'max-w-7xl w-[98vw] sm:w-[95vw] max-h-[98vh] sm:max-h-[95vh] p-0'
               } bg-black/95 border-none transition-all duration-300`}
               onInteractOutside={(e) => {
                 // Zavřít dialog při kliknutí mimo obsah
                 setSelectedPhoto(null);
                 setIsFullscreen(false);
               }}
+              aria-describedby="photo-description"
             >
+              {/* Hidden accessibility elements */}
+              <DialogTitle className="sr-only">
+                Fotka od {getDisplayName(selectedPhoto.uploaderName)}
+              </DialogTitle>
+              <div id="photo-description" className="sr-only">
+                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName)} dne {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')}
+                {selectedPhoto.aiAnalysis && `. AI popis: ${selectedPhoto.aiAnalysis}`}
+              </div>
               <div className="relative h-full flex flex-col">
                 {/* Top Controls */}
-                <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center">
+                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex justify-between items-center">
                   <GlassButton
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="text-white hover:bg-white/20"
+                    className="text-white hover:bg-white/20 p-2 sm:p-3"
                   >
-                    {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                    {isFullscreen ? <Minimize2 size={16} className="sm:w-5 sm:h-5" /> : <Maximize2 size={16} className="sm:w-5 sm:h-5" />}
                   </GlassButton>
 
                   <GlassButton
@@ -431,15 +462,19 @@ export default function PhotoGallery() {
                       setSelectedPhoto(null);
                       setIsFullscreen(false);
                     }}
-                    className="text-white hover:bg-white/20"
+                    className="text-white hover:bg-white/20 p-2 sm:p-3"
                   >
-                    <X size={20} />
+                    <X size={16} className="sm:w-5 sm:h-5" />
                   </GlassButton>
                 </div>
 
                 {/* Photo Container - kliknutí na fotku ji nezavře */}
                 <div
-                  className={`${isFullscreen ? 'flex-1' : 'max-h-[70vh]'} flex items-center justify-center p-4`}
+                  className={`${
+                    isFullscreen 
+                      ? 'flex-1' 
+                      : 'min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh]'
+                  } flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <OptimizedImage
@@ -448,7 +483,7 @@ export default function PhotoGallery() {
                     className={`${
                       isFullscreen
                         ? 'max-w-full max-h-full object-contain cursor-pointer'
-                        : 'w-full h-auto max-h-full object-contain cursor-pointer'
+                        : 'w-full h-full max-w-full max-h-full object-contain cursor-pointer'
                     }`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -460,47 +495,54 @@ export default function PhotoGallery() {
 
                 {/* Photo Info - Now below the image */}
                 <div className={`${
-                  isFullscreen ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent' : 'bg-black/80'
-                } p-6`}>
-                  <div className="text-white space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold">{selectedPhoto.uploaderName}</h3>
-                        <p className="text-white/80 text-sm">
-                          {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
+                  isFullscreen 
+                    ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent' 
+                    : 'bg-black/80 flex-shrink-0'
+                } p-3 sm:p-6`}>
+                  <div className="text-white space-y-3 sm:space-y-4">
+                    <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-lg font-bold flex-shrink-0">
+                          {getProfileImage(selectedPhoto.uploaderName)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-xl font-semibold truncate">{getDisplayName(selectedPhoto.uploaderName)}</h3>
+                          <p className="text-white/80 text-xs sm:text-sm">
+                            {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                         <GlassButton
                           variant="ghost"
                           size="sm"
                           onClick={() => likePhotoMutation.mutate(selectedPhoto.id)}
                           disabled={likePhotoMutation.isPending}
-                          className="text-white hover:bg-white/20"
+                          className="text-white hover:bg-white/20 p-2"
                         >
-                          <Heart className={`${
+                          <Heart className={`w-4 h-4 ${
                             selectedPhoto.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'
-                          }`} size={16} />
-                          <span className="text-sm">{selectedPhoto.likes || 0}</span>
+                          }`} />
+                          <span className="text-xs sm:text-sm ml-1">{selectedPhoto.likes || 0}</span>
                         </GlassButton>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       {selectedPhoto.questTitle && (
-                        <Badge variant="secondary" className="bg-romantic/80 text-white">
+                        <Badge variant="secondary" className="bg-romantic/80 text-white text-xs sm:text-sm px-2 py-1">
                           {selectedPhoto.questTitle}
                         </Badge>
                       )}
 
                       {selectedPhoto.isVerified && (
-                        <Badge variant="secondary" className="bg-green-600/80 text-white">
+                        <Badge variant="secondary" className="bg-green-600/80 text-white text-xs sm:text-sm px-2 py-1">
                           ✓ AI Ověřeno
                         </Badge>
                       )}
@@ -509,19 +551,19 @@ export default function PhotoGallery() {
                         <Badge variant="secondary" className={`${
                           selectedPhoto.verificationScore >= 80 ? 'bg-green-600/80' :
                           selectedPhoto.verificationScore >= 60 ? 'bg-yellow-600/80' : 'bg-red-600/80'
-                        } text-white`}>
+                        } text-white text-xs sm:text-sm px-2 py-1`}>
                           {selectedPhoto.verificationScore}% spolehlivost
                         </Badge>
                       )}
                     </div>
 
                     {selectedPhoto.aiAnalysis && (
-                      <div className="bg-black/50 rounded-lg p-4 border border-white/10">
-                        <h4 className="font-medium mb-2 flex items-center">
+                      <div className="bg-black/50 rounded-lg p-3 sm:p-4 border border-white/10">
+                        <h4 className="font-medium mb-2 flex items-center text-sm sm:text-base">
                           <span className="mr-2">🤖</span>
                           AI Analýza fotky
                         </h4>
-                        <p className="text-white/90 leading-relaxed">{selectedPhoto.aiAnalysis}</p>
+                        <p className="text-white/90 leading-relaxed text-xs sm:text-sm">{selectedPhoto.aiAnalysis}</p>
                       </div>
                     )}
                   </div>
