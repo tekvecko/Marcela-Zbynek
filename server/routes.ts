@@ -363,17 +363,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      // Find user by email (this would be more efficient with a proper user lookup)
-      // For now, we'll return mock data since we don't store user profiles separately
-      // In a real app, you'd query your users table
-      const userData = {
-        email: email,
-        firstName: email.split('@')[0], // Fallback: use part before @ as firstName
-        profileImageUrl: null // Will be populated from authenticated user data when available
-      };
+      // Validate email format
+      if (!email || typeof email !== 'string' || !email.includes('@')) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
       
-      res.json(userData);
+      // Get user from database
+      const user = await storage.getUserByEmail(decodeURIComponent(email));
+      
+      if (user) {
+        res.json({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl
+        });
+      } else {
+        // Fallback for users not in database
+        res.json({
+          email: email,
+          firstName: email.split('@')[0],
+          lastName: '',
+          profileImageUrl: null
+        });
+      }
     } catch (error) {
+      console.error("Error fetching user data:", error);
       res.status(500).json({ message: "Failed to fetch user data" });
     }
   });

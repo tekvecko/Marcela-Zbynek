@@ -1,5 +1,5 @@
-import { 
-  type User, 
+import {
+  type User,
   type InsertUser,
   type UpsertUser,
   type QuestChallenge,
@@ -24,21 +24,21 @@ export interface IStorage {
   // Legacy methods for compatibility
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   getQuestChallenges(): Promise<QuestChallenge[]>;
   getQuestChallenge(id: string): Promise<QuestChallenge | undefined>;
   createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge>;
-  
+
   getUploadedPhotos(): Promise<UploadedPhoto[]>;
   getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined>;
   getPhotosByQuestId(questId: string): Promise<UploadedPhoto[]>;
   createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto>;
   updatePhotoLikes(id: string, likes: number): Promise<UploadedPhoto | undefined>;
-  
+
   getPhotoLikes(photoId: string): Promise<PhotoLike[]>;
   createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike>;
   hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean>;
-  
+
   getQuestProgress(): Promise<QuestProgress[]>;
   getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]>;
   createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress>;
@@ -59,7 +59,7 @@ export class MemStorage implements IStorage {
     this.uploadedPhotos = new Map();
     this.photoLikes = new Map();
     this.questProgress = new Map();
-    
+
     this.initializeDefaultData();
   }
 
@@ -239,7 +239,7 @@ export class MemStorage implements IStorage {
     if (!userData.id) {
       throw new Error("User ID is required for upsert");
     }
-    
+
     const existingUser = this.users.get(userData.id);
     if (existingUser) {
       const updatedUser: User = {
@@ -274,7 +274,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
+    const user: User = {
       id,
       email: insertUser.email || null,
       firstName: insertUser.firstName || null,
@@ -311,7 +311,7 @@ export class MemStorage implements IStorage {
   }
 
   async getUploadedPhotos(): Promise<UploadedPhoto[]> {
-    return Array.from(this.uploadedPhotos.values()).sort((a, b) => 
+    return Array.from(this.uploadedPhotos.values()).sort((a, b) =>
       b.createdAt.getTime() - a.createdAt.getTime()
     );
   }
@@ -420,11 +420,11 @@ export class MemStorage implements IStorage {
     const existing = Array.from(this.questProgress.values()).find(
       progress => progress.questId === questId && progress.participantName === participantName
     );
-    
+
     if (existing) {
       return existing;
     }
-    
+
     return this.createQuestProgress({
       questId,
       participantName,
@@ -438,16 +438,31 @@ export class DatabaseStorage implements IStorage {
   // User operations
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
 
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getUser(id: string): Promise<User | null> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+      return user || null;
+    } catch (error) {
+      console.error("Failed to get user:", error);
+      return null;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      return user || null;
+    } catch (error) {
+      console.error("Failed to get user by email:", error);
+      return null;
+    }
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     if (!userData.id) {
       throw new Error("User ID is required for upsert");
     }
-    
+
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -479,13 +494,13 @@ export class DatabaseStorage implements IStorage {
   // Quest Challenge operations
   async getQuestChallenges(): Promise<QuestChallenge[]> {
     const challenges = await db.select().from(questChallenges);
-    
+
     // If no challenges exist, initialize with defaults
     if (challenges.length === 0) {
       await this.initializeDefaultChallenges();
       return await db.select().from(questChallenges);
     }
-    
+
     return challenges;
   }
 
