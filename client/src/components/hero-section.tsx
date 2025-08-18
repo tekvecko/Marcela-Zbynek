@@ -35,20 +35,22 @@ export default function HeroSection() {
           className="relative mx-auto mb-8 overflow-hidden"
           style={{
             width: `${currentSize}vw`,
-            height: `${Math.min(currentSize * 0.7, 60)}vw`, // Clip the bottom part as it scrolls
+            height: `${currentSize - scrollProgress * 20}vw`, // Gradually reduce height as user scrolls
             maxWidth: '90vw',
-            maxHeight: '60vw'
+            maxHeight: '90vw',
+            clipPath: scrollY > 50 ? `inset(0 0 ${scrollProgress * 40}% 0)` : 'none', // Clip from bottom
           }}
         >
           <img 
             src={flowerArchPhoto} 
             alt="Marcela a Zbyněk pod květinovou branou" 
-            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square absolute top-0 left-1/2 transform -translate-x-1/2"
+            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square"
             style={{
               width: `${currentSize}vw`,
               height: `${currentSize}vw`,
               maxWidth: '90vw',
-              maxHeight: '90vw'
+              maxHeight: '90vw',
+              transform: `translateY(${scrollY * 0.3}px)`, // Parallax effect - moves slower than scroll
             }}
           />
         </div>
