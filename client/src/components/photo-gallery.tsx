@@ -433,7 +433,16 @@ export default function PhotoGallery() {
                 setSelectedPhoto(null);
                 setIsFullscreen(false);
               }}
+              aria-describedby="photo-description"
             >
+              {/* Hidden accessibility elements */}
+              <DialogTitle className="sr-only">
+                Fotka od {getDisplayName(selectedPhoto.uploaderName)}
+              </DialogTitle>
+              <div id="photo-description" className="sr-only">
+                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName)} dne {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')}
+                {selectedPhoto.aiAnalysis && `. AI popis: ${selectedPhoto.aiAnalysis}`}
+              </div>
               <div className="relative h-full flex flex-col">
                 {/* Top Controls */}
                 <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex justify-between items-center">
