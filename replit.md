@@ -108,10 +108,15 @@ Authenticated user information should be used instead of manual name entry.
   - Photo moderation with verification toggle and deletion capabilities
   - User progress tracking across all quest challenges
   - Real-time data with automatic refresh using React Query
-- **Enhanced Navigation**: Added admin link to both desktop and mobile navigation menus
-- **Security Implementation**: Protected admin routes with authentication middleware
+- **Security Implementation**: 
+  - Added `isAdmin` boolean field to users table for role-based access control
+  - Protected admin routes with proper authentication and authorization middleware
+  - Frontend admin status checking with useAdmin hook
+  - Conditional navigation links visible only to administrators
+  - Access denied page for non-admin users attempting to access admin section
 - **Database Operations**: Extended storage interface with admin CRUD operations for challenges and photos
 - **UI Components**: Built responsive admin interface using Shadcn/UI components with Czech language support
+- **Admin Account Setup**: Configured marcelazbynek@gmail.com as the primary admin account
 
 ### December 2025 Updates  
 - **Removed Manual Name Input**: Eliminated "Vaše jméno" fields since users are authenticated via Google account
