@@ -30,9 +30,9 @@ export default function HeroSection() {
       </div>
       
       <div className="text-center z-10 px-4 w-full mx-auto">
-        {/* Fixed circular image that gets covered by page content */}
+        {/* Fixed circular image that stays in place */}
         <div 
-          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0"
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 transition-all duration-500 ease-out"
           style={{
             width: `${currentSize}vw`,
             height: `${currentSize}vw`,
@@ -43,32 +43,55 @@ export default function HeroSection() {
           <img 
             src={flowerArchPhoto} 
             alt="Marcela a Zbyněk pod květinovou branou" 
-            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square w-full h-full"
+            className="rounded-full shadow-2xl object-cover border-4 border-white animate-fade-in aspect-square w-full h-full transition-all duration-300"
           />
           
-          {/* Gradient overlay that appears on scroll */}
+          {/* Multi-layer gradient overlay for better blending */}
           <div 
-            className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-300"
+            className="absolute inset-0 rounded-full pointer-events-none transition-all duration-500 ease-out"
             style={{
-              background: `radial-gradient(circle, transparent ${60 - scrollProgress * 40}%, rgba(255, 245, 235, ${scrollProgress * 0.8}) ${80 - scrollProgress * 20}%, rgba(255, 245, 235, ${Math.min(scrollProgress * 1.2, 1)}) 100%)`,
-              opacity: scrollY > 100 ? 1 : 0,
+              background: `
+                radial-gradient(circle at center, 
+                  transparent ${Math.max(20, 70 - scrollProgress * 50)}%, 
+                  rgba(255, 245, 235, ${scrollProgress * 0.3}) ${Math.max(40, 85 - scrollProgress * 30)}%, 
+                  rgba(255, 245, 235, ${scrollProgress * 0.7}) ${Math.max(60, 95 - scrollProgress * 20)}%, 
+                  rgba(255, 245, 235, ${Math.min(scrollProgress * 1.5, 0.95)}) 100%
+                ),
+                linear-gradient(to bottom, 
+                  transparent ${Math.max(0, 50 - scrollProgress * 30)}%, 
+                  rgba(255, 245, 235, ${scrollProgress * 0.8}) ${Math.max(70, 100 - scrollProgress * 20)}%
+                )
+              `,
+              opacity: scrollY > 50 ? Math.min(scrollProgress * 1.5, 1) : 0,
+            }}
+          />
+          
+          {/* Additional top overlay for smoother transition */}
+          <div 
+            className="absolute inset-0 rounded-full pointer-events-none transition-all duration-300"
+            style={{
+              background: `linear-gradient(to bottom, rgba(255, 245, 235, ${Math.min(scrollProgress * 2, 1)}) 0%, transparent 40%)`,
+              opacity: scrollY > 200 ? 1 : 0,
             }}
           />
         </div>
         
-        {/* Spacer to maintain layout */}
+        {/* Spacer to maintain layout with smooth size transition */}
         <div 
-          className="mb-8"
+          className="mb-8 transition-all duration-300 ease-out"
           style={{
-            height: `${currentSize}vw`,
-            maxHeight: '90vw',
+            height: `${Math.max(currentSize * 0.8, 20)}vw`,
+            maxHeight: '80vw',
             width: `${currentSize}vw`,
             maxWidth: '90vw',
             margin: '0 auto',
           }}
         />
         
-        <div className="flex flex-col items-center relative z-20">
+        <div className="flex flex-col items-center relative z-20 bg-cream/80 backdrop-blur-sm rounded-lg p-6" style={{
+          boxShadow: scrollY > 100 ? '0 10px 30px rgba(0,0,0,0.1)' : 'none',
+          transition: 'all 0.3s ease-out'
+        }}>
           <h1 className="font-display text-5xl md:text-7xl font-bold text-charcoal mb-6 animate-fade-in text-center">
             Marcela <span className="heart-decoration text-6xl md:text-8xl animate-heart-beat">❤️</span> Zbyněk
           </h1>
