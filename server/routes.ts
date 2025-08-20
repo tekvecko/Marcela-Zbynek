@@ -81,12 +81,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = registerSchema.parse(req.body);
 
-      // Check if user already exists
-      const existingUser = await storage.getAuthUserByEmail(validatedData.email);
-      if (existingUser) {
-        return res.status(400).json({ message: "Uživatel s tímto e-mailem již existuje." });
-      }
-
       // Hash the password
       const passwordHash = await bcrypt.hash(validatedData.password, 12);
 
@@ -98,9 +92,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: validatedData.lastName,
       });
 
-      // Create session
-      const session = await storage.createAuthSession(user.id);
-
       res.json({
         user: {
           id: user.id,
@@ -108,9 +99,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
         },
-        sessionToken: session.sessionToken,
+        message: "Registrace byla úspešná",
       });
     } catch (error) {
+      console.error('Registration error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
@@ -129,13 +121,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify password
+      if (!user.passwordHash) {
+        return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
+      }
       const isValidPassword = await storage.verifyPassword(validatedData.password, user.passwordHash);
       if (!isValidPassword) {
         return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
       }
-
-      // Create session
-      const session = await storage.createAuthSession(user.id);
 
       res.json({
         user: {
@@ -144,9 +136,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
         },
-        sessionToken: session.sessionToken,
+        message: "Přihlášení bylo úspešné",
       });
     } catch (error) {
+      console.error('Login error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
@@ -154,18 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", authenticateUser, async (req: AuthRequest, res) => {
+  app.post("/api/auth/logout", async (req, res) => {
     try {
-      const authHeader = req.headers.authorization;
-      const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-      if (sessionToken) {
-        const session = await storage.getAuthSessionByToken(sessionToken);
-        if (session) {
-          await storage.deleteAuthSession(session.id);
-        }
-      }
-
       res.json({ message: "Úspěšně odhlášen." });
     } catch (error) {
       res.status(500).json({ message: "Chyba při odhlašování." });

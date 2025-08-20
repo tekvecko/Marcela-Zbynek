@@ -11,8 +11,7 @@ import {
   type QuestProgress,
   type InsertQuestProgress,
   type AuthUser,
-  type InsertAuthUser,
-  type AuthSession
+  type InsertAuthUser
 } from "@shared/schema";
 import { users, questChallenges, uploadedPhotos, photoLikes, questProgress } from "@shared/schema";
 import { db } from "./db";
@@ -59,9 +58,6 @@ export interface IStorage {
   getAuthUserByEmail(email: string): Promise<AuthUser | undefined>;
   getAuthUserById(id: string): Promise<AuthUser | undefined>;
   verifyPassword(password: string, hash: string): Promise<boolean>;
-  createAuthSession(userId: string): Promise<AuthSession>;
-  getAuthSessionByToken(token: string): Promise<AuthSession | undefined>;
-  deleteAuthSession(sessionId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -71,7 +67,7 @@ export class MemStorage implements IStorage {
   private photoLikes: Map<string, PhotoLike>;
   private questProgress: Map<string, QuestProgress>;
   private authUsers: Map<string, AuthUser>;
-  private authSessions: Map<string, AuthSession>;
+
 
 
   constructor() {
@@ -81,7 +77,7 @@ export class MemStorage implements IStorage {
     this.photoLikes = new Map();
     this.questProgress = new Map();
     this.authUsers = new Map();
-    this.authSessions = new Map();
+
 
     this.initializeDefaultData();
   }
@@ -1014,77 +1010,31 @@ export class DatabaseStorage implements IStorage {
       throw new Error("User with this email already exists.");
     }
 
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(userData.password, saltRounds);
-
     const [createdUser] = await db.insert(users).values({
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      // For auth users, we might not need all fields from the regular User schema,
-      // but we'll ensure required fields are present and others can be null or default.
+      passwordHash: userData.passwordHash,
     }).returning();
 
-    const [createdAuthUser] = await db.insert(authUsers).values({
-      id: createdUser.id,
-      email: userData.email,
-      passwordHash,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      isVerified: true, // Auto-verify for simplicity
-      verificationToken: null,
-      resetToken: null,
-      resetTokenExpiry: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-
-    return createdAuthUser;
+    return createdUser;
   }
 
   async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(authUsers).where(eq(authUsers.email, email)).limit(1);
-    return user;
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return user || undefined;
   }
 
   async getAuthUserById(id: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(authUsers).where(eq(authUsers.id, id)).limit(1);
-    return user;
+    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return user || undefined;
   }
 
   async verifyPassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);
   }
 
-  async createAuthSession(userId: string): Promise<AuthSession> {
-    const id = randomUUID();
-    const sessionToken = randomUUID();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-    const [createdSession] = await db.insert(authSessions).values({
-      id,
-      userId,
-      sessionToken,
-      expiresAt,
-      createdAt: new Date(),
-    }).returning();
-
-    return createdSession;
-  }
-
-  async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
-    const [session] = await db.select().from(authSessions).where(eq(authSessions.sessionToken, token)).limit(1);
-    if (session && session.expiresAt > new Date()) {
-      return session;
-    }
-    return undefined;
-  }
-
-  async deleteAuthSession(sessionId: string): Promise<boolean> {
-    const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
-    return result.rowCount > 0;
-  }
 }
 
 export const storage = new DatabaseStorage();
