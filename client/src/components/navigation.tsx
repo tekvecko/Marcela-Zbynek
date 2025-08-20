@@ -1,17 +1,10 @@
 import { useState } from "react";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
-import { Button } from "@/components/ui/button";
-import type { User as UserType } from "@shared/schema";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { user, isAuthenticated } = useAuth();
-  const { canAccessAdmin } = useAdmin();
-  const typedUser = user as UserType;
 
   return (
     <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
@@ -47,44 +40,12 @@ export default function Navigation() {
             >
               Detaily
             </Link>
-            {canAccessAdmin && (
-              <Link 
-                href="/admin" 
-                className={`transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Admin
-              </Link>
-            )}
-            
-            {isAuthenticated && typedUser && (
-              <div className="flex items-center space-x-4 border-l border-blush pl-4">
-                <div className="flex items-center space-x-2">
-                  {typedUser.profileImageUrl ? (
-                    <img 
-                      src={typedUser.profileImageUrl} 
-                      alt={typedUser.firstName || 'User'} 
-                      className="w-8 h-8 rounded-full object-cover slow-pulse"
-                      data-testid="img-avatar"
-                    />
-                  ) : (
-                    <User size={20} className="text-charcoal" />
-                  )}
-                  <span className="text-charcoal text-sm" data-testid="text-username">
-                    {typedUser.firstName || typedUser.email || 'Guest'}
-                  </span>
-                </div>
-                <Button
-                  onClick={() => window.location.href = '/api/logout'}
-                  variant="ghost"
-                  size="sm"
-                  className="text-charcoal hover:text-romantic"
-                  data-testid="button-logout"
-                >
-                  <LogOut size={16} />
-                  Odhlásit
-                </Button>
-              </div>
-            )}
+            <Link 
+              href="/admin" 
+              className={`transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+            >
+              Admin
+            </Link>
           </div>
           
           {/* Mobile Menu Button */}
@@ -128,45 +89,13 @@ export default function Navigation() {
               >
                 Detaily
               </Link>
-              {canAccessAdmin && (
-                <Link 
-                  href="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`text-left transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-                >
-                  Admin
-                </Link>
-              )}
-              
-              {isAuthenticated && typedUser && (
-                <div className="pt-4 border-t border-blush">
-                  <div className="flex items-center space-x-2 mb-3">
-                    {typedUser.profileImageUrl ? (
-                      <img 
-                        src={typedUser.profileImageUrl} 
-                        alt={typedUser.firstName || 'User'} 
-                        className="w-6 h-6 rounded-full object-cover slow-pulse"
-                        data-testid="img-avatar-mobile"
-                      />
-                    ) : (
-                      <User size={16} className="text-charcoal" />
-                    )}
-                    <span className="text-charcoal text-sm" data-testid="text-username-mobile">
-                      {typedUser.firstName || typedUser.email || 'Guest'}
-                    </span>
-                  </div>
-                  <Button
-                    onClick={() => window.location.href = '/api/logout'}
-                    variant="ghost"
-                    size="sm"
-                    className="text-charcoal hover:text-romantic w-full justify-start"
-                    data-testid="button-logout-mobile"
-                  >
-                    <LogOut size={16} />
-                    Odhlásit se
-                  </Button>
-                </div>
-              )}
+              <Link 
+                href="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+              >
+                Admin
+              </Link>
             </div>
           </div>
         )}

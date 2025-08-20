@@ -20,7 +20,6 @@ import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCirc
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { useAdmin } from "@/hooks/useAdmin";
 import { Link } from "wouter";
 import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared/schema";
 
@@ -38,7 +37,6 @@ type ChallengeFormData = z.infer<typeof challengeSchema>;
 export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isAdmin, isLoading: adminLoading, canAccessAdmin } = useAdmin();
   const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -46,39 +44,7 @@ export default function AdminPage() {
   const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
-  // Show loading while checking admin status
-  if (adminLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-12 w-12 mx-auto mb-4 text-romantic animate-pulse" />
-          <p className="text-lg text-gray-600 dark:text-gray-400">Ověřuji oprávnění...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show access denied if not admin
-  if (!canAccessAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center p-8">
-          <AlertTriangle className="h-16 w-16 mx-auto mb-6 text-red-500" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Přístup zamítnut
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Administrátorská sekce je přístupná pouze uživatelům s administrátorskými právy.
-          </p>
-          <Link href="/">
-            <Button className="bg-romantic hover:bg-romantic/90" data-testid="button-back-home">
-              Zpět na hlavní stránku
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // Admin access is now public - no authentication required
 
   // Fetch data
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
