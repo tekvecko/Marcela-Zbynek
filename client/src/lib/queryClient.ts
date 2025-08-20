@@ -1,5 +1,11 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+interface RequestOptions {
+  method?: string;
+  body?: any;
+  headers?: Record<string, string>;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -17,8 +23,8 @@ export async function apiRequest(
     method,
     headers: {
       "Content-Type": "application/json",
-      "X-App-Name": "Marcela ❤️ Zbyněk",
-      "User-Agent": "Marcela ❤️ Zbyněk Wedding App",
+      "X-App-Name": "Marcela & Zbynek",
+      "User-Agent": "Marcela & Zbynek Wedding App",
       ...fetchOptions.headers,
     },
     credentials: "include",
@@ -64,7 +70,13 @@ export const queryClient = new QueryClient({
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const res = await fetch(queryKey[0] as string, { headers });
+        const res = await fetch(queryKey[0] as string, { 
+          headers: {
+            "Content-Type": "application/json",
+            ...headers
+          },
+          credentials: "include"
+        });
         if (!res.ok) {
           if (res.status === 401) {
             // Token expired or invalid
