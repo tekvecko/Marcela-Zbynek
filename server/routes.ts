@@ -92,6 +92,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: validatedData.lastName,
       });
 
+      // Generate a simple session token
+      const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       res.json({
         user: {
           id: user.id,
@@ -99,6 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
         },
+        sessionToken,
         message: "Registrace byla úspešná",
       });
     } catch (error) {
@@ -129,6 +133,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
       }
 
+      // Generate a simple session token
+      const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       res.json({
         user: {
           id: user.id,
@@ -136,6 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
         },
+        sessionToken,
         message: "Přihlášení bylo úspešné",
       });
     } catch (error) {
