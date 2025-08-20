@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -74,12 +74,12 @@ Odpovězte ve formátu JSON s těmito poli:
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: "object",
+          type: SchemaType.OBJECT,
           properties: {
-            isValid: { type: "boolean" },
-            confidence: { type: "number" },
-            explanation: { type: "string" },
-            suggestedImprovements: { type: "string" },
+            isValid: { type: SchemaType.BOOLEAN },
+            confidence: { type: SchemaType.NUMBER },
+            explanation: { type: SchemaType.STRING },
+            suggestedImprovements: { type: SchemaType.STRING },
           },
           required: ["isValid", "confidence", "explanation"],
         },
@@ -128,7 +128,8 @@ Odpovězte ve formátu JSON s těmito poli:
         throw new Error("Invalid JSON structure or missing required fields");
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
-        throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
+        const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
+        throw new Error(`Failed to parse Gemini response: ${errorMessage}`);
       }
     } else {
       throw new Error("Empty response from Gemini");
@@ -137,11 +138,12 @@ Odpovězte ve formátu JSON s těmito poli:
     console.error(`Gemini verification error (attempt ${retryCount + 1}):`, error);
     
     // Retry for certain types of errors
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     if (retryCount < maxRetries && 
-        (error.message.includes('Failed to parse') || 
-         error.message.includes('Invalid JSON') ||
-         error.message.includes('503') ||
-         error.message.includes('429'))) {
+        (errorMessage.includes('Failed to parse') || 
+         errorMessage.includes('Invalid JSON') ||
+         errorMessage.includes('503') ||
+         errorMessage.includes('429'))) {
       console.log(`Retrying Gemini verification (attempt ${retryCount + 2}/${maxRetries + 1})...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
       return attemptGeminiVerification(imagePath, challengeTitle, challengeDescription, retryCount + 1);
