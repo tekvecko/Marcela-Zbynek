@@ -674,7 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/photos/bulk-verify", async (req, res) => {
     try {
       const { photoIds } = req.body;
-      
+
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return res.status(400).json({ message: 'Neplatný seznam ID fotek' });
       }
@@ -699,14 +699,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const challenges = await storage.getQuestChallenges();
       let updatedCount = 0;
-      
+
       for (const challenge of challenges) {
         if (!challenge.isActive) {
           await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: true });
           updatedCount++;
         }
       }
-      
+
       res.json({ message: `Aktivováno ${updatedCount} výzev`, updatedCount });
     } catch (error) {
       res.status(500).json({ message: "Failed to activate challenges" });
@@ -717,14 +717,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const challenges = await storage.getQuestChallenges();
       let updatedCount = 0;
-      
+
       for (const challenge of challenges) {
         if (challenge.isActive) {
           await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: false });
           updatedCount++;
         }
       }
-      
+
       res.json({ message: `Deaktivováno ${updatedCount} výzev`, updatedCount });
     } catch (error) {
       res.status(500).json({ message: "Failed to deactivate challenges" });
@@ -736,18 +736,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { points } = req.body;
       const challenges = await storage.getQuestChallenges();
       let updatedCount = 0;
-      
+
       const targetChallenges = challenges.filter(c => 
         points === 15 ? c.points <= 15 : c.points === points
       );
-      
+
       for (const challenge of targetChallenges) {
         if (!challenge.isActive) {
           await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: true });
           updatedCount++;
         }
       }
-      
+
       res.json({ message: `Aktivováno ${updatedCount} výzev s ${points} body`, updatedCount });
     } catch (error) {
       res.status(500).json({ message: "Failed to activate challenges by points" });
@@ -759,18 +759,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { points } = req.body;
       const challenges = await storage.getQuestChallenges();
       let updatedCount = 0;
-      
+
       const targetChallenges = challenges.filter(c => 
         points === 15 ? c.points <= 15 : c.points === points
       );
-      
+
       for (const challenge of targetChallenges) {
         if (challenge.isActive) {
           await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: false });
           updatedCount++;
         }
       }
-      
+
       res.json({ message: `Deaktivováno ${updatedCount} výzev s ${points} body`, updatedCount });
     } catch (error) {
       res.status(500).json({ message: "Failed to deactivate challenges by points" });

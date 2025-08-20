@@ -22,8 +22,6 @@ export async function apiRequest(
   const token = localStorage.getItem("auth_token");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-App-Name": "Marcela & Zbynek",
-    "User-Agent": "Marcela & Zbynek Wedding App",
     ...fetchOptions.headers,
   };
 
@@ -71,7 +69,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         const token = localStorage.getItem("auth_token");
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
 
         if (token) {
           headers.Authorization = `Bearer ${token}`;
@@ -83,30 +83,15 @@ export const queryClient = new QueryClient({
         });
 
         if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("auth_user");
+          window.location.reload();
           return null;
         }
 
         await throwIfResNotOk(response);
         return await response.json();
-      },
-
-        const res = await fetch(queryKey[0] as string, { 
-          headers: {
-            "Content-Type": "application/json",
-            ...headers
-          },
-          credentials: "include"
-        });
-        if (!res.ok) {
-          if (res.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem("auth_token");
-            localStorage.removeItem("auth_user");
-            window.location.reload();
-          }
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
       },
       refetchInterval: false,
       refetchOnWindowFocus: false,
