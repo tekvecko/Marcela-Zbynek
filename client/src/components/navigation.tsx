@@ -74,7 +74,7 @@ export default function Navigation() {
                     className="bg-white/20 backdrop-blur-sm border-white/20 hover:bg-white/30 text-charcoal"
                   >
                     <User size={16} className="mr-2" />
-                    {user.firstName || user.email}
+                    {user?.firstName || user?.email}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
@@ -148,7 +148,7 @@ export default function Navigation() {
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center text-charcoal">
                     <User size={16} className="mr-2" />
-                    {user.firstName || user.email}
+                    {user?.firstName || user?.email}
                   </div>
                   <GlassButton variant="outline" size="sm" onClick={logout} className="text-red-600 w-full">
                     Odhlásit se
