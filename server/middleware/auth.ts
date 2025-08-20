@@ -13,8 +13,20 @@ export interface AuthRequest extends Request {
 
 export async function authenticateUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    // For now, we'll skip authentication and allow all requests
-    // This is a simplified approach since we don't have session management
+    const authHeader = req.headers.authorization;
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    if (!sessionToken) {
+      return res.status(401).json({ message: "Chybí autentizační token." });
+    }
+
+    // Simple token validation - in production you'd want to store and validate these properly
+    if (!sessionToken.startsWith('session_')) {
+      return res.status(401).json({ message: "Neplatný autentizační token." });
+    }
+
+    // For now, we'll allow any valid-format session token
+    // In production, you'd validate against a database or session store
     next();
   } catch (error) {
     return res.status(500).json({ message: "Chyba při ověřování." });
