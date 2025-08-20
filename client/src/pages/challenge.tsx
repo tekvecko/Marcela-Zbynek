@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 import { apiRequest } from "@/lib/queryClient";
 import GlassButton from "@/components/ui/glass-button";
 import UploadProgress from "@/components/ui/upload-progress";
@@ -30,6 +31,7 @@ const HelpTooltip = ({ content, side, className }: { content: string; side?: "to
 export default function ChallengePage() {
   const [, params] = useRoute("/challenge/:id");
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const challengeId = params?.id;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -51,7 +53,7 @@ export default function ChallengePage() {
   const challenge = challenges.find(c => c.id === challengeId);
 
   // Quest progress disabled without authentication
-  const questProgress = [];
+  const questProgress: any[] = [];
 
   const isQuestCompleted = (questId: string) => {
     return false; // Always allow photo uploads without authentication
@@ -59,8 +61,6 @@ export default function ChallengePage() {
 
   const getProgressForQuest = (questId: string): number => {
     return 0; // No progress tracking without authentication
-    const targetPhotos = challenge?.targetPhotos || 1;
-    return Math.min((progress.photosUploaded / targetPhotos) * 80, 80); // Max 80% until verified
   };
 
   const uploadPhotoMutation = useMutation({
