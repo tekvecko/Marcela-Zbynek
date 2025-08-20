@@ -11,9 +11,10 @@ import {
   type QuestProgress,
   type InsertQuestProgress,
   type AuthUser,
-  type InsertAuthUser
+  type InsertAuthUser,
+  AuthSession
 } from "@shared/schema";
-import { users, questChallenges, uploadedPhotos, photoLikes, questProgress } from "@shared/schema";
+import { users, questChallenges, uploadedPhotos, photoLikes, questProgress, authUsers } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -58,6 +59,9 @@ export interface IStorage {
   getAuthUserByEmail(email: string): Promise<AuthUser | undefined>;
   getAuthUserById(id: string): Promise<AuthUser | undefined>;
   verifyPassword(password: string, hash: string): Promise<boolean>;
+  createAuthSession(userId: string): Promise<AuthSession>;
+  getAuthSessionByToken(token: string): Promise<AuthSession | undefined>;
+  deleteAuthSession(sessionId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -67,7 +71,7 @@ export class MemStorage implements IStorage {
   private photoLikes: Map<string, PhotoLike>;
   private questProgress: Map<string, QuestProgress>;
   private authUsers: Map<string, AuthUser>;
-
+  private authSessions: Map<string, AuthSession>;
 
 
   constructor() {
@@ -77,6 +81,7 @@ export class MemStorage implements IStorage {
     this.photoLikes = new Map();
     this.questProgress = new Map();
     this.authUsers = new Map();
+    this.authSessions = new Map();
 
 
     this.initializeDefaultData();
@@ -1021,12 +1026,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const [user] = await db.select().from(authUsers).where(eq(authUsers.email, email)).limit(1);
     return user || undefined;
   }
 
   async getAuthUserById(id: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const [user] = await db.select().from(authUsers).where(eq(authUsers.id, id)).limit(1);
     return user || undefined;
   }
 
@@ -1034,7 +1039,33 @@ export class DatabaseStorage implements IStorage {
     return bcrypt.compare(password, hash);
   }
 
+  async createAuthSession(userId: string): Promise<AuthSession> {
+    const id = randomUUID();
+    const sessionToken = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
+    const session: AuthSession = {
+      id,
+      userId,
+      sessionToken,
+      expiresAt,
+      createdAt: new Date(),
+    };
+
+    this.authSessions.set(id, session);
+    return session;
+  }
+
+  async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
+    return Array.from(this.authSessions.values()).find(session => 
+      session.sessionToken === token && session.expiresAt > new Date()
+    );
+  }
+
+  async deleteAuthSession(sessionId: string): Promise<boolean> {
+    return this.authSessions.delete(sessionId);
+  }
 }
 
 export const storage = new DatabaseStorage();

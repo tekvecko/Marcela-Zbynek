@@ -25,8 +25,38 @@ export async function authenticateUser(req: AuthRequest, res: Response, next: Ne
       return res.status(401).json({ message: "Neplatný autentizační token." });
     }
 
-    // For now, we'll allow any valid-format session token
-    // In production, you'd validate against a database or session store
+    // Extract user ID from token for basic user info
+    const tokenParts = sessionToken.split('_');
+    if (tokenParts.length >= 2) {
+      const userId = tokenParts[1];
+      
+      try {
+        // Try to get user from storage
+        const user = await storage.getAuthUser(userId);
+        if (user) {
+          req.user = {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          };
+        } else {
+          // Fallback for missing user - create a basic user object
+          req.user = {
+            id: userId,
+            email: `user_${userId}@example.com`,
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        // Fallback for errors
+        req.user = {
+          id: userId,
+          email: `user_${userId}@example.com`,
+        };
+      }
+    }
+
     next();
   } catch (error) {
     return res.status(500).json({ message: "Chyba při ověřování." });

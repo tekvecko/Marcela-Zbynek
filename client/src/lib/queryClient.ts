@@ -13,37 +13,36 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
+export async function apiRequest<T = any>(
   endpoint: string,
-  options: RequestOptions = {}
-): Promise<any> {
-  const { method = "GET", body, ...fetchOptions } = options;
+  options: RequestInit = {}
+): Promise<T> {
+  const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-  const token = localStorage.getItem("auth_token");
+  // Get auth token from localStorage
+  const token = localStorage.getItem('auth_token');
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...fetchOptions.headers,
+    'Content-Type': 'application/json',
+    ...options.headers,
   };
 
+  // Add Authorization header if token exists
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const config: RequestInit = {
-    method,
+  const response = await fetch(url, {
+    ...options,
     headers,
-    credentials: "include",
-    ...fetchOptions,
-  };
+  });
 
-  if (body) {
-    config.body = JSON.stringify(body);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+    throw new Error(errorData.message || 'Request failed');
   }
 
-  const response = await fetch(endpoint, config);
-
-  await throwIfResNotOk(response);
-  return response;
+  return response.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -91,7 +90,7 @@ export const queryClient = new QueryClient({
         }
 
         await throwIfResNotOk(response);
-        return await response.json();
+        return await res.json();
       },
       refetchInterval: false,
       refetchOnWindowFocus: false,
