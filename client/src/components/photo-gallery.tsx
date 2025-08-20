@@ -158,7 +158,9 @@ export default function PhotoGallery() {
 
   const likePhotoMutation = useMutation({
     mutationFn: async (photoId: string) => {
-      const response = await apiRequest('POST', `/api/photos/${photoId}/like`, {});
+      const response = await apiRequest(`/api/photos/${photoId}/like`, {
+        method: 'POST'
+      });
       return response.json();
     },
     onSuccess: () => {
