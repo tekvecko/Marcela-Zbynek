@@ -2,11 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertQuestChallengeSchema } from "@shared/schema";
+import { insertQuestChallengeSchema, registerSchema, loginSchema } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { verifyPhotoForChallenge, analyzePhotoContent } from "./gemini";
+import { authenticateUser, optionalAuth, type AuthRequest } from "./middleware/auth";
 
 // Simple rate limiting middleware
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -74,8 +75,100 @@ const photoLikeSchema = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Get all quest challenges
-  app.get("/api/quest-challenges", async (req, res) => {
+  // Auth Routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const validatedData = registerSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getAuthUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Uživatel s tímto e-mailem již existuje." });
+      }
+
+      // Create new user
+      const user = await storage.createAuthUser(validatedData);
+      
+      // Create session
+      const session = await storage.createAuthSession(user.id);
+
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+        sessionToken: session.sessionToken,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Chyba při registraci." });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const validatedData = loginSchema.parse(req.body);
+      
+      // Find user
+      const user = await storage.getAuthUserByEmail(validatedData.email);
+      if (!user) {
+        return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
+      }
+
+      // Verify password
+      const isValidPassword = await storage.verifyPassword(validatedData.password, user.passwordHash);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
+      }
+
+      // Create session
+      const session = await storage.createAuthSession(user.id);
+
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+        sessionToken: session.sessionToken,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Chyba při přihlašování." });
+    }
+  });
+
+  app.post("/api/auth/logout", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      
+      if (sessionToken) {
+        const session = await storage.getAuthSessionByToken(sessionToken);
+        if (session) {
+          await storage.deleteAuthSession(session.id);
+        }
+      }
+
+      res.json({ message: "Úspěšně odhlášen." });
+    } catch (error) {
+      res.status(500).json({ message: "Chyba při odhlašování." });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateUser, async (req: AuthRequest, res) => {
+    res.json({ user: req.user });
+  });
+
+  // Get all quest challenges (protected for photo quest)
+  app.get("/api/quest-challenges", authenticateUser, async (req: AuthRequest, res) => {
     try {
       const challenges = await storage.getQuestChallenges();
       res.json(challenges);
@@ -84,8 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get quest progress for a participant
-  app.get("/api/quest-progress/:participantName", async (req, res) => {
+  // Get quest progress for a participant (protected)
+  app.get("/api/quest-progress/:participantName", authenticateUser, async (req: AuthRequest, res) => {
     try {
       const { participantName } = req.params;
       const progress = await storage.getQuestProgressByParticipant(participantName);
@@ -95,8 +188,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload photo - with rate limiting
-  app.post("/api/photos/upload", uploadRateLimit, upload.single('photo'), async (req: any, res) => {
+  // Upload photo - with rate limiting and auth for quest photos
+  app.post("/api/photos/upload", uploadRateLimit, upload.single('photo'), async (req: AuthRequest, res) => {
+    // If questId is provided, require authentication
+    if (req.body.questId) {
+      return authenticateUser(req, res, async () => {
+        await handlePhotoUpload(req, res);
+      });
+    } else {
+      // Gallery photos don't require auth
+      await handlePhotoUpload(req, res);
+    }
+  });
+
+  async function handlePhotoUpload(req: AuthRequest, res: any) {
     try {
       console.log('Upload request received:', {
         hasFile: !!req.file,
@@ -111,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = photoUploadSchema.parse(req.body);
-      const uploaderName = "anonymous"; // Anonymous uploads
+      const uploaderName = req.user ? `${req.user.firstName} ${req.user.lastName}`.trim() || req.user.email : "anonymous";
       
       let isVerified = false;
       let verificationScore = 0;
@@ -176,8 +281,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update quest progress if questId provided
-      if (validatedData.questId) {
-        const participantName = "anonymous"; // Anonymous participant
+      if (validatedData.questId && req.user) {
+        const participantName = req.user.email;
         const progress = await storage.getOrCreateQuestProgress(validatedData.questId, participantName);
         
         if (isVerified) {
@@ -334,8 +439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Get quest leaderboard
-  app.get("/api/quest-leaderboard", async (req, res) => {
+  // Get quest leaderboard (protected)
+  app.get("/api/quest-leaderboard", authenticateUser, async (req: AuthRequest, res) => {
     try {
       const allProgress = await storage.getQuestProgress();
       const challenges = await storage.getQuestChallenges();

@@ -1,7 +1,24 @@
 import Navigation from "@/components/navigation";
 import PhotoQuest from "@/components/photo-quest";
+import AuthForm from "@/components/auth-form";
+import { useAuth } from "@/contexts/auth-context";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function PhotoQuestPage() {
+  const { user, login, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthForm onSuccess={login} />;
+  }
+
   return (
     <div className="min-h-screen bg-cream">
       <Navigation />
