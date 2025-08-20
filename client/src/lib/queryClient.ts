@@ -56,7 +56,26 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: async ({ queryKey }) => {
+        const token = localStorage.getItem("auth_token");
+        const headers: Record<string, string> = {};
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const res = await fetch(queryKey[0] as string, { headers });
+        if (!res.ok) {
+          if (res.status === 401) {
+            // Token expired or invalid
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("auth_user");
+            window.location.reload();
+          }
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      },
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes for better caching

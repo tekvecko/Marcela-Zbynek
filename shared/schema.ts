@@ -28,6 +28,28 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const authUsers = pgTable("auth_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  passwordHash: varchar("password_hash").notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationToken: varchar("verification_token"),
+  resetToken: varchar("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const authSessions = pgTable("auth_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => authUsers.id),
+  sessionToken: varchar("session_token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const questChallenges = pgTable("quest_challenges", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
@@ -111,9 +133,34 @@ export const insertQuestProgressSchema = createInsertSchema(questProgress).omit(
   completedAt: true,
 });
 
+export const insertAuthUserSchema = createInsertSchema(authUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  isVerified: true,
+  verificationToken: true,
+  resetToken: true,
+  resetTokenExpiry: true,
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Neplatný e-mail"),
+  password: z.string().min(6, "Heslo musí mít alespoň 6 znaků"),
+});
+
+export const registerSchema = z.object({
+  email: z.string().email("Neplatný e-mail"),
+  password: z.string().min(6, "Heslo musí mít alespoň 6 znaků"),
+  firstName: z.string().min(1, "Jméno je povinné"),
+  lastName: z.string().min(1, "Příjmení je povinné"),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type AuthUser = typeof authUsers.$inferSelect;
+export type InsertAuthUser = z.infer<typeof insertAuthUserSchema>;
+export type AuthSession = typeof authSessions.$inferSelect;
 export type QuestChallenge = typeof questChallenges.$inferSelect;
 export type InsertQuestChallenge = z.infer<typeof insertQuestChallengeSchema>;
 export type UploadedPhoto = typeof uploadedPhotos.$inferSelect;

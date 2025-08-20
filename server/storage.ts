@@ -9,12 +9,16 @@ import {
   type PhotoLike,
   type InsertPhotoLike,
   type QuestProgress,
-  type InsertQuestProgress
+  type InsertQuestProgress,
+  type AuthUser,
+  type InsertAuthUser,
+  type AuthSession
 } from "@shared/schema";
 import { users, questChallenges, uploadedPhotos, photoLikes, questProgress } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import bcrypt from 'bcryptjs';
 
 export interface IStorage {
   // User operations
@@ -49,6 +53,15 @@ export interface IStorage {
   createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress>;
   updateQuestProgress(id: string, photosUploaded: number, isCompleted?: boolean): Promise<QuestProgress | undefined>;
   getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress>;
+
+  // Auth operations
+  createAuthUser(userData: InsertAuthUser): Promise<AuthUser>;
+  getAuthUserByEmail(email: string): Promise<AuthUser | undefined>;
+  getAuthUserById(id: string): Promise<AuthUser | undefined>;
+  verifyPassword(password: string, hash: string): Promise<boolean>;
+  createAuthSession(userId: string): Promise<AuthSession>;
+  getAuthSessionByToken(token: string): Promise<AuthSession | undefined>;
+  deleteAuthSession(sessionId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -57,6 +70,9 @@ export class MemStorage implements IStorage {
   private uploadedPhotos: Map<string, UploadedPhoto>;
   private photoLikes: Map<string, PhotoLike>;
   private questProgress: Map<string, QuestProgress>;
+  private authUsers: Map<string, AuthUser>;
+  private authSessions: Map<string, AuthSession>;
+
 
   constructor() {
     this.users = new Map();
@@ -64,6 +80,8 @@ export class MemStorage implements IStorage {
     this.uploadedPhotos = new Map();
     this.photoLikes = new Map();
     this.questProgress = new Map();
+    this.authUsers = new Map();
+    this.authSessions = new Map();
 
     this.initializeDefaultData();
   }
@@ -140,38 +158,68 @@ export class MemStorage implements IStorage {
         isActive: true,
       },
       {
-        title: 'Všichni tančí 🕺',
-        description: 'Hosté se baví na tanečním parketu',
+        title: 'Tanec s rodiči 👫',
+        description: 'Nevěsta s tatínkem nebo ženich s maminkou',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Zábava na parketu 🕺',
+        description: 'Hosté si užívají na tanečním parketu',
         targetPhotos: 1,
         points: 12,
         isActive: true,
       },
       {
-        title: 'Třídení fotek 📱',
-        description: 'Hosté si prohlížejí a sdílejí fotky z večera',
+        title: 'Krájení dortu 🎂',
+        description: 'Společné krájení svatebního dortu',
         targetPhotos: 1,
-        points: 10,
+        points: 18,
         isActive: true,
       },
 
-      // Detaily a atmosféra
+      // Emotivní momenty
       {
-        title: 'Svatební dort 🎂',
-        description: 'Krájení nebo detail svatebního dortu',
+        title: 'Šťastné slzy 😭',
+        description: 'Emoce a dojetí během svatby',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Smích a radost 😊',
+        description: 'Upřímné momenty štěstí a smíchu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+
+      // Detaily a přípravy
+      {
+        title: 'Svatební šaty detail 👗',
+        description: 'Krásný detail svatebních šatů',
         targetPhotos: 1,
         points: 15,
         isActive: true,
       },
       {
         title: 'Svatební kytice 💐',
-        description: 'Krásná svatební kytice nevěsty',
+        description: 'Nevěstina kytice v plné kráse',
         targetPhotos: 1,
         points: 12,
         isActive: true,
       },
       {
-        title: 'Dekorace a výzdoba 🌸',
-        description: 'Příprava místa, květiny, svíčky',
+        title: 'Svatební dort 🍰',
+        description: 'Náš krásný svatební dort',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Dekorace a výzdoba 🎀',
+        description: 'Svatební dekorace a výzdoba prostoru',
         targetPhotos: 1,
         points: 10,
         isActive: true,
@@ -483,6 +531,70 @@ export class MemStorage implements IStorage {
       photosUploaded: 0,
       isCompleted: false,
     });
+  }
+
+  // Auth methods
+  async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
+    const id = randomUUID();
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(userData.password, saltRounds);
+
+    const authUser: AuthUser = {
+      id,
+      email: userData.email,
+      passwordHash,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      isVerified: true, // Auto-verify for simplicity
+      verificationToken: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    this.authUsers.set(id, authUser);
+    return authUser;
+  }
+
+  async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
+    return Array.from(this.authUsers.values()).find(user => user.email === email);
+  }
+
+  async getAuthUserById(id: string): Promise<AuthUser | undefined> {
+    return this.authUsers.get(id);
+  }
+
+  async verifyPassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash);
+  }
+
+  async createAuthSession(userId: string): Promise<AuthSession> {
+    const id = randomUUID();
+    const sessionToken = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+    const session: AuthSession = {
+      id,
+      userId,
+      sessionToken,
+      expiresAt,
+      createdAt: new Date(),
+    };
+
+    this.authSessions.set(id, session);
+    return session;
+  }
+
+  async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
+    return Array.from(this.authSessions.values()).find(session => 
+      session.sessionToken === token && session.expiresAt > new Date()
+    );
+  }
+
+  async deleteAuthSession(sessionId: string): Promise<boolean> {
+    return this.authSessions.delete(sessionId);
   }
 }
 
@@ -815,7 +927,7 @@ export class DatabaseStorage implements IStorage {
   async deleteUploadedPhoto(id: string): Promise<boolean> {
     // Delete associated likes first
     await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
-    
+
     // Delete the photo
     const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
     return result.rowCount > 0;
@@ -893,6 +1005,85 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return newProgress;
+  }
+
+  // Auth operations
+  async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
+    const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+    if (existingUser) {
+      throw new Error("User with this email already exists.");
+    }
+
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(userData.password, saltRounds);
+
+    const [createdUser] = await db.insert(users).values({
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      // For auth users, we might not need all fields from the regular User schema,
+      // but we'll ensure required fields are present and others can be null or default.
+    }).returning();
+
+    const [createdAuthUser] = await db.insert(authUsers).values({
+      id: createdUser.id,
+      email: userData.email,
+      passwordHash,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      isVerified: true, // Auto-verify for simplicity
+      verificationToken: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    return createdAuthUser;
+  }
+
+  async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
+    const [user] = await db.select().from(authUsers).where(eq(authUsers.email, email)).limit(1);
+    return user;
+  }
+
+  async getAuthUserById(id: string): Promise<AuthUser | undefined> {
+    const [user] = await db.select().from(authUsers).where(eq(authUsers.id, id)).limit(1);
+    return user;
+  }
+
+  async verifyPassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash);
+  }
+
+  async createAuthSession(userId: string): Promise<AuthSession> {
+    const id = randomUUID();
+    const sessionToken = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+    const [createdSession] = await db.insert(authSessions).values({
+      id,
+      userId,
+      sessionToken,
+      expiresAt,
+      createdAt: new Date(),
+    }).returning();
+
+    return createdSession;
+  }
+
+  async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
+    const [session] = await db.select().from(authSessions).where(eq(authSessions.sessionToken, token)).limit(1);
+    if (session && session.expiresAt > new Date()) {
+      return session;
+    }
+    return undefined;
+  }
+
+  async deleteAuthSession(sessionId: string): Promise<boolean> {
+    const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
+    return result.rowCount > 0;
   }
 }
 
