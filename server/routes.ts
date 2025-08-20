@@ -189,16 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload photo - with rate limiting and auth for quest photos
-  app.post("/api/photos/upload", uploadRateLimit, upload.single('photo'), async (req: AuthRequest, res) => {
-    // If questId is provided, require authentication
-    if (req.body.questId) {
-      return authenticateUser(req, res, async () => {
-        await handlePhotoUpload(req, res);
-      });
-    } else {
-      // Gallery photos don't require auth
-      await handlePhotoUpload(req, res);
-    }
+  app.post("/api/photos/upload", uploadRateLimit, upload.single('photo'), authenticateUser, async (req: AuthRequest, res) => {
+    await handlePhotoUpload(req, res);
   });
 
   async function handlePhotoUpload(req: AuthRequest, res: any) {
@@ -216,7 +208,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = photoUploadSchema.parse(req.body);
-      const uploaderName = req.user ? `${req.user.firstName} ${req.user.lastName}`.trim() || req.user.email : "anonymous";
+      const uploaderName = req.user 
+        ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email 
+        : "anonymous";
 
       let isVerified = false;
       let verificationScore = 0;
