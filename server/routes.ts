@@ -16,20 +16,20 @@ const createRateLimit = (maxRequests: number, windowMs: number) => {
   return (req: any, res: any, next: any) => {
     const identifier = req.user?.id || req.ip;
     const now = Date.now();
-    
+
     const userLimit = rateLimitMap.get(identifier);
-    
+
     if (!userLimit || now > userLimit.resetTime) {
       rateLimitMap.set(identifier, { count: 1, resetTime: now + windowMs });
       return next();
     }
-    
+
     if (userLimit.count >= maxRequests) {
       return res.status(429).json({ 
         message: "Příliš mnoho požadavků. Zkuste to prosím později." 
       });
     }
-    
+
     userLimit.count++;
     next();
   };
@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const validatedData = registerSchema.parse(req.body);
-      
+
       // Check if user already exists
       const existingUser = await storage.getAuthUserByEmail(validatedData.email);
       if (existingUser) {
@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create new user
       const user = await storage.createAuthUser(validatedData);
-      
+
       // Create session
       const session = await storage.createAuthSession(user.id);
 
@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const validatedData = loginSchema.parse(req.body);
-      
+
       // Find user
       const user = await storage.getAuthUserByEmail(validatedData.email);
       if (!user) {
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const authHeader = req.headers.authorization;
       const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-      
+
       if (sessionToken) {
         const session = await storage.getAuthSessionByToken(sessionToken);
         if (session) {
@@ -209,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: req.user?.email,
         files: req.files
       });
-      
+
       if (!req.file) {
         console.log('No file in request');
         return res.status(400).json({ message: "No photo uploaded" });
@@ -217,32 +217,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = photoUploadSchema.parse(req.body);
       const uploaderName = req.user ? `${req.user.firstName} ${req.user.lastName}`.trim() || req.user.email : "anonymous";
-      
+
       let isVerified = false;
       let verificationScore = 0;
       let aiAnalysis = "";
-      
+
       // If this is for a quest challenge, verify with Gemini AI
       if (validatedData.questId) {
         const challenge = await storage.getQuestChallenge(validatedData.questId);
         if (challenge) {
           console.log(`Verifying photo for challenge: ${challenge.title}`);
           const filePath = path.join(uploadDir, req.file.filename);
-          
+
           try {
             const verification = await verifyPhotoForChallenge(
               filePath, 
               challenge.title, 
               challenge.description
             );
-            
+
             isVerified = verification.isValid;
             // Ensure verificationScore is a valid number
             verificationScore = typeof verification.confidence === 'number' && !isNaN(verification.confidence) 
               ? Math.round(verification.confidence * 100) 
               : 70;
             aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
-            
+
             console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
           } catch (verificationError) {
             console.error('AI verification failed:', verificationError);
@@ -261,10 +261,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isVerified = true; // Gallery photos are auto-approved
         verificationScore = 85; // Good default score
       }
-      
+
       // Only create photo record if it's not for a quest OR if it's verified for a quest
       const shouldCreatePhoto = !validatedData.questId || (validatedData.questId && isVerified);
-      
+
       let photo = null;
       if (shouldCreatePhoto) {
         photo = await storage.createUploadedPhoto({
@@ -284,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.questId && req.user) {
         const participantName = req.user.email;
         const progress = await storage.getOrCreateQuestProgress(validatedData.questId, participantName);
-        
+
         if (isVerified) {
           // Check if quest is already completed
           if (progress.isCompleted) {
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou." 
             });
           }
-          
+
           // For quest challenges, mark as completed when photo is verified by AI
           await storage.updateQuestProgress(progress.id, 1, true);
           console.log(`Quest completed with AI-verified photo`);
@@ -343,18 +343,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos/quest/:questId", async (req, res) => {
     try {
       const { questId } = req.params;
-      
+
       // Validate questId format (should be UUID or safe string)
       if (!questId || typeof questId !== 'string' || questId.length > 100) {
         return res.status(400).json({ message: "Invalid quest ID format" });
       }
-      
+
       // Basic sanitization
       const sanitizedQuestId = questId.trim();
       if (!/^[\w\-]+$/.test(sanitizedQuestId)) {
         return res.status(400).json({ message: "Invalid quest ID characters" });
       }
-      
+
       const photos = await storage.getPhotosByQuestId(sanitizedQuestId);
       res.json(photos);
     } catch (error) {
@@ -365,27 +365,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded photos - with path traversal protection
   app.get("/api/photos/:filename", (req, res) => {
     const { filename } = req.params;
-    
+
     // Prevent path traversal attacks
     if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
       return res.status(400).json({ message: "Invalid filename" });
     }
-    
+
     // Only allow alphanumeric characters, dots, hyphens, and underscores
     if (!/^[\w\-\.]+$/.test(filename)) {
       return res.status(400).json({ message: "Invalid filename format" });
     }
-    
+
     const filePath = path.join(uploadDir, filename);
-    
+
     // Ensure the resolved path is still within the upload directory
     const resolvedPath = path.resolve(filePath);
     const resolvedUploadDir = path.resolve(uploadDir);
-    
+
     if (!resolvedPath.startsWith(resolvedUploadDir)) {
       return res.status(403).json({ message: "Access denied" });
     }
-    
+
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
     } else {
@@ -411,14 +411,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const voterName = "anonymous"; // Anonymous voter
-      
+
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
 
       const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
-      
+
       if (hasLiked) {
         return res.status(400).json({ message: "You have already liked this photo" });
       }
@@ -444,12 +444,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const allProgress = await storage.getQuestProgress();
       const challenges = await storage.getQuestChallenges();
-      
+
       const leaderboard = allProgress.reduce((acc, progress) => {
         const participant = acc.find(p => p.participantName === progress.participantName);
         const challenge = challenges.find(c => c.id === progress.questId);
         const points = challenge ? (progress.isCompleted ? challenge.points : 0) : 0;
-        
+
         if (participant) {
           participant.completedQuests += progress.isCompleted ? 1 : 0;
           participant.totalPoints += points;
@@ -460,12 +460,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalPoints: points,
           });
         }
-        
+
         return acc;
       }, [] as Array<{ participantName: string; completedQuests: number; totalPoints: number }>);
-      
+
       leaderboard.sort((a, b) => b.totalPoints - a.totalPoints || b.completedQuests - a.completedQuests);
-      
+
       res.json(leaderboard);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch leaderboard" });
@@ -513,11 +513,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const validatedData = insertQuestChallengeSchema.parse(req.body);
       const challenge = await storage.updateQuestChallenge(id, validatedData);
-      
+
       if (!challenge) {
         return res.status(404).json({ message: "Challenge not found" });
       }
-      
+
       res.json(challenge);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -532,11 +532,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const success = await storage.deleteQuestChallenge(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Challenge not found" });
       }
-      
+
       res.json({ message: "Challenge deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete challenge" });
@@ -548,24 +548,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const photo = await storage.getUploadedPhoto(id);
-      
+
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
-      
+
       // Delete file from filesystem
       const filePath = path.join(uploadDir, photo.filename);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-      
+
       // Delete from database
       const success = await storage.deleteUploadedPhoto(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Photo not found" });
       }
-      
+
       res.json({ message: "Photo deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete photo" });
@@ -577,17 +577,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { isVerified } = req.body;
-      
+
       if (typeof isVerified !== 'boolean') {
         return res.status(400).json({ message: "isVerified must be a boolean" });
       }
-      
+
       const photo = await storage.updatePhotoVerification(id, isVerified);
-      
+
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
-      
+
       res.json(photo);
     } catch (error) {
       res.status(500).json({ message: "Failed to update photo verification" });
@@ -598,14 +598,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/photos/bulk-delete", async (req, res) => {
     try {
       const { photoIds } = req.body;
-      
+
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return res.status(400).json({ message: "photoIds must be a non-empty array" });
       }
-      
+
       let deletedCount = 0;
       const errors: string[] = [];
-      
+
       for (const id of photoIds) {
         try {
           const photo = await storage.getUploadedPhoto(id);
@@ -615,7 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (fs.existsSync(filePath)) {
               fs.unlinkSync(filePath);
             }
-            
+
             // Delete from database
             const success = await storage.deleteUploadedPhoto(id);
             if (success) {
@@ -626,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors.push(`Chyba při mazání fotky ${id}: ${error instanceof Error ? error.message : 'Neznámá chyba'}`);
         }
       }
-      
+
       res.json({ 
         message: `Úspěšně smazáno ${deletedCount} z ${photoIds.length} fotek`,
         deletedCount,
@@ -641,14 +641,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/challenges/bulk-delete", async (req, res) => {
     try {
       const { challengeIds } = req.body;
-      
+
       if (!Array.isArray(challengeIds) || challengeIds.length === 0) {
         return res.status(400).json({ message: "challengeIds must be a non-empty array" });
       }
-      
+
       let deletedCount = 0;
       const errors: string[] = [];
-      
+
       for (const id of challengeIds) {
         try {
           const success = await storage.deleteQuestChallenge(id);
@@ -659,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors.push(`Chyba při mazání výzvy ${id}: ${error instanceof Error ? error.message : 'Neznámá chyba'}`);
         }
       }
-      
+
       res.json({ 
         message: `Úspěšně smazáno ${deletedCount} z ${challengeIds.length} výzev`,
         deletedCount,
