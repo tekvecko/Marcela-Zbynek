@@ -210,7 +210,23 @@ export default function ChallengePage() {
   };
 
   const handleUpload = () => {
-    if (!selectedFile || !challenge || !user?.email) return;
+    if (!selectedFile || !challenge) {
+      toast({
+        title: "Chyba",
+        description: "Vyberte prosím fotku k nahrání",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.email) {
+      toast({
+        title: "Není přihlášen",
+        description: "Pro nahrání fotky se musíte přihlásit",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const formData = new FormData();
     formData.append("photo", selectedFile);
