@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
 import OptimizedImage from "@/components/ui/optimized-image";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import GlassButton from "@/components/ui/glass-button";
@@ -44,7 +43,6 @@ export default function PhotoGallery() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   // Zachycení ESC klávesy a systémového tlačítka zpět
   useEffect(() => {
@@ -204,7 +202,7 @@ export default function PhotoGallery() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !user?.email) {
+    if (!selectedFile) {
       toast({
         title: "Chybí informace",
         description: "Prosím vyberte fotku.",
@@ -421,18 +419,9 @@ export default function PhotoGallery() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (!user?.email) {
-                                toast({
-                                  title: "Přihlášení vyžadováno",
-                                  description: "Pro hodnocení fotek musíte být přihlášeni.",
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
                               likePhotoMutation.mutate(photo.id);
                             }}
                             className="flex items-center space-x-1 bg-black/50 px-2 py-1 rounded hover:bg-black/70 transition-colors"
-                            disabled={!user?.email}
                           >
                             <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'}`} />
                             <span className="text-xs">{photo.likes || 0}</span>

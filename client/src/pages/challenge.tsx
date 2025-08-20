@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
 import GlassButton from "@/components/ui/glass-button";
 import UploadProgress from "@/components/ui/upload-progress";
 import PhotoAnalysisResult from "@/components/photo-analysis-result";
@@ -44,7 +43,6 @@ export default function ChallengePage() {
   const uploadProgressRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
     queryKey: ["/api/quest-challenges"],
@@ -52,27 +50,15 @@ export default function ChallengePage() {
 
   const challenge = challenges.find(c => c.id === challengeId);
 
-  const { data: questProgress = [] } = useQuery({
-    queryKey: ["/api/quest-progress", user?.email || ""],
-    enabled: !!user?.email,
-  });
+  // Quest progress disabled without authentication
+  const questProgress = [];
 
   const isQuestCompleted = (questId: string) => {
-    return questProgress.some((progress: any) =>
-      progress.questId === questId &&
-      progress.participantName === user?.email &&
-      progress.isCompleted
-    );
+    return false; // Always allow photo uploads without authentication
   };
 
   const getProgressForQuest = (questId: string): number => {
-    const progress = questProgress.find((p: any) =>
-      p.questId === questId &&
-      p.participantName === user?.email
-    );
-    if (!progress) return 0;
-    if (progress.isCompleted) return 100;
-    // Show partial progress based on uploaded (but not yet verified) photos
+    return 0; // No progress tracking without authentication
     const targetPhotos = challenge?.targetPhotos || 1;
     return Math.min((progress.photosUploaded / targetPhotos) * 80, 80); // Max 80% until verified
   };

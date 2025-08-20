@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupGoogleAuth, isAuthenticated } from "./googleAuth";
 import { z } from "zod";
 import { insertQuestChallengeSchema } from "@shared/schema";
 import multer from "multer";
@@ -74,18 +73,6 @@ const photoLikeSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupGoogleAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      res.json(req.user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
 
   // Get all quest challenges
   app.get("/api/quest-challenges", async (req, res) => {
@@ -108,8 +95,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload photo - requires authentication and rate limiting
-  app.post("/api/photos/upload", isAuthenticated, uploadRateLimit, upload.single('photo'), async (req: any, res) => {
+  // Upload photo - with rate limiting
+  app.post("/api/photos/upload", uploadRateLimit, upload.single('photo'), async (req: any, res) => {
     try {
       console.log('Upload request received:', {
         hasFile: !!req.file,
@@ -123,12 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No photo uploaded" });
       }
 
-      if (!req.user) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-
       const validatedData = photoUploadSchema.parse(req.body);
-      const uploaderName = req.user.email; // Use email as DB identifier
+      const uploaderName = "anonymous"; // Anonymous uploads
       
       let isVerified = false;
       let verificationScore = 0;
@@ -194,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update quest progress if questId provided
       if (validatedData.questId) {
-        const participantName = req.user.email; // Use email as DB identifier
+        const participantName = "anonymous"; // Anonymous participant
         const progress = await storage.getOrCreateQuestProgress(validatedData.questId, participantName);
         
         if (isVerified) {
@@ -305,15 +288,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Like/unlike a photo - requires authentication and rate limiting
-  app.post("/api/photos/:photoId/like", isAuthenticated, likeRateLimit, async (req: any, res) => {
+  // Like/unlike a photo - with rate limiting
+  app.post("/api/photos/:photoId/like", likeRateLimit, async (req: any, res) => {
     try {
       const { photoId } = req.params;
       photoLikeSchema.parse(req.body); // Validate empty body
-
-      if (!req.user) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
 
       // Validate photoId format
       if (!photoId || typeof photoId !== 'string' || photoId.length > 100) {
@@ -326,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid photo ID characters" });
       }
 
-      const voterName = req.user.email; // Use email as DB identifier
+      const voterName = "anonymous"; // Anonymous voter
       
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
@@ -354,45 +333,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user data by email for frontend display
-  app.get("/api/users/:email", async (req, res) => {
-    try {
-      const { email } = req.params;
-      
-      // For security, only allow authenticated users to query user data
-      if (!req.user) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      // Validate email format
-      if (!email || typeof email !== 'string' || !email.includes('@')) {
-        return res.status(400).json({ message: "Invalid email format" });
-      }
-      
-      // Get user from database
-      const user = await storage.getUserByEmail(decodeURIComponent(email));
-      
-      if (user) {
-        res.json({
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profileImageUrl: user.profileImageUrl
-        });
-      } else {
-        // Fallback for users not in database
-        res.json({
-          email: email,
-          firstName: email.split('@')[0],
-          lastName: '',
-          profileImageUrl: null
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      res.status(500).json({ message: "Failed to fetch user data" });
-    }
-  });
 
   // Get quest leaderboard
   app.get("/api/quest-leaderboard", async (req, res) => {
@@ -428,37 +368,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Routes
-  // Check if user is admin
-  const isAdmin = async (req: any, res: any, next: any) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Neautorizovaný přístup" });
-    }
-    
-    try {
-      // Get user from database to check admin status
-      const user = await storage.getUserByEmail(req.user.email);
-      if (!user || !user.isAdmin) {
-        return res.status(403).json({ message: "Přístup povolen pouze administrátorům" });
-      }
-      next();
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      return res.status(500).json({ message: "Chyba při ověřování oprávnění" });
-    }
-  };
 
-  // Check admin status
-  app.get("/api/admin/status", isAuthenticated, async (req: any, res) => {
+  // Check admin status - publicly accessible
+  app.get("/api/admin/status", async (req: any, res) => {
     try {
-      const user = await storage.getUserByEmail(req.user.email);
-      res.json({ isAdmin: user?.isAdmin || false });
+      res.json({ isAdmin: true }); // Make admin features accessible to everyone
     } catch (error) {
       res.status(500).json({ message: "Failed to check admin status" });
     }
   });
 
-  // Get all quest progress for admin
-  app.get("/api/quest-progress", isAuthenticated, async (req, res) => {
+  // Get all quest progress
+  app.get("/api/quest-progress", async (req, res) => {
     try {
       const progress = await storage.getQuestProgress();
       res.json(progress);
@@ -468,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Create new challenge
-  app.post("/api/admin/challenges", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/challenges", async (req, res) => {
     try {
       const validatedData = insertQuestChallengeSchema.parse(req.body);
       const challenge = await storage.createQuestChallenge(validatedData);
@@ -482,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Update challenge
-  app.put("/api/admin/challenges/:id", isAuthenticated, isAdmin, async (req, res) => {
+  app.put("/api/admin/challenges/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = insertQuestChallengeSchema.parse(req.body);
@@ -502,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Delete challenge
-  app.delete("/api/admin/challenges/:id", isAuthenticated, isAdmin, async (req, res) => {
+  app.delete("/api/admin/challenges/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteQuestChallenge(id);
@@ -518,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Delete photo
-  app.delete("/api/admin/photos/:id", isAuthenticated, isAdmin, async (req, res) => {
+  app.delete("/api/admin/photos/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const photo = await storage.getUploadedPhoto(id);
@@ -547,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Toggle photo verification
-  app.post("/api/admin/photos/:id/verify", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/photos/:id/verify", async (req, res) => {
     try {
       const { id } = req.params;
       const { isVerified } = req.body;
@@ -569,7 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Bulk delete photos
-  app.post("/api/admin/photos/bulk-delete", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/photos/bulk-delete", async (req, res) => {
     try {
       const { photoIds } = req.body;
       
@@ -612,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Bulk delete challenges
-  app.post("/api/admin/challenges/bulk-delete", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/challenges/bulk-delete", async (req, res) => {
     try {
       const { challengeIds } = req.body;
       

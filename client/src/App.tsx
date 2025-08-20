@@ -10,32 +10,18 @@ import ChallengePage from "@/pages/challenge";
 import GalleryPage from "@/pages/gallery";
 import DetailsPage from "@/pages/details";
 import AdminPage from "@/pages/admin";
-import Landing from "@/pages/landing";
-import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import { useAuth } from "@/hooks/useAuth";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
   return (
     <PageTransition>
       <Switch>
-        {isLoading || !isAuthenticated ? (
-          <>
-            <Route path="/" component={Landing} />
-            <Route path="/login" component={Login} />
-          </>
-        ) : (
-          <>
-            <Route path="/" component={Home} />
-            <Route path="/photo-quest" component={PhotoQuestPage} />
-            <Route path="/challenge/:id" component={ChallengePage} />
-            <Route path="/gallery" component={GalleryPage} />
-            <Route path="/details" component={DetailsPage} />
-            <Route path="/admin" component={AdminPage} />
-          </>
-        )}
+        <Route path="/" component={Home} />
+        <Route path="/photo-quest" component={PhotoQuestPage} />
+        <Route path="/challenge/:id" component={ChallengePage} />
+        <Route path="/gallery" component={GalleryPage} />
+        <Route path="/details" component={DetailsPage} />
+        <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
     </PageTransition>
