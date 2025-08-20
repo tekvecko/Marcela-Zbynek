@@ -1040,6 +1040,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAuthSession(userId: string): Promise<AuthSession> {
+    // For DatabaseStorage, we'll use MemStorage approach for now
+    // In production, you'd want to store sessions in database
     const id = randomUUID();
     const sessionToken = randomUUID();
     const expiresAt = new Date();
@@ -1053,17 +1055,29 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date(),
     };
 
+    // Store in memory for now (should be database in production)
+    if (!this.authSessions) {
+      this.authSessions = new Map();
+    }
     this.authSessions.set(id, session);
     return session;
   }
 
   async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
+    if (!this.authSessions) {
+      this.authSessions = new Map();
+      return undefined;
+    }
     return Array.from(this.authSessions.values()).find(session => 
       session.sessionToken === token && session.expiresAt > new Date()
     );
   }
 
   async deleteAuthSession(sessionId: string): Promise<boolean> {
+    if (!this.authSessions) {
+      this.authSessions = new Map();
+      return false;
+    }
     return this.authSessions.delete(sessionId);
   }
 }
