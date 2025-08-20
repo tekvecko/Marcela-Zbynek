@@ -162,6 +162,35 @@ export default function AdminPage() {
     },
   });
 
+  // Mass control mutations
+  const massControlMutation = useMutation({
+    mutationFn: ({ action, data }: { action: string; data?: any }) =>
+      apiRequest(`/api/admin/challenges/mass-${action}`, { method: "POST", body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      toast({ title: "Úspěch", description: "Operace byla dokončena" });
+    },
+  });
+
+  const resetProgressMutation = useMutation({
+    mutationFn: () =>
+      apiRequest("/api/admin/progress/reset-all", { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
+      toast({ title: "Úspěch", description: "Pokrok všech hráčů byl resetován" });
+    },
+  });
+
+  const bulkVerifyPhotosMutation = useMutation({
+    mutationFn: (photoIds: string[]) =>
+      apiRequest("/api/admin/photos/bulk-verify", { method: "POST", body: { photoIds } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      setSelectedPhotos([]);
+      toast({ title: "Úspěch", description: "Fotky byly schváleny" });
+    },
+  });
+
   // Handle form submission
   const onSubmit = (data: ChallengeFormData) => {
     if (editingChallenge) {
@@ -235,6 +264,60 @@ export default function AdminPage() {
     
     if (confirm(`Opravdu chcete smazat ${selectedPhotos.length} fotek?`)) {
       bulkDeletePhotosMutation.mutate(selectedPhotos);
+    }
+  };
+
+  // Game control handlers
+  const handleActivateAllChallenges = () => {
+    massControlMutation.mutate({ action: "activate" });
+  };
+
+  const handleDeactivateAllChallenges = () => {
+    massControlMutation.mutate({ action: "deactivate" });
+  };
+
+  const handleToggleChallengesByPoints = (points: number) => {
+    const targetChallenges = challenges.filter(c => points === 15 ? c.points <= 15 : c.points === points);
+    const allActive = targetChallenges.every(c => c.isActive);
+    massControlMutation.mutate({ 
+      action: allActive ? "deactivate-by-points" : "activate-by-points", 
+      data: { points } 
+    });
+  };
+
+  const handleResetAllProgress = () => {
+    if (window.confirm("Opravdu chcete resetovat pokrok všech hráčů? Tato akce je nevratná.")) {
+      resetProgressMutation.mutate();
+    }
+  };
+
+  const handleExportData = () => {
+    const data = {
+      challenges,
+      photos,
+      progress,
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wedding-game-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleBulkVerifyPhotos = () => {
+    if (selectedPhotos.length > 0) {
+      bulkVerifyPhotosMutation.mutate(selectedPhotos);
+    }
+  };
+
+  const handleSelectAllPhotos = (checked: boolean) => {
+    if (checked) {
+      setSelectedPhotos(photos.map(p => p.id));
+    } else {
+      setSelectedPhotos([]);
     }
   };
 
@@ -317,7 +400,7 @@ export default function AdminPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="challenges" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="challenges" data-testid="tab-challenges">
               <Trophy className="h-4 w-4 mr-2" />
               Výzvy
@@ -329,6 +412,10 @@ export default function AdminPage() {
             <TabsTrigger value="progress" data-testid="tab-progress">
               <Users className="h-4 w-4 mr-2" />
               Pokrok
+            </TabsTrigger>
+            <TabsTrigger value="game-control" data-testid="tab-game-control">
+              <Settings className="h-4 w-4 mr-2" />
+              Hra
             </TabsTrigger>
           </TabsList>
 
@@ -787,6 +874,198 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Game Control Tab */}
+          <TabsContent value="game-control">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Mass Challenge Control */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Hromadné ovládání výzev
+                  </CardTitle>
+                  <CardDescription>
+                    Rychlé ovládání všech nebo vybraných výzev
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      onClick={handleActivateAllChallenges}
+                      disabled={massControlMutation.isPending}
+                      className="flex-1"
+                      data-testid="button-activate-all"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Aktivovat vše
+                    </Button>
+                    <Button 
+                      onClick={handleDeactivateAllChallenges}
+                      disabled={massControlMutation.isPending}
+                      variant="outline"
+                      className="flex-1"
+                      data-testid="button-deactivate-all"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Deaktivovat vše
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Bodové kategorie</Label>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleToggleChallengesByPoints(25)}
+                        variant="outline" 
+                        size="sm"
+                        data-testid="button-toggle-high-points"
+                      >
+                        25 bodů (VIP)
+                      </Button>
+                      <Button 
+                        onClick={() => handleToggleChallengesByPoints(20)}
+                        variant="outline" 
+                        size="sm"
+                        data-testid="button-toggle-medium-points"
+                      >
+                        20 bodů
+                      </Button>
+                      <Button 
+                        onClick={() => handleToggleChallengesByPoints(15)}
+                        variant="outline" 
+                        size="sm"
+                        data-testid="button-toggle-low-points"
+                      >
+                        15 bodů a méně
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Game Statistics & Controls */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    Statistiky hry
+                  </CardTitle>
+                  <CardDescription>
+                    Přehled aktivity a quick akce
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-lg font-bold text-green-600">
+                        {challenges.filter(c => c.isActive).length}
+                      </div>
+                      <div className="text-green-700">Aktivních výzev</div>
+                    </div>
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-lg font-bold text-blue-600">
+                        {photos.length}
+                      </div>
+                      <div className="text-blue-700">Celkem fotek</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Button 
+                      onClick={handleResetAllProgress}
+                      disabled={resetProgressMutation.isPending}
+                      variant="destructive" 
+                      size="sm"
+                      className="w-full"
+                      data-testid="button-reset-progress"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Resetovat pokrok všech hráčů
+                    </Button>
+                    
+                    <Button 
+                      onClick={handleExportData}
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                      data-testid="button-export-data"
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Export dat
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Photo Management */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="h-5 w-5" />
+                    Hromadná správa fotek
+                  </CardTitle>
+                  <CardDescription>
+                    Operace s více fotkami najednou
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={photos.length > 0 && selectedPhotos.length === photos.length}
+                        onCheckedChange={handleSelectAllPhotos}
+                        data-testid="checkbox-select-all-photos"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {selectedPhotos.length > 0 
+                          ? `Vybráno: ${selectedPhotos.length} fotek` 
+                          : 'Vybrat všechny fotky'
+                        }
+                      </span>
+                    </div>
+                    
+                    {selectedPhotos.length > 0 && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={clearPhotoSelection}
+                          data-testid="button-clear-photo-selection"
+                        >
+                          Zrušit výběr
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkVerifyPhotos}
+                          disabled={bulkVerifyPhotosMutation.isPending}
+                          data-testid="button-bulk-verify"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Schválit vybrané ({selectedPhotos.length})
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleBulkDeletePhotos}
+                          disabled={bulkDeletePhotosMutation.isPending}
+                          data-testid="button-bulk-delete-photos"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Smazat vybrané ({selectedPhotos.length})
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-muted-foreground">
+                    Pro výběr jednotlivých fotek použijte checkboxy v záložce "Fotky"
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
