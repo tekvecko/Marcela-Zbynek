@@ -159,8 +159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user: req.user });
   });
 
-  // Get all quest challenges (protected for photo quest)
-  app.get("/api/quest-challenges", authenticateUser, async (req: AuthRequest, res) => {
+  // Get all quest challenges (public for now)
+  app.get("/api/quest-challenges", async (req, res) => {
     try {
       const challenges = await storage.getQuestChallenges();
       res.json(challenges);
@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quest progress for a participant (protected)
-  app.get("/api/quest-progress/:participantName", authenticateUser, async (req: AuthRequest, res) => {
+  app.get("/api/quest-progress/:participantName", async (req, res) => {
     try {
       const { participantName } = req.params;
       const progress = await storage.getQuestProgressByParticipant(participantName);
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Get quest leaderboard (protected)
-  app.get("/api/quest-leaderboard", authenticateUser, async (req: AuthRequest, res) => {
+  app.get("/api/quest-leaderboard", async (req, res) => {
     try {
       const allProgress = await storage.getQuestProgress();
       const challenges = await storage.getQuestChallenges();
