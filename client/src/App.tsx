@@ -11,6 +11,7 @@ import ChallengePage from "@/pages/challenge";
 import GalleryPage from "@/pages/gallery";
 import DetailsPage from "@/pages/details";
 import AdminPage from "@/pages/admin";
+import VerificationDemoPage from "@/pages/verification-demo";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
         <Route path="/gallery" component={GalleryPage} />
         <Route path="/details" component={DetailsPage} />
         <Route path="/admin" component={AdminPage} />
+        <Route path="/verification-demo" component={VerificationDemoPage} />
         <Route component={NotFound} />
       </Switch>
     </PageTransition>

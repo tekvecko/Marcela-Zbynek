@@ -15,6 +15,7 @@ import GlassButton from "@/components/ui/glass-button";
 import type { UploadedPhoto } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
+import VerificationTooltip from "@/components/ui/verification-tooltip";
 
 // Helper function to get display name - use firstName from user data or fallback to email
 const getDisplayName = (uploaderEmail: string, users?: Record<string, any>) => {
@@ -354,45 +355,15 @@ export default function PhotoGallery() {
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl pointer-events-none">
                     {/* AI Verification Badge */}
-                    {photo.aiVerified && (
+                    {/* Enhanced AI Verification Tooltip */}
+                    {(photo.isVerified || (photo.verificationScore && photo.verificationScore > 0)) && (
                       <div className="absolute top-2 left-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg cursor-help">
-                              <span>✓</span>
-                              <span>AI Ověřeno</span>
-                              <div className="ml-1 w-3 h-3 rounded-full bg-white/20 flex items-center justify-center">
-                                <span className="text-[8px] font-bold">i</span>
-                              </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="text-center">
-                              <div className="font-medium mb-1">AI Ověření:</div>
-                              <div className="text-xs">Fotka automaticky prošla kontrolou umělé inteligence</div>
-                              <div className="text-xs mt-1">a splňuje požadavky výzvy</div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    )}
-
-                    {/* Verification Score Badge */}
-                    {photo.verificationScore && photo.verificationScore > 0 && (
-                      <div className="absolute top-2 right-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className={`text-white text-xs px-2 py-1 rounded-full shadow-lg cursor-help ${
-                              photo.verificationScore >= 80 ? 'bg-green-500' :
-                              photo.verificationScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}>
-                              {photo.verificationScore}%
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>AI spolehlivost: {photo.verificationScore >= 80 ? 'Vysoká' : photo.verificationScore >= 60 ? 'Střední' : 'Nízká'}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <VerificationTooltip
+                          isVerified={photo.isVerified || false}
+                          verificationScore={(photo.verificationScore || 0) / 100}
+                          aiAnalysis={photo.aiAnalysis || undefined}
+                          size="sm"
+                        />
                       </div>
                     )}
 
