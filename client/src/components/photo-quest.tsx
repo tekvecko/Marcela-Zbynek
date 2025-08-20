@@ -98,11 +98,11 @@ export default function PhotoQuest() {
           <div className="w-24 h-24 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
             <Camera className="text-white drop-shadow-lg" size={32} />
           </div>
-          
+
           <h1 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-4">
             Photo Quest
           </h1>
-          
+
           <p className="text-xl text-charcoal/70 max-w-3xl mx-auto leading-relaxed mb-8">
             Staňte se svatebními fotografy! Plňte úkoly, zachycujte krásné okamžiky a pomozte nám vytvořit nezapomenutelné vzpomínky na náš velký den.
           </p>
@@ -125,20 +125,20 @@ export default function PhotoQuest() {
         <h2 className="font-display text-3xl font-bold text-center text-charcoal">
           Jak hrát Photo Quest?
         </h2>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoCard 
             type="tip"
             title="1. Vyberte si úkol"
             content="Projděte si seznam fotografických výzev níže a vyberte si úkol, který chcete splnit. Každý úkol má své body a obtížnost."
           />
-          
+
           <InfoCard 
             type="info"
             title="2. Vyfotografujte"
             content="Udělejte fotku podle zadání úkolu. Naše AI automaticky zkontroluje, zda fotka odpovídá požadavkům, a ihned vám dá zpětnou vazbu."
           />
-          
+
           <InfoCard 
             type="success"
             title="3. Získejte body"
@@ -157,11 +157,11 @@ export default function PhotoQuest() {
             Klikněte na kteroukoliv výzvu a začněte fotografovat!
           </p>
         </div>
-        
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {challenges.map((challenge) => {
             const Icon = getQuestIcon(challenge.title);
-            
+
             return (
               <Card
                 key={challenge.id}
@@ -178,15 +178,15 @@ export default function PhotoQuest() {
                       {challenge.points} bodů
                     </div>
                   </div>
-                  
+
                   <h3 className="font-display text-xl font-bold text-charcoal mb-2 group-hover:text-romantic transition-colors">
                     {challenge.title}
                   </h3>
-                  
+
                   <p className="text-charcoal/60 text-sm leading-relaxed mb-4 line-clamp-3">
                     {challenge.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className={`text-sm px-3 py-1 rounded-full ${
                       challenge.isActive 
@@ -195,7 +195,7 @@ export default function PhotoQuest() {
                     }`}>
                       {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
                     </span>
-                    
+
                     <GlassButton variant="primary" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <Camera size={14} />
                       Start
@@ -222,7 +222,7 @@ export default function PhotoQuest() {
               Nejlepší svatební fotografové podle získaných bodů
             </p>
           </div>
-          
+
           <div className="space-y-4">
             {leaderboard.slice(0, 10).map((entry, index) => (
               <div
@@ -250,7 +250,7 @@ export default function PhotoQuest() {
                     {getDisplayName(entry.participantName)}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center space-x-6 text-sm text-charcoal/70">
                   <span data-testid={`text-quests-${index}`}>
                     {entry.completedQuests} úkolů

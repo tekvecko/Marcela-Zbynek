@@ -19,14 +19,21 @@ export async function apiRequest(
 ): Promise<any> {
   const { method = "GET", body, ...fetchOptions } = options;
 
+  const token = localStorage.getItem("auth_token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-App-Name": "Marcela & Zbynek",
+    "User-Agent": "Marcela & Zbynek Wedding App",
+    ...fetchOptions.headers,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const config: RequestInit = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-App-Name": "Marcela & Zbynek",
-      "User-Agent": "Marcela & Zbynek Wedding App",
-      ...fetchOptions.headers,
-    },
+    headers,
     credentials: "include",
     ...fetchOptions,
   };
@@ -69,6 +76,19 @@ export const queryClient = new QueryClient({
         if (token) {
           headers.Authorization = `Bearer ${token}`;
         }
+
+        const response = await fetch(queryKey.join("/") as string, {
+          credentials: "include",
+          headers
+        });
+
+        if (response.status === 401) {
+          return null;
+        }
+
+        await throwIfResNotOk(response);
+        return await response.json();
+      },
 
         const res = await fetch(queryKey[0] as string, { 
           headers: {
