@@ -2,7 +2,7 @@ import Navigation from "@/components/navigation";
 import PhotoQuest from "@/components/photo-quest";
 import AuthForm from "@/components/auth-form";
 import { useAuth } from "@/contexts/auth-context";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 export default function PhotoQuestPage() {
   const { user, login, isLoading } = useAuth();

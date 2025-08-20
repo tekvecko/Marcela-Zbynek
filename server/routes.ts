@@ -6,6 +6,7 @@ import { insertQuestChallengeSchema, registerSchema, loginSchema } from "@shared
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcryptjs";
 import { verifyPhotoForChallenge, analyzePhotoContent } from "./gemini";
 import { authenticateUser, optionalAuth, type AuthRequest } from "./middleware/auth";
 
@@ -86,8 +87,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Uživatel s tímto e-mailem již existuje." });
       }
 
+      // Hash the password
+      const passwordHash = await bcrypt.hash(validatedData.password, 12);
+
       // Create new user
-      const user = await storage.createAuthUser(validatedData);
+      const user = await storage.createAuthUser({
+        email: validatedData.email,
+        passwordHash,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+      });
 
       // Create session
       const session = await storage.createAuthSession(user.id);
@@ -323,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(500).json({ message: "Failed to upload photo" });
     }
-  });
+  }
 
   // Get all uploaded photos - public for gallery viewing
   app.get("/api/photos", async (req, res) => {
