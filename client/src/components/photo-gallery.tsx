@@ -178,7 +178,18 @@ export default function PhotoGallery() {
         createFlyingHearts(buttonElement);
       }
       
-      // Okamžitě aktualizuj UI
+      return await apiRequest(`/api/photos/${photoId}/like`, {
+        method: 'POST'
+      });
+    },
+    onMutate: async ({ photoId }) => {
+      // Zruš všechny pending queries pro fotky
+      await queryClient.cancelQueries({ queryKey: ["/api/photos"] });
+      
+      // Ulož předchozí stav pro možný rollback
+      const previousPhotos = queryClient.getQueryData(["/api/photos"]);
+      
+      // Optimistically update - okamžitě aktualizuj UI
       queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(photo => 
@@ -197,9 +208,7 @@ export default function PhotoGallery() {
         } : null);
       }
       
-      return await apiRequest(`/api/photos/${photoId}/like`, {
-        method: 'POST'
-      });
+      return { previousPhotos };
     },
     onSuccess: (data, { photoId }) => {
       toast({
@@ -208,22 +217,38 @@ export default function PhotoGallery() {
         className: "border-l-4 border-l-red-500 bg-red-50",
       });
 
-      // Refresh z API pro jistotu
-      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
-    },
-    onError: (error: any, { photoId }) => {
-      console.error('Like error:', error);
-      
-      // Vrátit zpět stav při chybě
+      // Aktualizuj data s API odpovědí, ale zachovej userHasLiked jako true
       queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(photo => 
           photo.id === photoId 
-            ? { ...photo, userHasLiked: false, likes: Math.max((photo.likes || 0) - 1, 0) }
+            ? { 
+                ...photo, 
+                likes: data.likes || (photo.likes || 0), // Použij hodnotu z API
+                userHasLiked: true // Zachovej, že uživatel lajkl
+              }
             : photo
         );
       });
 
+      // Aktualizuj také selectedPhoto pokud je otevřená
+      if (selectedPhoto && selectedPhoto.id === photoId) {
+        setSelectedPhoto(prev => prev ? {
+          ...prev,
+          likes: data.likes || (prev.likes || 0),
+          userHasLiked: true
+        } : null);
+      }
+    },
+    onError: (error: any, { photoId }, context) => {
+      console.error('Like error:', error);
+      
+      // Rollback k předchozímu stavu
+      if (context?.previousPhotos) {
+        queryClient.setQueryData(["/api/photos"], context.previousPhotos);
+      }
+
+      // Vrátit zpět selectedPhoto při chybě
       if (selectedPhoto && selectedPhoto.id === photoId) {
         setSelectedPhoto(prev => prev ? {
           ...prev,
