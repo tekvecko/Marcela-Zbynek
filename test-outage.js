@@ -37,11 +37,11 @@ async function testOutageScenarios() {
   // Test 2: Zkouška Render zálohy
   console.log('\n2. 🟢 Testuji Render záložní systém...');
   try {
-    const healthResponse = await fetch(`${RENDER_URL}/api/health`, { timeout: 5000 });
+    const healthResponse = await fetch(`${RENDER_URL}/api/health`);
     const healthData = await healthResponse.json();
     console.log(`   ✅ Render health check: ${healthData.status}`);
     
-    const challengesResponse = await fetch(`${RENDER_URL}/api/quest-challenges`, { timeout: 5000 });
+    const challengesResponse = await fetch(`${RENDER_URL}/api/quest-challenges`);
     const challengesData = await challengesResponse.json();
     console.log(`   📊 Render výzvy: ${challengesData.length} dostupných`);
   } catch (error) {
@@ -71,8 +71,4 @@ async function testOutageScenarios() {
 }
 
 // Spustit pokud je soubor spuštěn přímo
-if (require.main === module) {
-  testOutageScenarios().catch(console.error);
-}
-
-module.exports = { testOutageScenarios };
+testOutageScenarios().catch(console.error);
