@@ -37,6 +37,13 @@ const onboardingSteps: OnboardingStep[] = [
     position: "bottom"
   },
   {
+    id: "mini-games",
+    title: "Mini-hry",
+    description: "Bavte se mezi fotografováním! Zahrajte si svatební kvízy, pexeso a další zábavné hry. Soutěžte s ostatními hosty!",
+    element: "[href='/mini-games']",
+    position: "bottom"
+  },
+  {
     id: "gallery",
     title: "Galerie",
     description: "Prohlížejte si fotografie od ostatních hostů a lajkujte ty nejkrásnější.",

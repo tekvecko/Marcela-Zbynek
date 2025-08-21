@@ -23,7 +23,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const totalSteps = 7; // Total number of onboarding steps
+  const totalSteps = 8; // Total number of onboarding steps (including mini-games)
 
   useEffect(() => {
     const completed = localStorage.getItem("wedding-onboarding-completed") === "true";
