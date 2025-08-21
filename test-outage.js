@@ -3,7 +3,7 @@
 
 const fetch = require('node-fetch');
 
-const REPLIT_URL = 'https://your-repl-name.your-username.repl.co';
+const REPLIT_URL = 'https://svatebni-fotovyzvy.zbkocian.repl.co';
 const RENDER_URL = 'https://your-app-name.onrender.com';
 
 async function testOutageScenarios() {
