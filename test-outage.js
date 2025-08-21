@@ -1,5 +1,5 @@
 
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 const REPLIT_URL = 'https://svatebni-fotovyzvy.zbkocian.repl.co';
 const RENDER_URL = 'https://your-app-name.onrender.com';
@@ -70,5 +70,5 @@ async function testOutageScenarios() {
   console.log('\n🏁 Test dokončen. Monitorujte aplikaci pro záložní chování.');
 }
 
-// Spustit pokud je soubor spuštěn přímo
+// Spustit test
 testOutageScenarios().catch(console.error);
