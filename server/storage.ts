@@ -473,9 +473,21 @@ export class MemStorage implements IStorage {
   }
 
   async hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean> {
-    return Array.from(this.photoLikes.values()).some(
+    const result = Array.from(this.photoLikes.values()).some(
       like => like.photoId === photoId && like.voterName === voterName
     );
+    console.log(`Checking if ${voterName} liked ${photoId}: ${result}`);
+    return result;
+  }
+
+  async cleanupAnonymousLikes(photoId: string): Promise<void> {
+    // Remove old anonymous likes for this photo
+    Array.from(this.photoLikes.entries()).forEach(([likeId, like]) => {
+      if (like.photoId === photoId && like.voterName === "anonymous") {
+        this.photoLikes.delete(likeId);
+        console.log(`Cleaned up anonymous like for photo ${photoId}`);
+      }
+    });
   }
 
   async getQuestProgress(): Promise<QuestProgress[]> {
