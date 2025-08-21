@@ -433,10 +433,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, photo.likes + 1);
       res.json(updatedPhoto);
     } catch (error) {
+      console.error("Like photo error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      res.status(500).json({ message: "Failed to like photo" });
+      res.status(500).json({ message: "Failed to like photo", error: error.message });
     }
   });
 
