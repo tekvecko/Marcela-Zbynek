@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X } from "lucide-react";
+import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import type { UploadedPhoto } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
 import VerificationTooltip from "@/components/ui/verification-tooltip";
+import { useAuth } from "@/contexts/auth-context";
 
 // Helper function to get display name - use firstName from user data or fallback to email
 const getDisplayName = (uploaderEmail: string, users?: Record<string, any>) => {
@@ -42,8 +43,31 @@ export default function PhotoGallery() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<UploadedPhoto | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [flyingHearts, setFlyingHearts] = useState<Array<{id: string, x: number, y: number}>>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isLoading: authLoading } = useAuth();
+
+  // Funkce pro vytvoření animace srdíček
+  const createFlyingHearts = useCallback((buttonElement: HTMLElement) => {
+    const rect = buttonElement.getBoundingClientRect();
+    const hearts = [];
+    
+    for (let i = 0; i < 8; i++) {
+      hearts.push({
+        id: `heart-${Date.now()}-${i}`,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+    }
+    
+    setFlyingHearts(prev => [...prev, ...hearts]);
+    
+    // Odstranění srdíček po animaci
+    setTimeout(() => {
+      setFlyingHearts(prev => prev.filter(heart => !hearts.some(h => h.id === heart.id)));
+    }, 2000);
+  }, []);
 
   // Zachycení ESC klávesy a systémového tlačítka zpět
   useEffect(() => {
@@ -86,7 +110,7 @@ export default function PhotoGallery() {
     mutationFn: async (formData: FormData) => {
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = {};
-      
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -144,24 +168,110 @@ export default function PhotoGallery() {
   });
 
   const likePhotoMutation = useMutation({
-    mutationFn: async (photoId: string) => {
+    mutationFn: async ({ photoId, buttonElement }: { photoId: string, buttonElement?: HTMLElement }) => {
+      if (!user) {
+        throw new Error("Pro hodnocení fotek se musíte přihlásit");
+      }
+      
+      // Okamžitě spusť animaci srdíček
+      if (buttonElement) {
+        createFlyingHearts(buttonElement);
+      }
+      
+      // Okamžitě aktualizuj UI
+      queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(photo => 
+          photo.id === photoId 
+            ? { ...photo, userHasLiked: true, likes: (photo.likes || 0) + 1 }
+            : photo
+        );
+      });
+
+      // Také aktualizuj selectedPhoto pokud je to ta stejná fotka
+      if (selectedPhoto && selectedPhoto.id === photoId) {
+        setSelectedPhoto(prev => prev ? {
+          ...prev,
+          userHasLiked: true,
+          likes: (prev.likes || 0) + 1
+        } : null);
+      }
+      
       return await apiRequest(`/api/photos/${photoId}/like`, {
         method: 'POST'
       });
     },
-    onSuccess: () => {
+    onSuccess: (data, { photoId }) => {
       toast({
-        title: "Fotka se vám líbí!",
-        description: "Vaš hlas byl započítán.",
+        title: "❤️ Fotka se vám líbí!",
+        description: "Váš hlas byl započítán.",
+        className: "border-l-4 border-l-red-500 bg-red-50",
       });
+
+      // Refresh z API pro jistotu
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Chyba při hodnocení",
-        description: error.message || "Nepodařilo se ohodnotit fotku.",
-        variant: "destructive",
+    onError: (error: any, { photoId }) => {
+      console.error('Like error:', error);
+      
+      // Vrátit zpět stav při chybě
+      queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(photo => 
+          photo.id === photoId 
+            ? { ...photo, userHasLiked: false, likes: Math.max((photo.likes || 0) - 1, 0) }
+            : photo
+        );
       });
+
+      if (selectedPhoto && selectedPhoto.id === photoId) {
+        setSelectedPhoto(prev => prev ? {
+          ...prev,
+          userHasLiked: false,
+          likes: Math.max((prev.likes || 0) - 1, 0)
+        } : null);
+      }
+      
+      if (!user) {
+        toast({
+          title: "🔒 Přihlášení vyžadováno",
+          description: "Pro hodnocení fotek se musíte nejdříve přihlásit.",
+          variant: "destructive",
+          action: (
+            <Button 
+              size="sm" 
+              onClick={() => window.location.href = '/'}
+              className="ml-auto"
+            >
+              <LogIn size={14} className="mr-1" />
+              Přihlásit se
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      const errorMessage = error.message || error.toString();
+      
+      if (errorMessage.includes("already liked")) {
+        toast({
+          title: "⚠️ Už jste hlasovali",
+          description: "Tuto fotku jste už jednou ohodnotili!",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes("Authentication required")) {
+        toast({
+          title: "🔒 Přihlášení vypršelo",
+          description: "Vaše přihlášení vypršelo. Přihlaste se znovu.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "❌ Chyba při hodnocení",
+          description: "Nepodařilo se ohodnotit fotku. Zkuste to prosím znovu.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -237,7 +347,18 @@ export default function PhotoGallery() {
                 side="bottom"
               />
             </div>
-            <p className="text-charcoal/70 mb-6">Sdílejte s námi své vzpomínky z naší svatby</p>
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <p className="text-charcoal/70">Sdílejte s námi své vzpomínky z naší svatby</p>
+              {user ? (
+                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                  ✓ Přihlášen jako {user.firstName || user.email.split('@')[0]}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
+                  🔒 Přihlaste se pro plné funkce
+                </Badge>
+              )}
+            </div>
 
             <Dialog>
               <DialogTrigger asChild>
@@ -375,16 +496,60 @@ export default function PhotoGallery() {
                               {getDisplayName(photo.uploaderName, users)}
                             </span>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              likePhotoMutation.mutate(photo.id);
-                            }}
-                            className="flex items-center space-x-1 bg-black/50 px-2 py-1 rounded hover:bg-black/70 transition-colors"
-                          >
-                            <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'}`} />
-                            <span className="text-xs">{photo.likes || 0}</span>
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!user) {
+                                    toast({
+                                      title: "🔒 Přihlášení vyžadováno",
+                                      description: "Pro hodnocení fotek se musíte přihlásit.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  if (!photo.userHasLiked && !likePhotoMutation.isPending) {
+                                    likePhotoMutation.mutate({ 
+                                      photoId: photo.id, 
+                                      buttonElement: e.currentTarget 
+                                    });
+                                  }
+                                }}
+                                className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-all duration-200 ${
+                                  !user 
+                                    ? 'bg-gray-500/80 cursor-pointer hover:bg-gray-400/80' 
+                                    : photo.userHasLiked 
+                                      ? 'bg-red-500/90 cursor-default shadow-lg animate-pulse-once' 
+                                      : 'bg-black/60 hover:bg-red-500/80 cursor-pointer hover:scale-105'
+                                } ${likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === photo.id ? 'animate-bounce' : ''}`}
+                                disabled={likePhotoMutation.isPending}
+                              >
+                                {!user ? (
+                                  <Lock className="w-3 h-3 text-white" />
+                                ) : (
+                                  <Heart className={`w-4 h-4 transition-all duration-300 ${
+                                    photo.userHasLiked ? 'text-white fill-white scale-110' : 'text-white'
+                                  }`} />
+                                )}
+                                <span className={`text-xs font-medium transition-all duration-300 ${
+                                  photo.userHasLiked ? 'text-white font-bold' : 'text-white'
+                                }`}>
+                                  {photo.likes || 0}
+                                </span>
+                                {likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === photo.id && (
+                                  <LoadingSpinner size="sm" className="text-white" />
+                                )}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              {!user 
+                                ? "Přihlaste se pro hodnocení fotek" 
+                                : photo.userHasLiked 
+                                  ? "Už jste tuto fotku ohodnotili" 
+                                  : "Klikněte pro lajk"}
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                         {photo.questTitle && (
                           <div className="text-xs text-white/80">
@@ -399,6 +564,29 @@ export default function PhotoGallery() {
             ))}
           </div>
         )}
+
+        {/* Létající srdíčka */}
+        {flyingHearts.map((heart) => (
+          <div
+            key={heart.id}
+            className="fixed pointer-events-none z-[9999]"
+            style={{
+              left: heart.x,
+              top: heart.y,
+              animation: `fly-heart 2s ease-out forwards`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <Heart 
+              className="text-red-500 fill-red-500" 
+              size={24}
+              style={{
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                animation: `heart-pulse 0.6s ease-in-out infinite alternate`
+              }}
+            />
+          </div>
+        ))}
 
         {/* Photo Detail Modal */}
         {selectedPhoto && (
@@ -513,18 +701,66 @@ export default function PhotoGallery() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-                        <GlassButton
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => likePhotoMutation.mutate(selectedPhoto.id)}
-                          disabled={likePhotoMutation.isPending}
-                          className="text-white hover:bg-white/20 p-2"
-                        >
-                          <Heart className={`w-4 h-4 ${
-                            selectedPhoto.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'
-                          }`} />
-                          <span className="text-xs sm:text-sm ml-1">{selectedPhoto.likes || 0}</span>
-                        </GlassButton>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <GlassButton
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                if (!user) {
+                                  toast({
+                                    title: "🔒 Přihlášení vyžadováno",
+                                    description: "Pro hodnocení fotek se musíte přihlásit.",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                if (!selectedPhoto.userHasLiked && !likePhotoMutation.isPending) {
+                                  likePhotoMutation.mutate({ 
+                                    photoId: selectedPhoto.id, 
+                                    buttonElement: e.currentTarget 
+                                  });
+                                }
+                              }}
+                              disabled={likePhotoMutation.isPending}
+                              className={`p-2 transition-all duration-300 ${
+                                !user 
+                                  ? 'text-gray-400 hover:bg-white/10 cursor-pointer' 
+                                  : selectedPhoto.userHasLiked 
+                                    ? 'text-red-400 cursor-default bg-red-500/20 animate-pulse-once' 
+                                    : 'text-white hover:bg-red-500/30 hover:text-red-200 hover:scale-110'
+                              } ${likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === selectedPhoto.id ? 'animate-bounce' : ''}`}
+                            >
+                              <div className="flex items-center gap-1">
+                                {!user ? (
+                                  <Lock className="w-4 h-4" />
+                                ) : (
+                                  <Heart className={`w-4 h-4 transition-all duration-300 ${
+                                    selectedPhoto.userHasLiked ? 'fill-red-400 text-red-400 scale-125' : 'text-white'
+                                  }`} />
+                                )}
+                                <span className={`text-xs sm:text-sm font-medium transition-all duration-300 ${
+                                  selectedPhoto.userHasLiked ? 'text-red-300 font-bold' : 'text-white'
+                                }`}>
+                                  {selectedPhoto.likes || 0}
+                                </span>
+                                {selectedPhoto.userHasLiked && user && (
+                                  <span className="text-xs text-red-400 font-bold animate-bounce">✓</span>
+                                )}
+                                {likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === selectedPhoto.id && (
+                                  <LoadingSpinner size="sm" className="text-white ml-1" />
+                                )}
+                              </div>
+                            </GlassButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            {!user 
+                              ? "Přihlaste se pro hodnocení fotek" 
+                              : selectedPhoto.userHasLiked 
+                                ? "Už jste tuto fotku ohodnotili" 
+                                : "Klikněte pro lajk"}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
 
