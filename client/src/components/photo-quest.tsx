@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Camera, Trophy, Users, Crown } from "lucide-react";
+import { Camera, Trophy, Users, Crown, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
@@ -53,10 +53,22 @@ interface LeaderboardEntry {
   totalPoints: number;
 }
 
+interface UserPhoto {
+  id: string;
+  filename: string;
+  originalName: string;
+  uploaderName: string;
+  questId: string | null;
+  createdAt: string;
+  isVerified: boolean;
+}
+
 export default function PhotoQuest() {
   const [, setLocation] = useLocation();
   const [challenges, setChallenges] = useState<QuestChallenge[]>([]);
   const [challengesLoading, setChallengesLoading] = useState(true);
+  const [userProgress, setUserProgress] = useState<QuestProgressData[]>([]);
+  const [progressLoading, setProgressLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   // Direct fetch to bypass TanStack Query issues
@@ -96,6 +108,39 @@ export default function PhotoQuest() {
     fetchChallenges();
   }, []);
 
+  // Fetch user progress
+  useEffect(() => {
+    const fetchUserProgress = async () => {
+      try {
+        setProgressLoading(true);
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch('/api/user/quest-progress', {
+          headers,
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserProgress(data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user progress:', err);
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+    fetchUserProgress();
+  }, []);
+
 
   const { data: leaderboard = [], isLoading: leaderboardLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ["/api/quest-leaderboard"],
@@ -109,7 +154,24 @@ export default function PhotoQuest() {
     return Camera;
   };
 
-  if (challengesLoading) {
+  // Helper function to check if quest is completed
+  const isQuestCompleted = (questId: string) => {
+    return userProgress.some(progress => progress.questId === questId && progress.isCompleted);
+  };
+
+  // Helper function to handle quest click
+  const handleQuestClick = (questId: string) => {
+    const completed = isQuestCompleted(questId);
+    if (completed) {
+      // If completed, navigate to view user's photo
+      setLocation(`/challenge/${questId}`);
+    } else {
+      // If not completed, navigate to take photo
+      setLocation(`/challenge/${questId}`);
+    }
+  };
+
+  if (challengesLoading || progressLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="w-8 h-8 border-4 border-romantic/20 border-t-romantic rounded-full animate-spin"></div>
@@ -204,18 +266,31 @@ export default function PhotoQuest() {
           )}
           {challenges.map((challenge) => {
             const Icon = getQuestIcon(challenge.title);
+            const completed = isQuestCompleted(challenge.id);
 
             return (
               <Card
                 key={challenge.id}
-                className="group relative overflow-hidden bg-white/20 backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                onClick={() => setLocation(`/challenge/${challenge.id}`)}
+                className={`group relative overflow-hidden backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
+                  completed 
+                    ? 'bg-gradient-to-br from-green-100/40 to-emerald-200/40 border-green-300/50' 
+                    : 'bg-white/20'
+                }`}
+                onClick={() => handleQuestClick(challenge.id)}
                 data-testid={`card-challenge-${challenge.id}`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-romantic to-love rounded-xl flex items-center justify-center shadow-lg">
-                      <Icon className="text-white" size={20} />
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-romantic to-love rounded-xl flex items-center justify-center shadow-lg">
+                        <Icon className="text-white" size={20} />
+                      </div>
+                      {completed && (
+                        <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <CheckCircle size={14} />
+                          Splněno
+                        </div>
+                      )}
                     </div>
                     <div className="bg-gradient-to-r from-gold to-yellow-400 text-white px-3 py-1 rounded-full text-sm font-medium shadow-md">
                       {challenge.points} bodů
@@ -240,8 +315,17 @@ export default function PhotoQuest() {
                     </span>
 
                     <GlassButton variant="primary" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera size={14} />
-                      Start
+                      {completed ? (
+                        <>
+                          <CheckCircle size={14} />
+                          Zobrazit
+                        </>
+                      ) : (
+                        <>
+                          <Camera size={14} />
+                          Start
+                        </>
+                      )}
                     </GlassButton>
                   </div>
                 </CardContent>
