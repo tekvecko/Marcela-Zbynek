@@ -323,15 +323,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos", optionalAuth, async (req: any, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
-      const currentUserEmail = req.user?.email;
 
-      // Add userHasLiked information for authenticated users
-      const photosWithLikeStatus = await Promise.all(
+      // Přidej userHasLiked informaci pro každou fotku
+      const photosWithUserInfo = await Promise.all(
         photos.map(async (photo) => {
-          let userHasLiked = false;
-          if (currentUserEmail) {
-            userHasLiked = await storage.hasUserLikedPhoto(photo.id, currentUserEmail);
-          }
+          const userHasLiked = req.user 
+            ? await storage.hasUserLikedPhoto(photo.id, req.user.email)
+            : false;
+
           return {
             ...photo,
             userHasLiked
@@ -339,12 +338,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
-      // Sort photos by creation date descending (newest first)
-      const sortedPhotos = photosWithLikeStatus.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      res.json(sortedPhotos);
+      res.json(photosWithUserInfo);
     } catch (error) {
+      console.error("Error fetching photos:", error);
       res.status(500).json({ message: "Failed to fetch photos" });
     }
   });
@@ -534,14 +530,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userEmail = req.user?.email;
       const { questId } = req.params;
-      
+
       if (!userEmail) {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
       const allPhotos = await storage.getPhotosByQuestId(questId);
       const userPhotos = allPhotos.filter(photo => photo.uploaderName === userEmail);
-      
+
       res.json(userPhotos);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch user photos" });

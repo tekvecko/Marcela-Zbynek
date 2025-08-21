@@ -217,8 +217,28 @@ export default function PhotoGallery() {
         className: "border-l-4 border-l-red-500 bg-red-50",
       });
 
-      // Refresh z API pro jistotu - aktualizuje skutečný stav
-      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      // Aktualizuj data s API odpovědí, ale zachovej userHasLiked jako true
+      queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(photo => 
+          photo.id === photoId 
+            ? { 
+                ...photo, 
+                likes: data.likes || (photo.likes || 0), // Použij hodnotu z API
+                userHasLiked: true // Zachovej, že uživatel lajkl
+              }
+            : photo
+        );
+      });
+
+      // Aktualizuj také selectedPhoto pokud je otevřená
+      if (selectedPhoto && selectedPhoto.id === photoId) {
+        setSelectedPhoto(prev => prev ? {
+          ...prev,
+          likes: data.likes || (prev.likes || 0),
+          userHasLiked: true
+        } : null);
+      }
     },
     onError: (error: any, { photoId }, context) => {
       console.error('Like error:', error);
