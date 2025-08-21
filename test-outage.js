@@ -2,7 +2,7 @@
 import fetch from 'node-fetch';
 
 const REPLIT_URL = 'http://localhost:5000';
-const RENDER_URL = 'https://your-app-name.onrender.com';
+const RENDER_URL = 'https://svatebni-fotovyzvy.onrender.com';
 
 async function testOutageScenarios() {
   console.log('🧪 Testování záložních scénářů...\n');
