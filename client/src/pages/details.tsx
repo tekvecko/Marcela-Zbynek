@@ -1,11 +1,15 @@
 import Navigation from "@/components/navigation";
 import WeddingDetails from "@/components/wedding-details";
 import WeddingTimeline from "@/components/wedding-timeline";
+import OnboardingTrigger from "@/components/onboarding/onboarding-trigger";
+import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 
 export default function DetailsPage() {
+  const { startOnboarding } = useOnboardingContext();
+
   return (
     <div className="min-h-screen bg-cream">
-      <Navigation />
+      <Navigation onStartTutorial={startOnboarding} />
       <WeddingDetails />
       
       {/* Wedding Timeline */}
@@ -32,6 +36,8 @@ export default function DetailsPage() {
           </div>
         </div>
       </footer>
+      
+      <OnboardingTrigger />
     </div>
   );
 }
