@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Like/unlike a photo - with rate limiting
-  app.post("/api/photos/:photoId/like", likeRateLimit, async (req: any, res) => {
+  app.post("/api/photos/:photoId/like", authenticateUser, likeRateLimit, async (req: any, res) => {
     try {
       const { photoId } = req.params;
       photoLikeSchema.parse(req.body); // Validate empty body
@@ -404,7 +404,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid photo ID characters" });
       }
 
-      const voterName = "anonymous"; // Anonymous voter
+      // Use authenticated user's email as voter name
+      const voterName = req.user?.email || "anonymous";
 
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
