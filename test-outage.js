@@ -1,7 +1,7 @@
 
 import fetch from 'node-fetch';
 
-const REPLIT_URL = 'https://svatebni-fotovyzvy.zbkocian.repl.co';
+const REPLIT_URL = 'http://localhost:5000';
 const RENDER_URL = 'https://your-app-name.onrender.com';
 
 async function testOutageScenarios() {
