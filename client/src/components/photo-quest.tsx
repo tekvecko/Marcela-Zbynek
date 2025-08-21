@@ -59,6 +59,13 @@ export default function PhotoQuest() {
     queryKey: ["/api/quest-challenges"],
   });
 
+  // Debug log for troubleshooting
+  console.log('PhotoQuest Debug:', { 
+    challengesCount: challenges.length, 
+    challengesLoading, 
+    firstChallenge: challenges[0] 
+  });
+
   const { data: leaderboard = [], isLoading: leaderboardLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ["/api/quest-leaderboard"],
   });
@@ -159,6 +166,11 @@ export default function PhotoQuest() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {challenges.length === 0 && !challengesLoading && (
+            <div className="col-span-full text-center py-8">
+              <p className="text-charcoal/60">Žádné výzvy nenalezeny. Zkuste obnovit stránku.</p>
+            </div>
+          )}
           {challenges.map((challenge) => {
             const Icon = getQuestIcon(challenge.title);
 
