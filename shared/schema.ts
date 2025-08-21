@@ -82,6 +82,35 @@ export const questProgress = pgTable("quest_progress", {
   index("idx_progress_completed").on(table.isCompleted),
 ]);
 
+// Mini-games tables
+export const miniGames = pgTable("mini_games", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  gameType: varchar("game_type").notNull(), // 'trivia', 'memory', 'word_match', 'couple_facts'
+  gameData: jsonb("game_data").notNull(), // Questions, answers, pairs, etc.
+  points: integer("points").notNull().default(10),
+  timeLimit: integer("time_limit").default(60), // seconds
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const miniGameScores = pgTable("mini_game_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  gameId: varchar("game_id").notNull().references(() => miniGames.id),
+  playerEmail: text("player_email").notNull(),
+  playerName: text("player_name").notNull(),
+  score: integer("score").notNull().default(0),
+  maxScore: integer("max_score").notNull(),
+  timeSpent: integer("time_spent"), // seconds
+  gameData: jsonb("game_data"), // Player's answers, choices, etc.
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_game_scores_game").on(table.gameId),
+  index("idx_game_scores_player").on(table.playerEmail),
+  index("idx_game_scores_score").on(table.score),
+]);
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -139,6 +168,16 @@ export const registerSchema = z.object({
   lastName: z.string().min(1, "Příjmení je povinné"),
 });
 
+export const insertMiniGameSchema = createInsertSchema(miniGames).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMiniGameScoreSchema = createInsertSchema(miniGameScores).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Auth session table for custom authentication
 export const authSessions = pgTable("auth_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -168,3 +207,7 @@ export type PhotoLike = typeof photoLikes.$inferSelect;
 export type InsertPhotoLike = z.infer<typeof insertPhotoLikeSchema>;
 export type QuestProgress = typeof questProgress.$inferSelect;
 export type InsertQuestProgress = z.infer<typeof insertQuestProgressSchema>;
+export type MiniGame = typeof miniGames.$inferSelect;
+export type InsertMiniGame = z.infer<typeof insertMiniGameSchema>;
+export type MiniGameScore = typeof miniGameScores.$inferSelect;
+export type InsertMiniGameScore = z.infer<typeof insertMiniGameScoreSchema>;

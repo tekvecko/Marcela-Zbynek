@@ -15,6 +15,8 @@ import DetailsPage from "@/pages/details";
 import AdminPage from "@/pages/admin";
 import VerificationDemoPage from "@/pages/verification-demo";
 import NotFound from "@/pages/not-found";
+import MiniGames from "@/pages/mini-games";
+import MiniGamePlay from "@/pages/mini-game-play";
 
 function Router() {
   return (
@@ -28,6 +30,8 @@ function Router() {
         <Route path="/details" component={DetailsPage} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/verification-demo" component={VerificationDemoPage} />
+        <Route path="/mini-games" component={MiniGames} />
+        <Route path="/mini-games/:gameId" component={MiniGamePlay} />
         <Route component={NotFound} />
       </Switch>
     </PageTransition>

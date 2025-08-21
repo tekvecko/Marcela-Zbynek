@@ -9,6 +9,7 @@ import fs from "fs";
 import bcrypt from "bcryptjs";
 import { verifyPhotoForChallenge, analyzePhotoContent } from "./gemini";
 import { authenticateUser, optionalAuth, type AuthRequest } from "./middleware/auth";
+import { miniGamesStorage } from "./mini-games-storage";
 
 // Simple rate limiting middleware
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -570,6 +571,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mini-games API routes
+  app.get("/api/mini-games", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const games = await miniGamesStorage.getMiniGames();
+      res.json(games);
+    } catch (error) {
+      console.error("Error fetching mini-games:", error);
+      res.status(500).json({ message: "Failed to fetch mini-games" });
+    }
+  });
+
+  app.get("/api/mini-games/:gameId", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { gameId } = req.params;
+      const game = await miniGamesStorage.getMiniGame(gameId);
+      
+      if (!game) {
+        return res.status(404).json({ message: "Mini-game not found" });
+      }
+      
+      res.json(game);
+    } catch (error) {
+      console.error("Error fetching mini-game:", error);
+      res.status(500).json({ message: "Failed to fetch mini-game" });
+    }
+  });
+
+  app.post("/api/mini-games/:gameId/score", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { gameId } = req.params;
+      const { score, maxScore, timeSpent, gameData } = req.body;
+      
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Validate input
+      if (typeof score !== 'number' || typeof maxScore !== 'number' || score < 0 || maxScore < 0) {
+        return res.status(400).json({ message: "Invalid score data" });
+      }
+
+      // Check if game exists
+      const game = await miniGamesStorage.getMiniGame(gameId);
+      if (!game) {
+        return res.status(404).json({ message: "Mini-game not found" });
+      }
+
+      const playerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email || 'Anonymous';
+
+      const scoreData = {
+        gameId,
+        playerEmail: req.user.email || '',
+        playerName,
+        score,
+        maxScore,
+        timeSpent: timeSpent || null,
+        gameData: gameData || null
+      };
+
+      const savedScore = await miniGamesStorage.saveMiniGameScore(scoreData);
+      res.json(savedScore);
+    } catch (error) {
+      console.error("Error saving mini-game score:", error);
+      res.status(500).json({ message: "Failed to save score" });
+    }
+  });
+
+  app.get("/api/mini-games/:gameId/scores", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { gameId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const scores = await miniGamesStorage.getTopScores(gameId, limit);
+      res.json(scores);
+    } catch (error) {
+      console.error("Error fetching mini-game scores:", error);
+      res.status(500).json({ message: "Failed to fetch scores" });
+    }
+  });
+
+  app.get("/api/mini-games/:gameId/my-score", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { gameId } = req.params;
+      
+      if (!req.user?.email) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const score = await miniGamesStorage.getPlayerScore(gameId, req.user.email);
+      res.json(score || null);
+    } catch (error) {
+      console.error("Error fetching player score:", error);
+      res.status(500).json({ message: "Failed to fetch player score" });
+    }
+  });
 
   // Get quest leaderboard (protected)
   app.get("/api/quest-leaderboard", async (req, res) => {

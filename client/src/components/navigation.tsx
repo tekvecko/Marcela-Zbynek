@@ -44,6 +44,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               Photo Quest
             </Link>
             <Link
+              href="/mini-games"
+              className={`transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+            >
+              Mini-hry
+            </Link>
+            <Link
               href="/gallery"
               className={`transition-colors ${location === '/gallery' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
@@ -127,6 +133,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 className={`text-left transition-colors ${location === '/photo-quest' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
                 Photo Quest
+              </Link>
+              <Link
+                href="/mini-games"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+              >
+                Mini-hry
               </Link>
               <Link
                 href="/gallery"
