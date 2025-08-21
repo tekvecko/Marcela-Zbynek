@@ -414,9 +414,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Photo not found" });
       }
 
-      // Clean up old anonymous likes first
-      await storage.cleanupAnonymousLikes(sanitizedPhotoId);
-
       const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
 
       console.log(`Has user liked? ${hasLiked}`);
