@@ -496,6 +496,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current user's quest progress
+  app.get("/api/user/quest-progress", authenticateUser, async (req: any, res) => {
+    try {
+      const userEmail = req.user?.email;
+      if (!userEmail) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const progress = await storage.getQuestProgressByParticipant(userEmail);
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user quest progress" });
+    }
+  });
+
+  // Get user's photos for a specific quest
+  app.get("/api/user/quest/:questId/photos", authenticateUser, async (req: any, res) => {
+    try {
+      const userEmail = req.user?.email;
+      const { questId } = req.params;
+      
+      if (!userEmail) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const allPhotos = await storage.getPhotosByQuestId(questId);
+      const userPhotos = allPhotos.filter(photo => photo.uploaderName === userEmail);
+      
+      res.json(userPhotos);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user photos" });
+    }
+  });
+
   // Admin: Create new challenge
   app.post("/api/admin/challenges", async (req, res) => {
     try {

@@ -971,6 +971,12 @@ export class DatabaseStorage implements IStorage {
     return !!existingLike;
   }
 
+  async cleanupAnonymousLikes(photoId: string): Promise<void> {
+    await db
+      .delete(photoLikes)
+      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, "anonymous")));
+  }
+
   // Quest Progress operations
   async getQuestProgress(): Promise<QuestProgress[]> {
     return await db.select().from(questProgress);
