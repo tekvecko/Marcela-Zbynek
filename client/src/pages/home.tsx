@@ -1,14 +1,19 @@
 import Navigation from "@/components/navigation";
 import HeroSection from "@/components/hero-section";
 import CountdownTimer from "@/components/countdown-timer";
+import OnboardingTrigger from "@/components/onboarding/onboarding-trigger";
+import OnboardingTutorial from "@/components/onboarding/onboarding-tutorial";
+import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 import { Link } from "wouter";
 import { Camera, Heart, MapPin, Users } from "lucide-react";
 import GlassButton from "@/components/ui/glass-button";
 
 export default function Home() {
+  const { startOnboarding } = useOnboardingContext();
+
   return (
     <div className="min-h-screen bg-cream">
-      <Navigation />
+      <Navigation onStartTutorial={startOnboarding} />
       <HeroSection />
       <CountdownTimer />
       
@@ -110,6 +115,9 @@ export default function Home() {
         </div>
       </footer>
 
+      {/* Onboarding */}
+      <OnboardingTrigger />
+      <OnboardingTutorial />
     </div>
   );
 }

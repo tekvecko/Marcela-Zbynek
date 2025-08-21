@@ -1,11 +1,14 @@
 import Navigation from "@/components/navigation";
 import PhotoQuest from "@/components/photo-quest";
 import AuthForm from "@/components/auth-form";
+import OnboardingTrigger from "@/components/onboarding/onboarding-trigger";
 import { useAuth } from "@/contexts/auth-context";
+import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 
 export default function PhotoQuestPage() {
   const { user, login, isLoading } = useAuth();
+  const { startOnboarding } = useOnboardingContext();
 
   if (isLoading) {
     return (
@@ -21,7 +24,7 @@ export default function PhotoQuestPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Navigation />
+      <Navigation onStartTutorial={startOnboarding} />
       <PhotoQuest />
       
       {/* Footer */}
@@ -41,6 +44,8 @@ export default function PhotoQuestPage() {
           </div>
         </div>
       </footer>
+      
+      <OnboardingTrigger />
     </div>
   );
 }

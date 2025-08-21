@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X, LogOut, User, HelpCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import GlassButton from "@/components/ui/glass-button";
 import { useAuth } from "@/contexts/auth-context";
@@ -8,10 +8,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function Navigation() {
+interface NavigationProps {
+  onStartTutorial?: () => void;
+}
+
+export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const { user, logout } = useAuth();
@@ -78,6 +83,15 @@ export default function Navigation() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
+                  {onStartTutorial && (
+                    <>
+                      <DropdownMenuItem onClick={onStartTutorial} className="text-romantic">
+                        <HelpCircle size={16} className="mr-2" />
+                        Spustit tutoriál
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={logout} className="text-red-600">
                     <LogOut size={16} className="mr-2" />
                     Odhlásit se
@@ -150,6 +164,20 @@ export default function Navigation() {
                     <User size={16} className="mr-2" />
                     {user?.firstName || user?.email}
                   </div>
+                  {onStartTutorial && (
+                    <GlassButton 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        onStartTutorial();
+                        setIsMenuOpen(false);
+                      }} 
+                      className="text-romantic w-full"
+                    >
+                      <HelpCircle size={16} className="mr-2" />
+                      Spustit tutoriál
+                    </GlassButton>
+                  )}
                   <GlassButton variant="outline" size="sm" onClick={logout} className="text-red-600 w-full">
                     Odhlásit se
                   </GlassButton>
