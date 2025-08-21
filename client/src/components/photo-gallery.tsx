@@ -105,9 +105,17 @@ export default function PhotoGallery() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch('/api/photos/upload', {
         method: 'POST',
         body: formData,
+        headers,
       });
       if (!response.ok) {
         const error = await response.json();
