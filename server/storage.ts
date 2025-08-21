@@ -313,6 +313,7 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
+        passwordHash: null,
         isAdmin: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -341,6 +342,7 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName || null,
       lastName: insertUser.lastName || null,
       profileImageUrl: insertUser.profileImageUrl || null,
+      passwordHash: null,
       isAdmin: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -494,7 +496,8 @@ export class MemStorage implements IStorage {
 
   async removePhotoLike(photoId: string, voterName: string): Promise<boolean> {
     let deleted = false;
-    for (const [likeId, like] of this.photoLikes.entries()) {
+    const entries = Array.from(this.photoLikes.entries());
+    for (const [likeId, like] of entries) {
       if (like.photoId === photoId && like.voterName === voterName) {
         this.photoLikes.delete(likeId);
         deleted = true;
@@ -564,18 +567,16 @@ export class MemStorage implements IStorage {
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
     const id = randomUUID();
     const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(userData.password, saltRounds);
+    const passwordHash = userData.passwordHash ? await bcrypt.hash(userData.passwordHash, saltRounds) : null;
 
     const authUser: AuthUser = {
       id,
-      email: userData.email,
+      email: userData.email ?? null,
       passwordHash,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      isVerified: true, // Auto-verify for simplicity
-      verificationToken: null,
-      resetToken: null,
-      resetTokenExpiry: null,
+      firstName: userData.firstName ?? null,
+      lastName: userData.lastName ?? null,
+      profileImageUrl: null,
+      isAdmin: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -634,23 +635,23 @@ export class DatabaseStorage implements IStorage {
   // User operations
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
 
-  async getUser(id: string): Promise<User | null> {
+  async getUser(id: string): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
-      return user || null;
+      return user || undefined;
     } catch (error) {
       console.error("Failed to get user:", error);
-      return null;
+      return undefined;
     }
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      return user || null;
+      return user || undefined;
     } catch (error) {
       console.error("Failed to get user by email:", error);
-      return null;
+      return undefined;
     }
   }
 
@@ -721,7 +722,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuestChallenge(id: string): Promise<boolean> {
     const result = await db.delete(questChallenges).where(eq(questChallenges.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   private async initializeDefaultChallenges(): Promise<void> {
@@ -962,7 +963,7 @@ export class DatabaseStorage implements IStorage {
 
     // Delete the photo
     const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Photo Like operations
@@ -979,8 +980,7 @@ export class DatabaseStorage implements IStorage {
     const [existingLike] = await db
       .select()
       .from(photoLikes)
-      .where(eq(photoLikes.photoId, photoId))
-      .where(eq(photoLikes.voterName, voterName));
+      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)));
     return !!existingLike;
   }
 
@@ -997,7 +997,7 @@ export class DatabaseStorage implements IStorage {
         eq(photoLikes.voterName, voterName)
       ));
 
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Quest Progress operations
@@ -1035,8 +1035,7 @@ export class DatabaseStorage implements IStorage {
     const [existingProgress] = await db
       .select()
       .from(questProgress)
-      .where(eq(questProgress.questId, questId))
-      .where(eq(questProgress.participantName, participantName));
+      .where(and(eq(questProgress.questId, questId), eq(questProgress.participantName, participantName)));
 
     if (existingProgress) {
       return existingProgress;
@@ -1057,9 +1056,11 @@ export class DatabaseStorage implements IStorage {
 
   // Auth operations
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
-    const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
-    if (existingUser) {
-      throw new Error("User with this email already exists.");
+    if (userData.email) {
+      const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+      if (existingUser) {
+        throw new Error("User with this email already exists.");
+      }
     }
 
     const [createdUser] = await db.insert(users).values({
@@ -1113,7 +1114,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAuthSession(sessionId: string): Promise<boolean> {
     const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
