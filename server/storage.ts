@@ -14,7 +14,7 @@ import {
   type InsertAuthUser,
   AuthSession
 } from "@shared/schema";
-import { users, questChallenges, uploadedPhotos, photoLikes, questProgress, authUsers } from "@shared/schema";
+import { users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -600,6 +600,11 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private authSessions: Map<string, AuthSession>;
+
+  constructor() {
+    this.authSessions = new Map();
+  }
   // User operations
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
 
@@ -1026,12 +1031,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(authUsers).where(eq(authUsers.email, email)).limit(1);
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return user || undefined;
   }
 
   async getAuthUserById(id: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(authUsers).where(eq(authUsers.id, id)).limit(1);
+    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return user || undefined;
   }
 
@@ -1040,45 +1045,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAuthSession(userId: string): Promise<AuthSession> {
-    // For DatabaseStorage, we'll use MemStorage approach for now
-    // In production, you'd want to store sessions in database
-    const id = randomUUID();
     const sessionToken = randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-    const session: AuthSession = {
-      id,
+    const [session] = await db.insert(authSessions).values({
       userId,
       sessionToken,
       expiresAt,
-      createdAt: new Date(),
-    };
+    }).returning();
 
-    // Store in memory for now (should be database in production)
-    if (!this.authSessions) {
-      this.authSessions = new Map();
-    }
-    this.authSessions.set(id, session);
     return session;
   }
 
   async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
-    if (!this.authSessions) {
-      this.authSessions = new Map();
-      return undefined;
+    const [session] = await db.select().from(authSessions)
+      .where(eq(authSessions.sessionToken, token))
+      .limit(1);
+    
+    if (session && session.expiresAt > new Date()) {
+      return session;
     }
-    return Array.from(this.authSessions.values()).find(session => 
-      session.sessionToken === token && session.expiresAt > new Date()
-    );
+    return undefined;
   }
 
   async deleteAuthSession(sessionId: string): Promise<boolean> {
-    if (!this.authSessions) {
-      this.authSessions = new Map();
-      return false;
-    }
-    return this.authSessions.delete(sessionId);
+    const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
+    return result.rowCount > 0;
   }
 }
 

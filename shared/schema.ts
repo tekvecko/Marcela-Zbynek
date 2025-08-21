@@ -134,11 +134,27 @@ export const registerSchema = z.object({
   lastName: z.string().min(1, "Příjmení je povinné"),
 });
 
+// Auth session table for custom authentication
+export const authSessions = pgTable("auth_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  sessionToken: varchar("session_token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertAuthSessionSchema = createInsertSchema(authSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type AuthUser = User;
 export type InsertAuthUser = z.infer<typeof insertAuthUserSchema>;
+export type AuthSession = typeof authSessions.$inferSelect;
+export type InsertAuthSession = z.infer<typeof insertAuthSessionSchema>;
 export type QuestChallenge = typeof questChallenges.$inferSelect;
 export type InsertQuestChallenge = z.infer<typeof insertQuestChallengeSchema>;
 export type UploadedPhoto = typeof uploadedPhotos.$inferSelect;
