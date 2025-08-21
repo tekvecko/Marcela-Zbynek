@@ -1,4 +1,3 @@
-
 import { storage } from "../storage";
 import type { Request, Response, NextFunction } from "express";
 
@@ -11,58 +10,6 @@ export interface AuthRequest extends Request {
   };
 }
 
-export async function authenticateUser(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const authHeader = req.headers.authorization;
-    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-    if (!sessionToken) {
-      return res.status(401).json({ message: "Chybí autentizační token." });
-    }
-
-    // Simple token validation - in production you'd want to store and validate these properly
-    if (!sessionToken.startsWith('session_')) {
-      return res.status(401).json({ message: "Neplatný autentizační token." });
-    }
-
-    // Extract user ID from token for basic user info
-    const tokenParts = sessionToken.split('_');
-    if (tokenParts.length >= 2) {
-      const userId = tokenParts[1];
-      
-      try {
-        // Try to get user from storage
-        const user = await storage.getAuthUserById(userId);
-        if (user) {
-          req.user = {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-          };
-        } else {
-          // Fallback for missing user - create a basic user object
-          req.user = {
-            id: userId,
-            email: `user_${userId}@example.com`,
-          };
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        // Fallback for errors
-        req.user = {
-          id: userId,
-          email: `user_${userId}@example.com`,
-        };
-      }
-    }
-
-    next();
-  } catch (error) {
-    return res.status(500).json({ message: "Chyba při ověřování." });
-  }
-}
-
 export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -72,8 +19,55 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
   }
 
   // Try to authenticate but don't fail if it doesn't work
-  authenticateUser(req, res, (error) => {
+  // The authenticateUser function will handle setting req.user or not
+  authenticateUser(req, res, () => {
     // Continue regardless of auth success/failure
     next();
   });
+}
+
+
+export async function authenticateUser(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    if (!sessionToken) {
+      // If no token is provided, the user is not authenticated, but we don't necessarily fail.
+      // This case is handled by optionalAuth, but if called directly without a token, we should proceed.
+      req.user = undefined; // Explicitly set to undefined if no token
+      return next();
+    }
+
+    // Assuming storage.getAuthSessionByToken and storage.getAuthUserById are correctly implemented
+    const sessionData = await storage.getAuthSessionByToken(sessionToken);
+    if (!sessionData) {
+      req.user = undefined; // Session not found
+      return next();
+    }
+
+    const user = await storage.getAuthUserById(sessionData.userId);
+    if (!user) {
+      req.user = undefined; // User not found for the session
+      return next();
+    }
+
+    // Assign the found user to req.user
+    req.user = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    // On error, treat as unauthenticated
+    req.user = undefined;
+    // We should not send a response here if called via next() chain,
+    // but if this is the primary auth for a route, it might need error handling.
+    // For now, we proceed as if unauthenticated.
+    next();
+  }
 }

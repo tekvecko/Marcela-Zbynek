@@ -320,11 +320,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Get all uploaded photos - public for gallery viewing
-  app.get("/api/photos", async (req, res) => {
+  app.get("/api/photos", optionalAuth, async (req: any, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
+      const currentUserEmail = req.user?.email;
+
+      // Add userHasLiked information for authenticated users
+      const photosWithLikeStatus = await Promise.all(
+        photos.map(async (photo) => {
+          let userHasLiked = false;
+          if (currentUserEmail) {
+            userHasLiked = await storage.hasUserLikedPhoto(photo.id, currentUserEmail);
+          }
+          return {
+            ...photo,
+            userHasLiked
+          };
+        })
+      );
+
       // Sort photos by creation date descending (newest first)
-      const sortedPhotos = photos.sort((a, b) => 
+      const sortedPhotos = photosWithLikeStatus.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       res.json(sortedPhotos);
