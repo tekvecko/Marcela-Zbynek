@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -79,29 +79,8 @@ export default function PhotoGallery() {
     queryKey: ["/api/photos"],
   });
 
-  // Fetch user data for all photo uploaders
-  const uploaderEmails = [...new Set(photos.map(photo => photo.uploaderName))];
-  const { data: users = {} } = useQuery({
-    queryKey: ["/api/users/batch", uploaderEmails],
-    queryFn: async () => {
-      if (uploaderEmails.length === 0) return {};
-      
-      const userPromises = uploaderEmails.map(async (email) => {
-        try {
-          const response = await apiRequest('GET', `/api/users/${encodeURIComponent(email)}`, {});
-          const userData = await response.json();
-          return [email, userData];
-        } catch (error) {
-          console.error(`Failed to fetch user data for ${email}:`, error);
-          return [email, null];
-        }
-      });
-      
-      const userResults = await Promise.all(userPromises);
-      return Object.fromEntries(userResults.filter(([_, userData]) => userData !== null));
-    },
-    enabled: uploaderEmails.length > 0,
-  });
+  // Use simple display names without fetching user data (since /api/users endpoint doesn't exist)
+  const users = {};
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -271,10 +250,10 @@ export default function PhotoGallery() {
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Nahrát fotku do galerie</DialogTitle>
+                  <DialogDescription>
+                    Sdílejte své krásné vzpomínky ze svatby s ostatními hosty.
+                  </DialogDescription>
                 </DialogHeader>
-                <div className="text-sm text-charcoal/70 mb-4">
-                  Sdílejte své krásné vzpomínky ze svatby s ostatními hosty.
-                </div>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="photo">Vyberte fotku nebo vyfotografujte</Label>
