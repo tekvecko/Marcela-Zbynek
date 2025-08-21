@@ -461,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      res.status(500).json({ message: "Failed to process like/unlike", error: error.message });
+      res.status(500).json({ message: "Failed to process like/unlike", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -841,7 +841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Reset all progress
   app.post("/api/admin/progress/reset-all", async (req, res) => {
     try {
-      const progressRecords = await storage.getAllQuestProgress();
+      const progressRecords = await storage.getQuestProgress();
       let resetCount = 0;
 
       for (const progress of progressRecords) {
