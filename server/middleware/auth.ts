@@ -69,41 +69,41 @@ export async function authenticateUser(req: AuthRequest, res: Response, next: Ne
     const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
     if (!sessionToken) {
-      // If no token is provided, the user is not authenticated, but we don't necessarily fail.
-      // This case is handled by optionalAuth, but if called directly without a token, we should proceed.
-      req.user = undefined; // Explicitly set to undefined if no token
-      return next();
+      return res.status(401).json({ message: "Authentication required" });
     }
 
-    // Assuming storage.getAuthSessionByToken and storage.getAuthUserById are correctly implemented
-    const sessionData = await storage.getAuthSessionByToken(sessionToken);
-    if (!sessionData) {
-      req.user = undefined; // Session not found
-      return next();
+    // Simple token validation - extract user ID from token
+    if (!sessionToken.startsWith('session_')) {
+      return res.status(401).json({ message: "Invalid token format" });
     }
 
-    const user = await storage.getAuthUserById(sessionData.userId);
-    if (!user) {
-      req.user = undefined; // User not found for the session
-      return next();
+    const tokenParts = sessionToken.split('_');
+    if (tokenParts.length < 2) {
+      return res.status(401).json({ message: "Invalid token format" });
     }
 
-    // Assign the found user to req.user
-    req.user = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
+    const userId = tokenParts[1];
+    
+    try {
+      const user = await storage.getAuthUserById(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
 
-    next();
+      req.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      };
+
+      next();
+    } catch (dbError) {
+      console.error('Database error during authentication:', dbError);
+      return res.status(500).json({ message: "Authentication failed" });
+    }
   } catch (error) {
     console.error('Authentication error:', error);
-    // On error, treat as unauthenticated
-    req.user = undefined;
-    // We should not send a response here if called via next() chain,
-    // but if this is the primary auth for a route, it might need error handling.
-    // For now, we proceed as if unauthenticated.
-    next();
+    return res.status(500).json({ message: "Authentication failed" });
   }
 }

@@ -404,10 +404,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Like/unlike a photo - with rate limiting
-  app.post("/api/photos/:photoId/like", authenticateUser, likeRateLimit, async (req: any, res) => {
+  app.post("/api/photos/:photoId/like", authenticateUser, likeRateLimit, async (req: AuthRequest, res) => {
     try {
       const { photoId } = req.params;
       photoLikeSchema.parse(req.body); // Validate empty body
+
+      // Check if user is authenticated
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required to like photos" });
+      }
 
       // Validate photoId format
       if (!photoId || typeof photoId !== 'string' || photoId.length > 100) {
@@ -421,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Use authenticated user's email as voter name
-      const voterName = req.user?.email || "anonymous";
+      const voterName = req.user.email;
 
       console.log(`Like attempt: photoId=${sanitizedPhotoId}, voterName=${voterName}`);
 

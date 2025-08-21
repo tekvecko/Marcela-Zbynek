@@ -378,12 +378,18 @@ export default function PhotoGallery() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              likePhotoMutation.mutate(photo.id);
+                              if (!photo.userHasLiked) {
+                                likePhotoMutation.mutate(photo.id);
+                              }
                             }}
-                            className="flex items-center space-x-1 bg-black/50 px-2 py-1 rounded hover:bg-black/70 transition-colors"
-                            disabled={likePhotoMutation.isPending}
+                            className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                              photo.userHasLiked 
+                                ? 'bg-red-500/80 cursor-not-allowed' 
+                                : 'bg-black/50 hover:bg-black/70 cursor-pointer'
+                            }`}
+                            disabled={likePhotoMutation.isPending || photo.userHasLiked}
                           >
-                            <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'}`} />
+                            <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-white fill-white' : 'text-white'}`} />
                             <span className="text-xs">{photo.likes || 0}</span>
                           </button>
                         </div>
@@ -517,14 +523,25 @@ export default function PhotoGallery() {
                         <GlassButton
                           variant="ghost"
                           size="sm"
-                          onClick={() => likePhotoMutation.mutate(selectedPhoto.id)}
+                          onClick={() => {
+                            if (!selectedPhoto.userHasLiked) {
+                              likePhotoMutation.mutate(selectedPhoto.id);
+                            }
+                          }}
                           disabled={likePhotoMutation.isPending || selectedPhoto.userHasLiked}
-                          className="text-white hover:bg-white/20 p-2"
+                          className={`p-2 ${
+                            selectedPhoto.userHasLiked 
+                              ? 'text-red-400 cursor-not-allowed' 
+                              : 'text-white hover:bg-white/20'
+                          }`}
                         >
                           <Heart className={`w-4 h-4 ${
                             selectedPhoto.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'
                           }`} />
                           <span className="text-xs sm:text-sm ml-1">{selectedPhoto.likes || 0}</span>
+                          {selectedPhoto.userHasLiked && (
+                            <span className="text-xs ml-1">✓</span>
+                          )}
                         </GlassButton>
                       </div>
                     </div>
