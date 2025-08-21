@@ -352,8 +352,32 @@ export class MemStorage implements IStorage {
   }
 
   async getQuestChallenges(): Promise<QuestChallenge[]> {
-    return Array.from(this.questChallenges.values()).filter(c => c.isActive);
+    // Simulace výpadku databáze
+    if (process.env.SIMULATE_DB_OUTAGE === 'true') {
+      console.warn('🔴 SIMULACE: Databáze nedostupná - používám záložní data');
+      return [
+        {
+          id: 'fallback-1',
+          title: '🔴 ZÁLOŽNÍ REŽIM - Základní fotka',
+          description: 'Aplikace běží v záložním režimu. Nahrajte jakoukoliv fotku.',
+          targetPhotoCount: 1,
+          points: 10,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ];
+    }
+
+    try {
+      return Array.from(this.questChallenges.values()).filter(c => c.isActive);
+    } catch (error) {
+      console.error('Chyba v MemStorage při získávání quest challenges:', error);
+      console.warn('🔴 FALLBACK v MemStorage: Používám záložní data');
+      return [];
+    }
   }
+
 
   async getQuestChallenge(id: string): Promise<QuestChallenge | undefined> {
     return this.questChallenges.get(id);
@@ -690,39 +714,82 @@ export class DatabaseStorage implements IStorage {
 
   // Quest Challenge operations
   async getQuestChallenges(): Promise<QuestChallenge[]> {
-    const challenges = await db.select().from(questChallenges);
-
-    // If no challenges exist, initialize with defaults
-    if (challenges.length === 0) {
-      await this.initializeDefaultChallenges();
-      return await db.select().from(questChallenges);
+    // Simulace výpadku databáze
+    if (process.env.SIMULATE_DB_OUTAGE === 'true') {
+      console.warn('🔴 SIMULACE: Databáze nedostupná - používám záložní data');
+      return [
+        {
+          id: 'fallback-1',
+          title: '🔴 ZÁLOŽNÍ REŽIM - Základní fotka',
+          description: 'Aplikace běží v záložním režimu. Nahrajte jakoukoliv fotku.',
+          targetPhotoCount: 1,
+          points: 10,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ];
     }
 
-    return challenges;
+    try {
+      const challenges = await db.select().from(questChallenges);
+
+      // If no challenges exist, initialize with defaults
+      if (challenges.length === 0) {
+        await this.initializeDefaultChallenges();
+        return await db.select().from(questChallenges);
+      }
+
+      return challenges;
+    } catch (error) {
+      console.error('Databázová chyba:', error);
+      console.warn('🔴 AUTOMATICKÝ FALLBACK: Používám záložní data');
+      return [];
+    }
   }
 
   async getQuestChallenge(id: string): Promise<QuestChallenge | undefined> {
-    const [challenge] = await db.select().from(questChallenges).where(eq(questChallenges.id, id));
-    return challenge;
+    try {
+      const [challenge] = await db.select().from(questChallenges).where(eq(questChallenges.id, id));
+      return challenge;
+    } catch (error) {
+      console.error(`Failed to get quest challenge ${id}:`, error);
+      return undefined;
+    }
   }
 
   async createQuestChallenge(challenge: InsertQuestChallenge): Promise<QuestChallenge> {
-    const [createdChallenge] = await db.insert(questChallenges).values(challenge).returning();
-    return createdChallenge;
+    try {
+      const [createdChallenge] = await db.insert(questChallenges).values(challenge).returning();
+      return createdChallenge;
+    } catch (error) {
+      console.error('Failed to create quest challenge:', error);
+      throw error; // Re-throw to indicate failure
+    }
   }
 
   async updateQuestChallenge(id: string, challenge: InsertQuestChallenge): Promise<QuestChallenge | undefined> {
-    const [updatedChallenge] = await db
-      .update(questChallenges)
-      .set(challenge)
-      .where(eq(questChallenges.id, id))
-      .returning();
-    return updatedChallenge;
+    try {
+      const [updatedChallenge] = await db
+        .update(questChallenges)
+        .set(challenge)
+        .where(eq(questChallenges.id, id))
+        .returning();
+      return updatedChallenge;
+    } catch (error) {
+      console.error(`Failed to update quest challenge ${id}:`, error);
+      return undefined;
+    }
   }
 
   async deleteQuestChallenge(id: string): Promise<boolean> {
-    const result = await db.delete(questChallenges).where(eq(questChallenges.id, id));
-    return (result.rowCount ?? 0) > 0;
+    try {
+      const result = await db.delete(questChallenges).where(eq(questChallenges.id, id));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error(`Failed to delete quest challenge ${id}:`, error);
+      return false;
+    }
   }
 
   private async initializeDefaultChallenges(): Promise<void> {
@@ -922,96 +989,170 @@ export class DatabaseStorage implements IStorage {
 
   // Photo operations
   async getUploadedPhotos(): Promise<UploadedPhoto[]> {
-    return await db.select().from(uploadedPhotos);
+    try {
+      return await db.select().from(uploadedPhotos);
+    } catch (error) {
+      console.error("Failed to get uploaded photos:", error);
+      return [];
+    }
   }
 
   async getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined> {
-    const [photo] = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id));
-    return photo;
+    try {
+      const [photo] = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+      return photo;
+    } catch (error) {
+      console.error(`Failed to get uploaded photo ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getPhotosByQuestId(questId: string): Promise<UploadedPhoto[]> {
-    return await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.questId, questId));
+    try {
+      return await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.questId, questId));
+    } catch (error) {
+      console.error(`Failed to get uploaded photos for quest ${questId}:`, error);
+      return [];
+    }
   }
 
   async createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto> {
-    const [createdPhoto] = await db.insert(uploadedPhotos).values(photo).returning();
-    return createdPhoto;
+    try {
+      const [createdPhoto] = await db.insert(uploadedPhotos).values(photo).returning();
+      return createdPhoto;
+    } catch (error) {
+      console.error('Failed to create uploaded photo:', error);
+      throw error;
+    }
   }
 
   async updatePhotoLikes(id: string, likes: number): Promise<UploadedPhoto | undefined> {
-    const [updatedPhoto] = await db
-      .update(uploadedPhotos)
-      .set({ likes })
-      .where(eq(uploadedPhotos.id, id))
-      .returning();
-    return updatedPhoto;
+    try {
+      const [updatedPhoto] = await db
+        .update(uploadedPhotos)
+        .set({ likes })
+        .where(eq(uploadedPhotos.id, id))
+        .returning();
+      return updatedPhoto;
+    } catch (error) {
+      console.error(`Failed to update likes for photo ${id}:`, error);
+      return undefined;
+    }
   }
 
   async updatePhotoVerification(id: string, isVerified: boolean): Promise<UploadedPhoto | undefined> {
-    const [updatedPhoto] = await db
-      .update(uploadedPhotos)
-      .set({ isVerified })
-      .where(eq(uploadedPhotos.id, id))
-      .returning();
-    return updatedPhoto;
+    try {
+      const [updatedPhoto] = await db
+        .update(uploadedPhotos)
+        .set({ isVerified })
+        .where(eq(uploadedPhotos.id, id))
+        .returning();
+      return updatedPhoto;
+    } catch (error) {
+      console.error(`Failed to update verification for photo ${id}:`, error);
+      return undefined;
+    }
   }
 
   async deleteUploadedPhoto(id: string): Promise<boolean> {
-    // Delete associated likes first
-    await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
+    try {
+      // Delete associated likes first
+      await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
 
-    // Delete the photo
-    const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
-    return (result.rowCount ?? 0) > 0;
+      // Delete the photo
+      const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error(`Failed to delete uploaded photo ${id}:`, error);
+      return false;
+    }
   }
 
   // Photo Like operations
   async getPhotoLikes(photoId: string): Promise<PhotoLike[]> {
-    return await db.select().from(photoLikes).where(eq(photoLikes.photoId, photoId));
+    try {
+      return await db.select().from(photoLikes).where(eq(photoLikes.photoId, photoId));
+    } catch (error) {
+      console.error(`Failed to get likes for photo ${photoId}:`, error);
+      return [];
+    }
   }
 
   async createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike> {
-    const [createdLike] = await db.insert(photoLikes).values(like).returning();
-    return createdLike;
+    try {
+      const [createdLike] = await db.insert(photoLikes).values(like).returning();
+      return createdLike;
+    } catch (error) {
+      console.error('Failed to create photo like:', error);
+      throw error;
+    }
   }
 
   async hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean> {
-    const [existingLike] = await db
-      .select()
-      .from(photoLikes)
-      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)));
-    return !!existingLike;
+    try {
+      const [existingLike] = await db
+        .select()
+        .from(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)));
+      return !!existingLike;
+    } catch (error) {
+      console.error(`Failed to check if user ${voterName} liked photo ${photoId}:`, error);
+      return false;
+    }
   }
 
   async cleanupAnonymousLikes(photoId: string): Promise<void> {
-    await db
-      .delete(photoLikes)
-      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, "anonymous")));
+    try {
+      await db
+        .delete(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, "anonymous")));
+    } catch (error) {
+      console.error(`Failed to cleanup anonymous likes for photo ${photoId}:`, error);
+    }
   }
 
   async removePhotoLike(photoId: string, voterName: string): Promise<boolean> {
-    const result = await db.delete(photoLikes)
-      .where(and(
-        eq(photoLikes.photoId, photoId),
-        eq(photoLikes.voterName, voterName)
-      ));
+    try {
+      const result = await db.delete(photoLikes)
+        .where(and(
+          eq(photoLikes.photoId, photoId),
+          eq(photoLikes.voterName, voterName)
+        ));
 
-    return (result.rowCount ?? 0) > 0;
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error(`Failed to remove like for photo ${photoId} by ${voterName}:`, error);
+      return false;
+    }
   }
 
   // Quest Progress operations
   async getQuestProgress(): Promise<QuestProgress[]> {
-    return await db.select().from(questProgress);
+    try {
+      return await db.select().from(questProgress);
+    } catch (error) {
+      console.error("Failed to get quest progress:", error);
+      return [];
+    }
   }
 
   async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]> {
-    return await db.select().from(questProgress).where(eq(questProgress.participantName, participantName));
+    try {
+      return await db.select().from(questProgress).where(eq(questProgress.participantName, participantName));
+    } catch (error) {
+      console.error(`Failed to get quest progress for participant ${participantName}:`, error);
+      return [];
+    }
   }
 
   async createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress> {
-    const [createdProgress] = await db.insert(questProgress).values(progress).returning();
-    return createdProgress;
+    try {
+      const [createdProgress] = await db.insert(questProgress).values(progress).returning();
+      return createdProgress;
+    } catch (error) {
+      console.error('Failed to create quest progress:', error);
+      throw error;
+    }
   }
 
   async updateQuestProgress(id: string, photosUploaded: number, isCompleted?: boolean): Promise<QuestProgress | undefined> {
@@ -1023,68 +1164,98 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    const [updatedProgress] = await db
-      .update(questProgress)
-      .set(updateData)
-      .where(eq(questProgress.id, id))
-      .returning();
-    return updatedProgress;
+    try {
+      const [updatedProgress] = await db
+        .update(questProgress)
+        .set(updateData)
+        .where(eq(questProgress.id, id))
+        .returning();
+      return updatedProgress;
+    } catch (error) {
+      console.error(`Failed to update quest progress ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress> {
-    const [existingProgress] = await db
-      .select()
-      .from(questProgress)
-      .where(and(eq(questProgress.questId, questId), eq(questProgress.participantName, participantName)));
+    try {
+      const [existingProgress] = await db
+        .select()
+        .from(questProgress)
+        .where(and(eq(questProgress.questId, questId), eq(questProgress.participantName, participantName)));
 
-    if (existingProgress) {
-      return existingProgress;
+      if (existingProgress) {
+        return existingProgress;
+      }
+
+      const [newProgress] = await db
+        .insert(questProgress)
+        .values({
+          questId,
+          participantName,
+          photosUploaded: 0,
+          isCompleted: false,
+        })
+        .returning();
+
+      return newProgress;
+    } catch (error) {
+      console.error(`Failed to get or create quest progress for quest ${questId} and participant ${participantName}:`, error);
+      throw error;
     }
-
-    const [newProgress] = await db
-      .insert(questProgress)
-      .values({
-        questId,
-        participantName,
-        photosUploaded: 0,
-        isCompleted: false,
-      })
-      .returning();
-
-    return newProgress;
   }
 
   // Auth operations
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
-    if (userData.email) {
-      const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
-      if (existingUser) {
-        throw new Error("User with this email already exists.");
+    try {
+      if (userData.email) {
+        const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+        if (existingUser) {
+          throw new Error("User with this email already exists.");
+        }
       }
+
+      const [createdUser] = await db.insert(users).values({
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        passwordHash: userData.passwordHash,
+      }).returning();
+
+      return createdUser;
+    } catch (error) {
+      console.error('Failed to create auth user:', error);
+      throw error;
     }
-
-    const [createdUser] = await db.insert(users).values({
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      passwordHash: userData.passwordHash,
-    }).returning();
-
-    return createdUser;
   }
 
   async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      return user || undefined;
+    } catch (error) {
+      console.error(`Failed to get auth user by email ${email}:`, error);
+      return undefined;
+    }
   }
 
   async getAuthUserById(id: string): Promise<AuthUser | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+      return user || undefined;
+    } catch (error) {
+      console.error(`Failed to get auth user by id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async verifyPassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
+    try {
+      return bcrypt.compare(password, hash);
+    } catch (error) {
+      console.error('Failed to verify password:', error);
+      return false;
+    }
   }
 
   async createAuthSession(userId: string): Promise<AuthSession> {
@@ -1092,29 +1263,44 @@ export class DatabaseStorage implements IStorage {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-    const [session] = await db.insert(authSessions).values({
-      userId,
-      sessionToken,
-      expiresAt,
-    }).returning();
+    try {
+      const [session] = await db.insert(authSessions).values({
+        userId,
+        sessionToken,
+        expiresAt,
+      }).returning();
 
-    return session;
+      return session;
+    } catch (error) {
+      console.error('Failed to create auth session:', error);
+      throw error;
+    }
   }
 
   async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
-    const [session] = await db.select().from(authSessions)
-      .where(eq(authSessions.sessionToken, token))
-      .limit(1);
+    try {
+      const [session] = await db.select().from(authSessions)
+        .where(eq(authSessions.sessionToken, token))
+        .limit(1);
 
-    if (session && session.expiresAt > new Date()) {
-      return session;
+      if (session && session.expiresAt > new Date()) {
+        return session;
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Failed to get auth session by token:', error);
+      return undefined;
     }
-    return undefined;
   }
 
   async deleteAuthSession(sessionId: string): Promise<boolean> {
-    const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
-    return (result.rowCount ?? 0) > 0;
+    try {
+      const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error(`Failed to delete auth session ${sessionId}:`, error);
+      return false;
+    }
   }
 }
 

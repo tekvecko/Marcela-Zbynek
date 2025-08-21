@@ -1,0 +1,25 @@
+
+services:
+  - type: web
+    name: svatebni-fotovyzvy
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wedding-db
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+    healthCheckPath: /api/health
+
+databases:
+  - name: wedding-db
+    databaseName: wedding_app
+    plan: free
