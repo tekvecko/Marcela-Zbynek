@@ -47,6 +47,7 @@ export interface IStorage {
   getPhotoLikes(photoId: string): Promise<PhotoLike[]>;
   createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike>;
   hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean>;
+  cleanupAnonymousLikes(photoId: string): Promise<void>;
 
   getQuestProgress(): Promise<QuestProgress[]>;
   getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]>;
