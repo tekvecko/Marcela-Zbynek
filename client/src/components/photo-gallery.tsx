@@ -381,6 +381,7 @@ export default function PhotoGallery() {
                               likePhotoMutation.mutate(photo.id);
                             }}
                             className="flex items-center space-x-1 bg-black/50 px-2 py-1 rounded hover:bg-black/70 transition-colors"
+                            disabled={likePhotoMutation.isPending}
                           >
                             <Heart className={`w-4 h-4 ${photo.userHasLiked ? 'text-red-400 fill-red-400' : 'text-white'}`} />
                             <span className="text-xs">{photo.likes || 0}</span>
@@ -517,7 +518,7 @@ export default function PhotoGallery() {
                           variant="ghost"
                           size="sm"
                           onClick={() => likePhotoMutation.mutate(selectedPhoto.id)}
-                          disabled={likePhotoMutation.isPending}
+                          disabled={likePhotoMutation.isPending || selectedPhoto.userHasLiked}
                           className="text-white hover:bg-white/20 p-2"
                         >
                           <Heart className={`w-4 h-4 ${

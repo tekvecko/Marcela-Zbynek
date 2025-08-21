@@ -15,15 +15,51 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
   const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
   if (!sessionToken) {
+    // No token provided, continue as unauthenticated
+    req.user = undefined;
     return next();
   }
 
-  // Try to authenticate but don't fail if it doesn't work
-  // The authenticateUser function will handle setting req.user or not
-  authenticateUser(req, res, () => {
-    // Continue regardless of auth success/failure
+  // Simple token validation
+  if (!sessionToken.startsWith('session_')) {
+    req.user = undefined;
+    return next();
+  }
+
+  // Extract user ID from token
+  const tokenParts = sessionToken.split('_');
+  if (tokenParts.length >= 2) {
+    const userId = tokenParts[1];
+
+    // Try to get user from storage, but don't fail if it doesn't work
+    storage.getAuthUserById(userId)
+      .then(user => {
+        if (user) {
+          req.user = {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          };
+        } else {
+          // Fallback for missing user
+          req.user = {
+            id: userId,
+            email: `user_${userId}@example.com`,
+          };
+        }
+        next();
+      })
+      .catch(error => {
+        console.error('Optional auth error:', error);
+        // On error, treat as unauthenticated
+        req.user = undefined;
+        next();
+      });
+  } else {
+    req.user = undefined;
     next();
-  });
+  }
 }
 
 
