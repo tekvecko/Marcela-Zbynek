@@ -32,7 +32,7 @@ export async function authenticateUser(req: AuthRequest, res: Response, next: Ne
       
       try {
         // Try to get user from storage
-        const user = await storage.getAuthUser(userId);
+        const user = await storage.getAuthUserById(userId);
         if (user) {
           req.user = {
             id: user.id,
