@@ -106,6 +106,11 @@ export const insertUploadedPhotoSchema = createInsertSchema(uploadedPhotos).omit
 export const insertPhotoLikeSchema = createInsertSchema(photoLikes).omit({
   id: true,
   createdAt: true,
+}).refine((data) => {
+  // Additional validation for voter name
+  return data.voterName && data.voterName.length <= 255 && data.voterName.includes('@');
+}, {
+  message: "Valid email address required for voter name"
 });
 
 export const insertQuestProgressSchema = createInsertSchema(questProgress).omit({

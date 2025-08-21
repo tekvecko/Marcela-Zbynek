@@ -48,6 +48,7 @@ export interface IStorage {
   createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike>;
   hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean>;
   cleanupAnonymousLikes(photoId: string): Promise<void>;
+  removePhotoLike(photoId: string, voterName: string): Promise<boolean>;
 
   getQuestProgress(): Promise<QuestProgress[]>;
   getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]>;
@@ -489,6 +490,18 @@ export class MemStorage implements IStorage {
         console.log(`Cleaned up anonymous like for photo ${photoId}`);
       }
     });
+  }
+
+  async removePhotoLike(photoId: string, voterName: string): Promise<boolean> {
+    let deleted = false;
+    for (const [likeId, like] of this.photoLikes.entries()) {
+      if (like.photoId === photoId && like.voterName === voterName) {
+        this.photoLikes.delete(likeId);
+        deleted = true;
+        break;
+      }
+    }
+    return deleted;
   }
 
   async getQuestProgress(): Promise<QuestProgress[]> {
@@ -977,6 +990,16 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, "anonymous")));
   }
 
+  async removePhotoLike(photoId: string, voterName: string): Promise<boolean> {
+    const result = await db.delete(photoLikes)
+      .where(and(
+        eq(photoLikes.photoId, photoId),
+        eq(photoLikes.voterName, voterName)
+      ));
+
+    return result.rowCount > 0;
+  }
+
   // Quest Progress operations
   async getQuestProgress(): Promise<QuestProgress[]> {
     return await db.select().from(questProgress);
@@ -1081,7 +1104,7 @@ export class DatabaseStorage implements IStorage {
     const [session] = await db.select().from(authSessions)
       .where(eq(authSessions.sessionToken, token))
       .limit(1);
-    
+
     if (session && session.expiresAt > new Date()) {
       return session;
     }

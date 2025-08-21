@@ -421,37 +421,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid photo ID characters" });
       }
 
-      // Use authenticated user's email as voter name
+      // Use authenticated user's email as voter name with additional validation
       const voterName = req.user.email;
+      if (!voterName || typeof voterName !== 'string' || voterName.length > 255) {
+        return res.status(400).json({ message: "Invalid user email" });
+      }
 
-      console.log(`Like attempt: photoId=${sanitizedPhotoId}, voterName=${voterName}`);
-
+      // Check if photo exists first (prevents race conditions)
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
 
-      const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
-
-      console.log(`Has user liked? ${hasLiked}`);
-
-      if (hasLiked) {
-        return res.status(400).json({ message: "You have already liked this photo" });
+      // Prevent users from liking their own photos
+      if (photo.uploaderName === voterName) {
+        return res.status(400).json({ message: "You cannot like your own photos" });
       }
 
-      await storage.createPhotoLike({
-        photoId: sanitizedPhotoId,
-        voterName: voterName,
-      });
+      const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
 
-      const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, photo.likes + 1);
-      res.json(updatedPhoto);
+      if (hasLiked) {
+        // Unlike functionality - remove like
+        await storage.removePhotoLike(sanitizedPhotoId, voterName);
+        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, Math.max(0, photo.likes - 1));
+        res.json({ ...updatedPhoto, userHasLiked: false, action: "unliked" });
+      } else {
+        // Like functionality - add like
+        await storage.createPhotoLike({
+          photoId: sanitizedPhotoId,
+          voterName: voterName,
+        });
+        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, photo.likes + 1);
+        res.json({ ...updatedPhoto, userHasLiked: true, action: "liked" });
+      }
     } catch (error) {
-      console.error("Like photo error:", error);
+      console.error("Like/unlike photo error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      res.status(500).json({ message: "Failed to like photo", error: error.message });
+      res.status(500).json({ message: "Failed to process like/unlike", error: error.message });
     }
   });
 
