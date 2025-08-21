@@ -16,7 +16,7 @@ import {
 } from "@shared/schema";
 import { users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from 'bcryptjs';
 
