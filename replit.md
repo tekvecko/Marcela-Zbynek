@@ -4,7 +4,7 @@
 
 This is a wedding website application for Marcela and Zbyněk's wedding on October 11, 2025. The website features a romantic design with a wedding countdown timer, photo sharing capabilities, and a gamified "Photo Quest" system where guests can complete photography challenges. The application includes a photo gallery where guests can upload images, like photos from other guests, and track their progress through various wedding-related photo challenges. Advanced AI verification using Google Gemini ensures that uploaded photos match challenge requirements automatically.
 
-**Recently Added**: Replit Authentication system with protected routes, landing page for unauthenticated users, and user profile integration in the navigation.
+**Recently Added**: Replit Authentication system with protected routes, dedicated login page at `/login`, landing page for unauthenticated users, and user profile integration in the navigation.
 
 ## User Preferences
 
@@ -127,6 +127,13 @@ Authenticated user information should be used instead of manual name entry.
 - **Fixed Gemini AI Issues**: Resolved random photo approval when AI analysis fails - now rejects photos on errors
 - **Enhanced JSON Parsing**: Improved cleanup of Gemini API responses to handle malformed JSON better
 - **Added Retry Mechanism**: Implemented exponential backoff retry for temporary Gemini API failures
+
+### August 21, 2025 Updates
+- **Login Page Implementation**: Created dedicated login page at `/login` route with proper routing configuration
+- **Authentication System Fixes**: Resolved TypeScript errors in auth middleware and storage layer  
+- **Router Configuration**: Fixed server-side and client-side routing to handle login page correctly
+- **User Experience**: Login page automatically redirects authenticated users to home page
+- **Testing Support**: Added data-testid attributes to login form elements for better testability
 
 ## Earlier Improvements (August 2025)
 
