@@ -137,6 +137,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                         value={formData.firstName}
                         onChange={(e) => handleInputChange("firstName", e.target.value)}
                         className="pl-10"
+                        data-testid="input-firstName"
                       />
                     </div>
                     {errors.firstName && (
@@ -155,6 +156,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                         value={formData.lastName}
                         onChange={(e) => handleInputChange("lastName", e.target.value)}
                         className="pl-10"
+                        data-testid="input-lastName"
                       />
                     </div>
                     {errors.lastName && (
@@ -176,6 +178,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="pl-10"
+                  data-testid="input-email"
                 />
               </div>
               {errors.email && (
@@ -194,6 +197,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                   value={formData.password}
                   onChange={(e) => handleInputChange("password", e.target.value)}
                   className="pl-10"
+                  data-testid="input-password"
                 />
               </div>
               {errors.password && (
@@ -207,6 +211,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
               size="lg"
               className="w-full"
               disabled={authMutation.isPending}
+              data-testid="button-submit"
             >
               {authMutation.isPending 
                 ? (isLogin ? "Přihlašování..." : "Registrování...") 
@@ -220,6 +225,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               className="text-romantic hover:text-love transition-colors"
+              data-testid="button-toggle-mode"
             >
               {isLogin 
                 ? "Nemáte účet? Registrujte se zde" 
