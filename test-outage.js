@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 const fetch = require('node-fetch');
 
 const REPLIT_URL = 'https://svatebni-fotovyzvy.zbkocian.repl.co';
