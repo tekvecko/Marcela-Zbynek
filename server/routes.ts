@@ -74,7 +74,35 @@ const photoLikeSchema = z.object({
   // voterName will be automatically extracted from authenticated user
 });
 
+// Middleware pro monitoring dostupnosti služeb
+const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
+  const serviceStatus = {
+    database: process.env.SIMULATE_DB_OUTAGE !== 'true',
+    ai: process.env.SIMULATE_AI_OUTAGE !== 'true',
+    storage: process.env.SIMULATE_STORAGE_OUTAGE !== 'true',
+    environment: process.env.NODE_ENV || 'development'
+  };
+
+  req.serviceStatus = serviceStatus;
+  
+  // Přidej warning headers při výpadku
+  if (!serviceStatus.database) {
+    res.setHeader('X-Service-Warning', 'Database-Unavailable');
+  }
+  if (!serviceStatus.ai) {
+    res.setHeader('X-Service-Warning', 'AI-Service-Unavailable');
+  }
+  if (!serviceStatus.storage) {
+    res.setHeader('X-Service-Warning', 'Storage-Service-Unavailable');
+  }
+
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Použij monitoring middleware globálně
+  app.use('/api', serviceMonitoringMiddleware);
 
   // Health check endpoint for Render
   app.get('/api/health', (req, res) => {
@@ -83,6 +111,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV 
     });
+  });
+
+  // Monitoring dashboard pro stav služeb
+  app.get('/api/admin/service-status', (req, res) => {
+    const serviceStatus = {
+      replit: {
+        database: process.env.SIMULATE_DB_OUTAGE !== 'true',
+        ai: process.env.SIMULATE_AI_OUTAGE !== 'true',
+        storage: process.env.SIMULATE_STORAGE_OUTAGE !== 'true',
+        environment: 'development'
+      },
+      render: {
+        available: true, // Zde by byl skutečný health check
+        database: process.env.DATABASE_URL?.includes('render') || false,
+        environment: 'production'
+      },
+      fallbacks: {
+        database: 'In-memory storage with default challenges',
+        ai: 'Auto-approve all photos without AI verification',
+        storage: 'Cloudinary cloud storage'
+      }
+    };
+
+    res.json(serviceStatus);
+  });
+
+  // Simulace výpadku pro testování záložního systému
+  app.post('/api/admin/simulate-outage', async (req, res) => {
+    const { outageType, duration } = req.body;
+    
+    try {
+      switch (outageType) {
+        case 'database':
+          // Simuluje nedostupnost databáze
+          process.env.SIMULATE_DB_OUTAGE = 'true';
+          setTimeout(() => {
+            delete process.env.SIMULATE_DB_OUTAGE;
+          }, duration || 30000);
+          break;
+          
+        case 'ai':
+          // Simuluje nedostupnost AI služby
+          process.env.SIMULATE_AI_OUTAGE = 'true';
+          setTimeout(() => {
+            delete process.env.SIMULATE_AI_OUTAGE;
+          }, duration || 30000);
+          break;
+          
+        case 'storage':
+          // Simuluje nedostupnost file storage
+          process.env.SIMULATE_STORAGE_OUTAGE = 'true';
+          setTimeout(() => {
+            delete process.env.SIMULATE_STORAGE_OUTAGE;
+          }, duration || 30000);
+          break;
+      }
+      
+      res.json({ 
+        message: `Simulován výpadek typu: ${outageType} na ${duration || 30000}ms`,
+        fallbackInstructions: {
+          database: "Použijte záložní Render PostgreSQL databázi",
+          ai: "AI analýza bude dočasně nedostupná",
+          storage: "Fotky budou ukládány do Cloudinary"
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Chyba při simulaci výpadku" });
+    }
   });
 
   // Auth Routes
