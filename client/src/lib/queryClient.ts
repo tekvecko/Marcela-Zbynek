@@ -90,7 +90,7 @@ export const queryClient = new QueryClient({
         }
 
         await throwIfResNotOk(response);
-        return await res.json();
+        return await response.json();
       },
       refetchInterval: false,
       refetchOnWindowFocus: false,

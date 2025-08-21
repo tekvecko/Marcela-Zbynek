@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Camera, Trophy, Users, Crown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -54,17 +55,47 @@ interface LeaderboardEntry {
 
 export default function PhotoQuest() {
   const [, setLocation] = useLocation();
+  const [challenges, setChallenges] = useState<QuestChallenge[]>([]);
+  const [challengesLoading, setChallengesLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
 
-  const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
-    queryKey: ["/api/quest-challenges"],
-  });
+  // Direct fetch to bypass TanStack Query issues
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        setChallengesLoading(true);
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
 
-  // Debug log for troubleshooting
-  console.log('PhotoQuest Debug:', { 
-    challengesCount: challenges.length, 
-    challengesLoading, 
-    firstChallenge: challenges[0] 
-  });
+        const response = await fetch('/api/quest-challenges', {
+          headers,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setChallenges(data || []);
+        setError(null);
+      } catch (err) {
+        setError(err);
+        setChallenges([]);
+      } finally {
+        setChallengesLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, []);
+
 
   const { data: leaderboard = [], isLoading: leaderboardLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ["/api/quest-leaderboard"],
