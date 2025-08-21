@@ -407,12 +407,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use authenticated user's email as voter name
       const voterName = req.user?.email || "anonymous";
 
+      console.log(`Like attempt: photoId=${sanitizedPhotoId}, voterName=${voterName}`);
+
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
       }
 
+      // Clean up old anonymous likes first
+      await storage.cleanupAnonymousLikes(sanitizedPhotoId);
+
       const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
+
+      console.log(`Has user liked? ${hasLiked}`);
 
       if (hasLiked) {
         return res.status(400).json({ message: "You have already liked this photo" });
