@@ -95,10 +95,18 @@ export default function ChallengePage() {
         });
       }, 150);
 
-      // Call the API
+      // Call the API with auth token
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch("/api/photos/upload", {
         method: "POST",
         body: formData,
+        headers,
       });
 
       if (!response.ok) {
