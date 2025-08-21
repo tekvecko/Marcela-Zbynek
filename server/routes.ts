@@ -441,18 +441,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
 
       if (hasLiked) {
-        // Unlike functionality - remove like
+        // Unlike functionality - remove like and decrease count
         await storage.removePhotoLike(sanitizedPhotoId, voterName);
-        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, Math.max(0, photo.likes - 1));
-        res.json({ ...updatedPhoto, userHasLiked: false, action: "unliked" });
+        const newLikeCount = Math.max(0, photo.likes - 1);
+        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, newLikeCount);
+        res.json({ ...updatedPhoto, userHasLiked: false, action: "unliked", likes: newLikeCount });
       } else {
-        // Like functionality - add like
+        // Like functionality - add like and increase count
         await storage.createPhotoLike({
           photoId: sanitizedPhotoId,
           voterName: voterName,
         });
-        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, photo.likes + 1);
-        res.json({ ...updatedPhoto, userHasLiked: true, action: "liked" });
+        const newLikeCount = photo.likes + 1;
+        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, newLikeCount);
+        res.json({ ...updatedPhoto, userHasLiked: true, action: "liked", likes: newLikeCount });
       }
     } catch (error) {
       console.error("Like/unlike photo error:", error);

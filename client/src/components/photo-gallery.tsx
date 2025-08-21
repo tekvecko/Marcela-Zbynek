@@ -189,23 +189,33 @@ export default function PhotoGallery() {
       // Ulož předchozí stav pro možný rollback
       const previousPhotos = queryClient.getQueryData(["/api/photos"]);
       
-      // Optimistically update - okamžitě aktualizuj UI
+      // Optimistically update - okamžitě aktualizuj UI podle aktuálního stavu
       queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
         if (!oldData) return oldData;
-        return oldData.map(photo => 
-          photo.id === photoId 
-            ? { ...photo, userHasLiked: true, likes: (photo.likes || 0) + 1 }
-            : photo
-        );
+        return oldData.map(photo => {
+          if (photo.id === photoId) {
+            const currentlyLiked = photo.userHasLiked;
+            return { 
+              ...photo, 
+              userHasLiked: !currentlyLiked, 
+              likes: currentlyLiked ? Math.max(0, (photo.likes || 0) - 1) : (photo.likes || 0) + 1
+            };
+          }
+          return photo;
+        });
       });
 
       // Také aktualizuj selectedPhoto pokud je to ta stejná fotka
       if (selectedPhoto && selectedPhoto.id === photoId) {
-        setSelectedPhoto(prev => prev ? {
-          ...prev,
-          userHasLiked: true,
-          likes: (prev.likes || 0) + 1
-        } : null);
+        setSelectedPhoto(prev => {
+          if (!prev) return null;
+          const currentlyLiked = prev.userHasLiked;
+          return {
+            ...prev,
+            userHasLiked: !currentlyLiked,
+            likes: currentlyLiked ? Math.max(0, (prev.likes || 0) - 1) : (prev.likes || 0) + 1
+          };
+        });
       }
       
       return { previousPhotos };
@@ -217,15 +227,15 @@ export default function PhotoGallery() {
         className: "border-l-4 border-l-red-500 bg-red-50",
       });
 
-      // Aktualizuj data s API odpovědí, ale zachovej userHasLiked jako true
+      // Aktualizuj data s API odpovědí
       queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(photo => 
           photo.id === photoId 
             ? { 
                 ...photo, 
-                likes: data.likes || (photo.likes || 0), // Použij hodnotu z API
-                userHasLiked: true // Zachovej, že uživatel lajkl
+                likes: data.likes !== undefined ? data.likes : photo.likes, // Použij hodnotu z API
+                userHasLiked: data.userHasLiked !== undefined ? data.userHasLiked : true
               }
             : photo
         );
@@ -235,8 +245,8 @@ export default function PhotoGallery() {
       if (selectedPhoto && selectedPhoto.id === photoId) {
         setSelectedPhoto(prev => prev ? {
           ...prev,
-          likes: data.likes || (prev.likes || 0),
-          userHasLiked: true
+          likes: data.likes !== undefined ? data.likes : prev.likes,
+          userHasLiked: data.userHasLiked !== undefined ? data.userHasLiked : true
         } : null);
       }
     },
@@ -250,11 +260,16 @@ export default function PhotoGallery() {
 
       // Vrátit zpět selectedPhoto při chybě
       if (selectedPhoto && selectedPhoto.id === photoId) {
-        setSelectedPhoto(prev => prev ? {
-          ...prev,
-          userHasLiked: false,
-          likes: Math.max((prev.likes || 0) - 1, 0)
-        } : null);
+        // Najdi původní stav z rollback dat
+        const originalPhotos = context?.previousPhotos as UploadedPhoto[] | undefined;
+        const originalPhoto = originalPhotos?.find(p => p.id === photoId);
+        if (originalPhoto) {
+          setSelectedPhoto(prev => prev ? {
+            ...prev,
+            userHasLiked: originalPhoto.userHasLiked || false,
+            likes: originalPhoto.likes || 0
+          } : null);
+        }
       }
       
       if (!user) {
