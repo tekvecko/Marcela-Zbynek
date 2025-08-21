@@ -86,7 +86,7 @@ export default function PhotoGallery() {
     mutationFn: async (formData: FormData) => {
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = {};
-      
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -149,17 +149,42 @@ export default function PhotoGallery() {
         method: 'POST'
       });
     },
-    onSuccess: () => {
+    onSuccess: (data, photoId) => {
       toast({
         title: "Fotka se vám líbí!",
-        description: "Vaš hlas byl započítán.",
+        description: "Váš hlas byl započítán.",
       });
+
+      // Okamžitě aktualizuj data v cache
+      queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
+        if (!oldData) return oldData;
+
+        return oldData.map(photo => 
+          photo.id === photoId 
+            ? { ...photo, userHasLiked: true, likes: (photo.likes || 0) + 1 }
+            : photo
+        );
+      });
+
+      // Také aktualizuj selectedPhoto pokud je to ta stejná fotka
+      if (selectedPhoto && selectedPhoto.id === photoId) {
+        setSelectedPhoto(prev => prev ? {
+          ...prev,
+          userHasLiked: true,
+          likes: (prev.likes || 0) + 1
+        } : null);
+      }
+
+      // Nakonec refresh z API pro jistotu
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
     },
     onError: (error: any) => {
+      console.error('Like error:', error);
       toast({
         title: "Chyba při hodnocení",
-        description: error.message || "Nepodařilo se ohodnotit fotku.",
+        description: error.message === "You have already liked this photo" 
+          ? "Tuto fotku jste už lajkovali!" 
+          : "Nepodařilo se ohodnotit fotku. Zkuste to znovu.",
         variant: "destructive",
       });
     },
