@@ -37,9 +37,9 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
         if (user) {
           req.user = {
             id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            email: user.email || '',
+            firstName: user.firstName || undefined,
+            lastName: user.lastName || undefined,
           };
         } else {
           // Fallback for missing user
@@ -92,9 +92,9 @@ export async function authenticateUser(req: AuthRequest, res: Response, next: Ne
 
       req.user = {
         id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        email: user.email || '',
+        firstName: user.firstName || undefined,
+        lastName: user.lastName || undefined,
       };
 
       next();
