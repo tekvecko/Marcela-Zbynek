@@ -54,9 +54,12 @@ const gameColors = {
 export default function MiniGames() {
   const [, setLocation] = useLocation();
 
-  const { data: games = [], isLoading, error } = useQuery<MiniGame[]>({
+  const { data: games, isLoading, error } = useQuery<MiniGame[]>({
     queryKey: ["/api/mini-games"],
   });
+
+  // Ensure games is always an array, never null
+  const gamesArray = games || [];
 
   if (isLoading) {
     return (
@@ -154,7 +157,7 @@ export default function MiniGames() {
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {games && games.length > 0 && games.map((game) => {
+            {gamesArray.map((game) => {
               const IconComponent = gameIcons[game.gameType as keyof typeof gameIcons] || GamepadIcon;
               const gradientColor = gameColors[game.gameType as keyof typeof gameColors] || "from-gray-500 to-gray-600";
 
@@ -204,7 +207,7 @@ export default function MiniGames() {
             })}
           </div>
 
-          {(!games || games.length === 0) && (
+          {gamesArray.length === 0 && (
             <div className="text-center py-12">
               <GamepadIcon size={48} className="text-charcoal/30 mx-auto mb-4" />
               <p className="text-charcoal/60 text-lg">Zatím nejsou dostupné žádné mini-hry.</p>
