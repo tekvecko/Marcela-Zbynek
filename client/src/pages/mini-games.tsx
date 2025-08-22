@@ -4,6 +4,7 @@ import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import GlassButton from "@/components/ui/glass-button";
+import Navigation from "@/components/navigation";
 import { OnboardingHighlight } from "@/components/onboarding/onboarding-highlight";
 import { 
   Trophy, 
@@ -89,8 +90,9 @@ export default function MiniGames() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage">
+      <Navigation />
+      <div className="max-w-6xl mx-auto space-y-12 p-4 md:p-8">
         
         {/* Hero Section */}
         <OnboardingHighlight step="mini-games" className="relative">
