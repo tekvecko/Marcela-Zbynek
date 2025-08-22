@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,6 +82,7 @@ export default function OnboardingTutorial() {
     prevStep 
   } = useOnboardingContext();
   const [highlightedElement, setHighlightedElement] = useState<Element | null>(null);
+  const tutorialCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOnboardingOpen) return;
@@ -102,15 +103,51 @@ export default function OnboardingTutorial() {
     }
   }, [currentStep, isOnboardingOpen]);
 
-  // Ensure page scrolls to show tutorial when it first opens
+  // Ensure page scrolls to show tutorial when it first opens and focus on tutorial card
   useEffect(() => {
     if (isOnboardingOpen) {
       // Scroll to top with a slight delay to ensure smooth transition
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
+        // Focus on tutorial card for better accessibility
+        if (tutorialCardRef.current) {
+          tutorialCardRef.current.focus();
+        }
       }, 100);
     }
   }, [isOnboardingOpen]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!isOnboardingOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case "Escape":
+          skipTutorial();
+          break;
+        case "ArrowRight":
+        case "Enter":
+        case " ":
+          if (currentStep === totalSteps - 1) {
+            completeTutorial();
+          } else {
+            nextStep();
+          }
+          event.preventDefault();
+          break;
+        case "ArrowLeft":
+          if (currentStep > 0) {
+            prevStep();
+            event.preventDefault();
+          }
+          break;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOnboardingOpen, currentStep, totalSteps]);
 
   useEffect(() => {
     if (!isOnboardingOpen) {
@@ -151,7 +188,11 @@ export default function OnboardingTutorial() {
 
       {/* Tutorial Card */}
       <div className="fixed inset-0 z-[102] flex items-center justify-center p-4">
-        <Card className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-xl max-w-md w-full mx-4 sm:max-w-lg">
+        <Card 
+          ref={tutorialCardRef}
+          tabIndex={-1}
+          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-xl max-w-md w-full mx-4 sm:max-w-lg outline-none"
+        >
           <CardContent className="p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
