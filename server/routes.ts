@@ -8,7 +8,8 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcryptjs";
 import { verifyPhotoForChallenge, analyzePhotoContent } from "./gemini";
-import { authenticateUser, optionalAuth, type AuthRequest } from "./middleware/auth";
+import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "./middleware/auth";
+import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
 
 // Simple rate limiting middleware
@@ -198,8 +199,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: validatedData.lastName,
       });
 
-      // Generate a simple session token
-      const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate JWT token
+      const token = generateToken({
+        userId: user.id,
+        email: user.email || '',
+        isAdmin: user.isAdmin || false,
+      });
 
       res.json({
         user: {
@@ -207,8 +212,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          isAdmin: user.isAdmin || false,
         },
-        sessionToken,
+        token,
         message: "Registrace byla úspešná",
       });
     } catch (error) {
@@ -239,8 +245,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
       }
 
-      // Generate a simple session token
-      const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate JWT token
+      const token = generateToken({
+        userId: user.id,
+        email: user.email || '',
+        isAdmin: user.isAdmin || false,
+      });
 
       res.json({
         user: {
@@ -248,8 +258,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          isAdmin: user.isAdmin || false,
         },
-        sessionToken,
+        token,
         message: "Přihlášení bylo úspešné",
       });
     } catch (error) {
@@ -505,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Like/unlike a photo - with rate limiting
+  // Like/unlike a photo - with rate limiting and race condition protection
   app.post("/api/photos/:photoId/like", authenticateUser, likeRateLimit, async (req: AuthRequest, res) => {
     try {
       const { photoId } = req.params;
@@ -533,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user email" });
       }
 
-      // Check if photo exists first (prevents race conditions)
+      // Check if photo exists first
       const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
       if (!photo) {
         return res.status(404).json({ message: "Photo not found" });
@@ -544,24 +555,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You cannot like your own photos" });
       }
 
-      const hasLiked = await storage.hasUserLikedPhoto(sanitizedPhotoId, voterName);
-
-      if (hasLiked) {
-        // Unlike functionality - remove like and decrease count
-        await storage.removePhotoLike(sanitizedPhotoId, voterName);
-        const newLikeCount = Math.max(0, photo.likes - 1);
-        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, newLikeCount);
-        res.json({ ...updatedPhoto, userHasLiked: false, action: "unliked", likes: newLikeCount });
-      } else {
-        // Like functionality - add like and increase count
-        await storage.createPhotoLike({
-          photoId: sanitizedPhotoId,
-          voterName: voterName,
-        });
-        const newLikeCount = photo.likes + 1;
-        const updatedPhoto = await storage.updatePhotoLikes(sanitizedPhotoId, newLikeCount);
-        res.json({ ...updatedPhoto, userHasLiked: true, action: "liked", likes: newLikeCount });
-      }
+      // Use atomic toggle operation to prevent race conditions
+      const result = await storage.togglePhotoLike(sanitizedPhotoId, voterName);
+      
+      // Get updated photo data
+      const updatedPhoto = await storage.getUploadedPhoto(sanitizedPhotoId);
+      
+      res.json({ 
+        ...updatedPhoto, 
+        userHasLiked: result.userHasLiked, 
+        action: result.action, 
+        likes: result.likes 
+      });
     } catch (error) {
       console.error("Like/unlike photo error:", error);
       if (error instanceof z.ZodError) {
@@ -720,10 +725,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin Routes
 
-  // Check admin status - publicly accessible
-  app.get("/api/admin/status", async (req: any, res) => {
+  // Check admin status - requires authentication
+  app.get("/api/admin/status", authenticateUser, async (req: AuthRequest, res) => {
     try {
-      res.json({ isAdmin: true }); // Make admin features accessible to everyone
+      res.json({ 
+        isAdmin: req.user?.isAdmin || false,
+        user: {
+          id: req.user?.id,
+          email: req.user?.email,
+          isAdmin: req.user?.isAdmin || false
+        }
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to check admin status" });
     }
@@ -774,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Create new challenge
-  app.post("/api/admin/challenges", async (req, res) => {
+  app.post("/api/admin/challenges", requireAdmin, async (req: AuthRequest, res) => {
     try {
       const validatedData = insertQuestChallengeSchema.parse(req.body);
       const challenge = await storage.createQuestChallenge(validatedData);
@@ -788,7 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Update challenge
-  app.put("/api/admin/challenges/:id", async (req, res) => {
+  app.put("/api/admin/challenges/:id", requireAdmin, async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
       const validatedData = insertQuestChallengeSchema.parse(req.body);

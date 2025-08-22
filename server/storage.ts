@@ -49,6 +49,11 @@ export interface IStorage {
   hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean>;
   cleanupAnonymousLikes(photoId: string): Promise<void>;
   removePhotoLike(photoId: string, voterName: string): Promise<boolean>;
+  togglePhotoLike(photoId: string, voterName: string): Promise<{
+    userHasLiked: boolean;
+    likes: number;
+    action: 'liked' | 'unliked';
+  }>;
 
   getQuestProgress(): Promise<QuestProgress[]>;
   getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]>;
@@ -360,11 +365,11 @@ export class MemStorage implements IStorage {
           id: 'fallback-1',
           title: '🔴 ZÁLOŽNÍ REŽIM - Základní fotka',
           description: 'Aplikace běží v záložním režimu. Nahrajte jakoukoliv fotku.',
-          targetPhotoCount: 1,
+          targetPhotos: 1,
           points: 10,
           isActive: true,
           createdAt: new Date(),
-          updatedAt: new Date()
+
         }
       ];
     }
@@ -531,6 +536,67 @@ export class MemStorage implements IStorage {
     return deleted;
   }
 
+  // Thread-safe atomic like/unlike operation to prevent race conditions
+  async togglePhotoLike(photoId: string, voterName: string): Promise<{
+    userHasLiked: boolean;
+    likes: number;
+    action: 'liked' | 'unliked';
+  }> {
+    // Get current photo
+    const photo = this.uploadedPhotos.get(photoId);
+    if (!photo) {
+      throw new Error('Photo not found');
+    }
+
+    // Check current like status
+    const hasLiked = Array.from(this.photoLikes.values()).some(
+      like => like.photoId === photoId && like.voterName === voterName
+    );
+
+    if (hasLiked) {
+      // Remove like
+      const entries = Array.from(this.photoLikes.entries());
+      for (const [likeId, like] of entries) {
+        if (like.photoId === photoId && like.voterName === voterName) {
+          this.photoLikes.delete(likeId);
+          break;
+        }
+      }
+      
+      // Update photo likes count atomically
+      const newLikeCount = Math.max(0, photo.likes - 1);
+      photo.likes = newLikeCount;
+      this.uploadedPhotos.set(photoId, photo);
+
+      return {
+        userHasLiked: false,
+        likes: newLikeCount,
+        action: 'unliked'
+      };
+    } else {
+      // Add like
+      const likeId = randomUUID();
+      const newLike: PhotoLike = {
+        id: likeId,
+        photoId,
+        voterName,
+        createdAt: new Date(),
+      };
+      this.photoLikes.set(likeId, newLike);
+
+      // Update photo likes count atomically
+      const newLikeCount = photo.likes + 1;
+      photo.likes = newLikeCount;
+      this.uploadedPhotos.set(photoId, photo);
+
+      return {
+        userHasLiked: true,
+        likes: newLikeCount,
+        action: 'liked'
+      };
+    }
+  }
+
   async getQuestProgress(): Promise<QuestProgress[]> {
     return Array.from(this.questProgress.values());
   }
@@ -691,7 +757,7 @@ export class DatabaseStorage implements IStorage {
         target: users.id,
         set: {
           ...userData,
-          updatedAt: new Date(),
+,
         },
       })
       .returning();
@@ -722,11 +788,11 @@ export class DatabaseStorage implements IStorage {
           id: 'fallback-1',
           title: '🔴 ZÁLOŽNÍ REŽIM - Základní fotka',
           description: 'Aplikace běží v záložním režimu. Nahrajte jakoukoliv fotku.',
-          targetPhotoCount: 1,
+          targetPhotos: 1,
           points: 10,
           isActive: true,
           createdAt: new Date(),
-          updatedAt: new Date()
+
         }
       ];
     }
@@ -1124,6 +1190,67 @@ export class DatabaseStorage implements IStorage {
       console.error(`Failed to remove like for photo ${photoId} by ${voterName}:`, error);
       return false;
     }
+  }
+
+  // Thread-safe atomic like/unlike operation to prevent race conditions
+  async togglePhotoLike(photoId: string, voterName: string): Promise<{
+    userHasLiked: boolean;
+    likes: number;
+    action: 'liked' | 'unliked';
+  }> {
+    // Use database transaction for atomicity
+    return await db.transaction(async (tx) => {
+      // Check current photo existence
+      const [photo] = await tx.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, photoId));
+      if (!photo) {
+        throw new Error('Photo not found');
+      }
+
+      // Check current like status
+      const [existingLike] = await tx
+        .select()
+        .from(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)));
+
+      if (existingLike) {
+        // Remove like
+        await tx.delete(photoLikes)
+          .where(and(
+            eq(photoLikes.photoId, photoId),
+            eq(photoLikes.voterName, voterName)
+          ));
+
+        // Update photo likes count atomically
+        const newLikeCount = Math.max(0, photo.likes - 1);
+        await tx.update(uploadedPhotos)
+          .set({ likes: newLikeCount })
+          .where(eq(uploadedPhotos.id, photoId));
+
+        return {
+          userHasLiked: false,
+          likes: newLikeCount,
+          action: 'unliked'
+        };
+      } else {
+        // Add like
+        await tx.insert(photoLikes).values({
+          photoId,
+          voterName,
+        });
+
+        // Update photo likes count atomically
+        const newLikeCount = photo.likes + 1;
+        await tx.update(uploadedPhotos)
+          .set({ likes: newLikeCount })
+          .where(eq(uploadedPhotos.id, photoId));
+
+        return {
+          userHasLiked: true,
+          likes: newLikeCount,
+          action: 'liked'
+        };
+      }
+    });
   }
 
   // Quest Progress operations

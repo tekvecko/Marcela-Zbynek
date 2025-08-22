@@ -57,10 +57,10 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
       return response.json();
     },
     onSuccess: (data) => {
-      const sessionToken = data.sessionToken || `session_${data.user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem("auth_token", sessionToken);
+      const token = data.token; // Now using JWT tokens
+      localStorage.setItem("auth_token", token);
       localStorage.setItem("auth_user", JSON.stringify(data.user));
-      onSuccess(data.user, sessionToken);
+      onSuccess(data.user, token);
       toast({
         title: isLogin ? "Přihlášení úspěšné!" : "Registrace úspěšná!",
         description: `Vítejte${data.user.firstName ? `, ${data.user.firstName}` : ""}!`,
