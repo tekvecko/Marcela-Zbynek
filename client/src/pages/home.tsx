@@ -1,7 +1,7 @@
 import Navigation from "@/components/navigation";
 import HeroSection from "@/components/hero-section";
 import CountdownTimer from "@/components/countdown-timer";
-import OnboardingTrigger from "@/components/onboarding/onboarding-trigger";
+
 import OnboardingTutorial from "@/components/onboarding/onboarding-tutorial";
 import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 import { Link } from "wouter";
@@ -115,8 +115,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Onboarding */}
-      <OnboardingTrigger />
+       />
       <OnboardingTutorial />
     </div>
   );
