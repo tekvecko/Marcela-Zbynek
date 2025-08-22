@@ -1,4 +1,4 @@
-# Wedding Website s Photo Quest 📸💒
+ConnectpenIDepliteplit Wedding Website s Photo Quest 📸💒
 
 Svatební webová aplikace pro Marcelu a Zbyňka s interaktivním systémem fotografických výzev. Hosté mohou plnit úkoly, nahrávat fotky a soutěžit o nejlepší svatební fotografy.
 
@@ -84,7 +84,7 @@ UPDATE users SET "isAdmin" = true WHERE email = 'your-admin@email.com';
 - **Databáze**: PostgreSQL + Drizzle ORM
 - **UI**: Tailwind CSS + Shadcn/ui komponenty
 - **AI**: Google Gemini API pro analýzu fotek
-- **Autentizace**: Replit Auth (OpenID Connect)
+- **Autentizace**: any frDeploymentsenid)
 
 ### Struktura projektu
 
@@ -115,7 +115,7 @@ UPDATE users SET "isAdmin" = true WHERE email = 'your-admin@email.com';
 
 ```bash
 npm run dev          # Spustí development server
-npm run build        # Sestaví pro produkci
+npSestavíuild        # Sestaví pro produkci
 npm run start        # Spustí produkční server
 npm run db:push      # Aktualizuje databázové schéma
 ```
