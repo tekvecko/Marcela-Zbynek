@@ -667,6 +667,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all mini-game scores across all games for leaderboards
+  app.get("/api/mini-games-scores/all", async (req, res) => {
+    try {
+      const games = await miniGamesStorage.getMiniGames();
+      const allScores: any[] = [];
+      
+      for (const game of games) {
+        const scores = await miniGamesStorage.getMiniGameScores(game.id);
+        allScores.push(...scores.map(score => ({ ...score, gameTitle: game.title, gamePoints: game.points })));
+      }
+      
+      res.json(allScores);
+    } catch (error) {
+      console.error("Error fetching all mini-game scores:", error);
+      res.status(500).json({ message: "Failed to fetch mini-game scores" });
+    }
+  });
+
   // Get quest leaderboard (protected)
   app.get("/api/quest-leaderboard", async (req, res) => {
     try {

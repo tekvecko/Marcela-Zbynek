@@ -56,10 +56,12 @@ export default function MiniGames() {
 
   const { data: games, isLoading, error } = useQuery<MiniGame[]>({
     queryKey: ["/api/mini-games"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
   });
 
   // Ensure games is always an array, never null
-  const gamesArray = games || [];
+  const gamesArray = Array.isArray(games) ? games : [];
 
   if (isLoading) {
     return (

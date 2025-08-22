@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, LogOut, User, HelpCircle, Loader2 } from "lucide-react";
+import { Menu, X, LogOut, User, HelpCircle, Loader2, Trophy } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import GlassButton from "@/components/ui/glass-button";
@@ -53,6 +53,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               className={`transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
               Mini-hry
+            </Link>
+            <Link
+              href="/leaderboards"
+              className={`transition-colors ${location === '/leaderboards' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+            >
+              Žebříčky
             </Link>
             <Link
               href="/gallery"
@@ -119,8 +125,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
                       {onStartTutorial && (
                         <>
-                          <DropdownMenuItem 
-                            onClick={onStartTutorial} 
+                          <DropdownMenuItem
+                            onClick={onStartTutorial}
                             disabled={isLoggingOut}
                             className="text-romantic"
                           >
@@ -130,8 +136,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           <DropdownMenuSeparator />
                         </>
                       )}
-                      <DropdownMenuItem 
-                        onClick={handleLogout} 
+                      <DropdownMenuItem
+                        onClick={handleLogout}
                         disabled={isLoggingOut}
                         className="text-red-600"
                       >
@@ -210,6 +216,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 Mini-hry
               </Link>
               <Link
+                href="/leaderboards"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/leaderboards' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+              >
+                Žebříčky
+              </Link>
+              <Link
                 href="/gallery"
                 onClick={() => setIsMenuOpen(false)}
                 className={`text-left transition-colors ${location === '/gallery' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
@@ -266,25 +279,25 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                         {user?.firstName || user?.email}
                       </div>
                       {onStartTutorial && (
-                        <GlassButton 
-                          variant="outline" 
-                          size="sm" 
+                        <GlassButton
+                          variant="outline"
+                          size="sm"
                           disabled={isLoggingOut}
                           onClick={() => {
                             onStartTutorial();
                             setIsMenuOpen(false);
-                          }} 
+                          }}
                           className="text-romantic w-full"
                         >
                           <HelpCircle size={16} className="mr-2" />
                           Spustit tutoriál
                         </GlassButton>
                       )}
-                      <GlassButton 
-                        variant="outline" 
-                        size="sm" 
+                      <GlassButton
+                        variant="outline"
+                        size="sm"
                         disabled={isLoggingOut}
-                        onClick={handleLogout} 
+                        onClick={handleLogout}
                         className="text-red-600 w-full"
                       >
                         {isLoggingOut ? (
