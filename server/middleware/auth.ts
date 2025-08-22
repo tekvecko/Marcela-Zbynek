@@ -12,7 +12,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction) {
+export async function optionalAuth(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
@@ -29,33 +29,32 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
     return next();
   }
 
-  // Try to get user from storage to get current info, but don't fail if it doesn't work
-  storage.getAuthUserById(payload.userId)
-    .then(user => {
-      if (user) {
-        req.user = {
-          id: user.id,
-          email: user.email || '',
-          firstName: user.firstName || undefined,
-          lastName: user.lastName || undefined,
-          isAdmin: user.isAdmin || false,
-        };
-      } else {
-        // User not found in storage, but token is valid - create minimal user info
-        req.user = {
-          id: payload.userId,
-          email: payload.email || '',
-          isAdmin: payload.isAdmin || false,
-        };
-      }
-      next();
-    })
-    .catch(error => {
-      console.error('Optional auth error:', error);
-      // On error, treat as unauthenticated
-      req.user = undefined;
-      next();
-    });
+  try {
+    // Try to get user from storage to get current info, but don't fail if it doesn't work
+    const user = await storage.getAuthUserById(payload.userId);
+    if (user) {
+      req.user = {
+        id: user.id,
+        email: user.email || '',
+        firstName: user.firstName || undefined,
+        lastName: user.lastName || undefined,
+        isAdmin: user.isAdmin || false,
+      };
+    } else {
+      // User not found in storage, but token is valid - create minimal user info
+      req.user = {
+        id: payload.userId,
+        email: payload.email || '',
+        isAdmin: payload.isAdmin || false,
+      };
+    }
+  } catch (error) {
+    console.error('Optional auth error:', error);
+    // On error, treat as unauthenticated
+    req.user = undefined;
+  }
+  
+  next();
 }
 
 
