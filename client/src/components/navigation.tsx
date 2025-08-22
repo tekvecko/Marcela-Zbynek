@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Menu, X, LogOut, User, HelpCircle, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, LogOut, User, HelpCircle, Loader2, Trophy } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import GlassButton from "@/components/ui/glass-button";
@@ -19,15 +19,71 @@ interface NavigationProps {
 
 export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show navigation when at the top of the page
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+      } 
+      // Hide when scrolling down, show when scrolling up
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide navigation
+        setIsVisible(false);
+        // Close mobile menu if open when hiding
+        if (isMenuOpen) {
+          setIsMenuOpen(false);
+        }
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up - show navigation
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    // Add scroll event listener with throttling
+    let timeoutId: NodeJS.Timeout;
+    const throttledHandleScroll = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(handleScroll, 10);
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [lastScrollY, isMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
+    <motion.nav 
+      className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush"
+      initial={{ y: 0 }}
+      animate={{ 
+        y: isVisible ? 0 : -100,
+        opacity: isVisible ? 1 : 0
+      }}
+      transition={{ 
+        duration: 0.3, 
+        ease: "easeInOut"
+      }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
@@ -53,6 +109,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               className={`transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
             >
               Mini-hry
+            </Link>
+            <Link
+              href="/leaderboards"
+              className={`transition-colors ${location === '/leaderboards' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+            >
+              Žebříčky
             </Link>
             <Link
               href="/gallery"
@@ -119,8 +181,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
                       {onStartTutorial && (
                         <>
-                          <DropdownMenuItem 
-                            onClick={onStartTutorial} 
+                          <DropdownMenuItem
+                            onClick={onStartTutorial}
                             disabled={isLoggingOut}
                             className="text-romantic"
                           >
@@ -130,8 +192,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           <DropdownMenuSeparator />
                         </>
                       )}
-                      <DropdownMenuItem 
-                        onClick={handleLogout} 
+                      <DropdownMenuItem
+                        onClick={handleLogout}
                         disabled={isLoggingOut}
                         className="text-red-600"
                       >
@@ -173,7 +235,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
         {/* Mobile Navigation */}
         <AnimatePresence>
-          {isMenuOpen && (
+          {isMenuOpen && isVisible && (
             <motion.div
               key="mobile-menu"
               initial={{ opacity: 0, height: 0 }}
@@ -208,6 +270,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 className={`text-left transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
               >
                 Mini-hry
+              </Link>
+              <Link
+                href="/leaderboards"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-left transition-colors ${location === '/leaderboards' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
+              >
+                Žebříčky
               </Link>
               <Link
                 href="/gallery"
@@ -266,25 +335,25 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                         {user?.firstName || user?.email}
                       </div>
                       {onStartTutorial && (
-                        <GlassButton 
-                          variant="outline" 
-                          size="sm" 
+                        <GlassButton
+                          variant="outline"
+                          size="sm"
                           disabled={isLoggingOut}
                           onClick={() => {
                             onStartTutorial();
                             setIsMenuOpen(false);
-                          }} 
+                          }}
                           className="text-romantic w-full"
                         >
                           <HelpCircle size={16} className="mr-2" />
                           Spustit tutoriál
                         </GlassButton>
                       )}
-                      <GlassButton 
-                        variant="outline" 
-                        size="sm" 
+                      <GlassButton
+                        variant="outline"
+                        size="sm"
                         disabled={isLoggingOut}
-                        onClick={handleLogout} 
+                        onClick={handleLogout}
                         className="text-red-600 w-full"
                       >
                         {isLoggingOut ? (
@@ -304,6 +373,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           )}
         </AnimatePresence>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

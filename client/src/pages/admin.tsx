@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
@@ -23,6 +23,8 @@ import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { Link } from "wouter";
 import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared/schema";
+import Navigation from "@/components/navigation";
+import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 
 // Form schemas
 const challengeSchema = z.object({
@@ -40,7 +42,7 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   // Bulk selection states
   const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
@@ -254,7 +256,7 @@ export default function AdminPage() {
 
   const handleBulkDeleteChallenges = () => {
     if (selectedChallenges.length === 0) return;
-    
+
     if (confirm(`Opravdu chcete smazat ${selectedChallenges.length} výzev?`)) {
       bulkDeleteChallengesMutation.mutate(selectedChallenges);
     }
@@ -262,7 +264,7 @@ export default function AdminPage() {
 
   const handleBulkDeletePhotos = () => {
     if (selectedPhotos.length === 0) return;
-    
+
     if (confirm(`Opravdu chcete smazat ${selectedPhotos.length} fotek?`)) {
       bulkDeletePhotosMutation.mutate(selectedPhotos);
     }
@@ -332,9 +334,12 @@ export default function AdminPage() {
     uniqueUploaders: new Set(photos.map(p => p.uploaderName)).size,
   };
 
+  const { startOnboarding } = useOnboardingContext();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-8">
+      <Navigation onStartTutorial={startOnboarding} />
+      <div className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Administrace
@@ -402,7 +407,7 @@ export default function AdminPage() {
                         {stat.subtitle}
                       </motion.p>
                     </CardContent>
-                    
+
                     {/* Subtle glow effect */}
                     <motion.div
                       className="absolute inset-0 rounded-lg"
@@ -590,7 +595,7 @@ export default function AdminPage() {
                           }
                         </span>
                       </div>
-                      
+
                       {selectedChallenges.length > 0 && (
                         <div className="flex gap-2">
                           <Button
@@ -713,7 +718,7 @@ export default function AdminPage() {
                           }
                         </span>
                       </div>
-                      
+
                       {selectedPhotos.length > 0 && (
                         <div className="flex gap-2">
                           <Button
@@ -934,7 +939,7 @@ export default function AdminPage() {
                       Deaktivovat vše
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label>Bodové kategorie</Label>
                     <div className="flex gap-2">
@@ -1006,7 +1011,7 @@ export default function AdminPage() {
                       <AlertTriangle className="h-4 w-4 mr-2" />
                       Resetovat pokrok všech hráčů
                     </Button>
-                    
+
                     <Button 
                       onClick={handleExportData}
                       variant="outline" 
@@ -1047,7 +1052,7 @@ export default function AdminPage() {
                         }
                       </span>
                     </div>
-                    
+
                     {selectedPhotos.length > 0 && (
                       <div className="flex gap-2">
                         <Button

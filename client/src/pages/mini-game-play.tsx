@@ -19,6 +19,8 @@ import { WordMatchGame } from "@/components/mini-games/word-match-game";
 import { CoupleFactsGame } from "@/components/mini-games/couple-facts-game";
 import { ReactionSpeedGame } from "@/components/mini-games/reaction-speed-game";
 import { apiRequest } from "@/lib/queryClient";
+import Navigation from "@/components/navigation";
+import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 
 interface MiniGame {
   id: string;
@@ -53,7 +55,8 @@ export default function MiniGamePlay() {
   const [, params] = useRoute("/mini-games/:gameId");
   const gameId = params?.gameId;
   const queryClient = useQueryClient();
-  
+  const { startOnboarding } = useOnboardingContext();
+
   const [gameState, setGameState] = useState<"playing" | "finished" | "loading">("loading");
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
 
@@ -97,7 +100,7 @@ export default function MiniGamePlay() {
   const handleGameFinish = async (result: GameResult) => {
     setGameResult(result);
     setGameState("finished");
-    
+
     try {
       await saveScoreMutation.mutateAsync(result);
     } catch (error) {
@@ -142,7 +145,8 @@ export default function MiniGamePlay() {
   if (gameLoading || !game) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
+        <Navigation onStartTutorial={startOnboarding} />
+        <div className="max-w-4xl mx-auto pt-24">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-romantic"></div>
             <p className="mt-4 text-charcoal/70">Načítání hry...</p>
@@ -154,8 +158,9 @@ export default function MiniGamePlay() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        
+      <Navigation onStartTutorial={startOnboarding} />
+      <div className="max-w-4xl mx-auto space-y-6 pt-24">
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <GlassButton
@@ -228,7 +233,7 @@ export default function MiniGamePlay() {
                   Hra dokončena!
                 </CardTitle>
               </CardHeader>
-              
+
               <CardContent className="space-y-6">
                 <div className="text-center space-y-4">
                   <div className="text-3xl font-bold text-charcoal">
@@ -237,7 +242,7 @@ export default function MiniGamePlay() {
                   <div className="text-charcoal/70">
                     Čas: {gameResult.timeSpent}s
                   </div>
-                  
+
                   <div className="flex justify-center">
                     {gameResult.score === gameResult.maxScore ? (
                       <div className="flex items-center gap-2 text-green-600">
@@ -263,7 +268,7 @@ export default function MiniGamePlay() {
                     <RotateCcw size={16} />
                     Hrát znovu
                   </GlassButton>
-                  
+
                   <GlassButton
                     variant="primary"
                     size="lg"
@@ -284,7 +289,7 @@ export default function MiniGamePlay() {
                   Nejlepší výsledky
                 </CardTitle>
               </CardHeader>
-              
+
               <CardContent>
                 {topScores.length > 0 ? (
                   <div className="space-y-2">
@@ -303,7 +308,7 @@ export default function MiniGamePlay() {
                             {score.playerName}
                           </span>
                         </div>
-                        
+
                         <div className="text-charcoal/70 text-sm">
                           {score.score}/{score.maxScore}
                           {score.timeSpent && ` (${score.timeSpent}s)`}
