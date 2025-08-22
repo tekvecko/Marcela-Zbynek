@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Menu, X, LogOut, User, HelpCircle } from "lucide-react";
+import { Menu, X, LogOut, User, HelpCircle, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import GlassButton from "@/components/ui/glass-button";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,11 @@ interface NavigationProps {
 export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
@@ -68,58 +73,121 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               Admin
             </Link>
 
-            {!user && (
-              <Link href="/login">
-                <GlassButton variant="outline" size="sm">
-                  Přihlásit se
-                </GlassButton>
-              </Link>
-            )}
+            <AnimatePresence mode="wait">
+              {!user && (
+                <motion.div
+                  key="login-button"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link href="/login">
+                    <GlassButton variant="outline" size="sm">
+                      Přihlásit se
+                    </GlassButton>
+                  </Link>
+                </motion.div>
+              )}
 
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="bg-white/20 backdrop-blur-sm border-white/20 hover:bg-white/30 text-charcoal"
-                  >
-                    <User size={16} className="mr-2" />
-                    {user?.firstName || user?.email}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
-                  {onStartTutorial && (
-                    <>
-                      <DropdownMenuItem onClick={onStartTutorial} className="text-romantic">
-                        <HelpCircle size={16} className="mr-2" />
-                        Spustit tutoriál
+              {user && (
+                <motion.div
+                  key="user-menu"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isLoggingOut}
+                        className={`bg-white/20 backdrop-blur-sm border-white/20 hover:bg-white/30 text-charcoal transition-all ${
+                          isLoggingOut ? "opacity-70" : ""
+                        }`}
+                      >
+                        {isLoggingOut ? (
+                          <Loader2 size={16} className="mr-2 animate-spin" />
+                        ) : (
+                          <User size={16} className="mr-2" />
+                        )}
+                        {user?.firstName || user?.email}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
+                      {onStartTutorial && (
+                        <>
+                          <DropdownMenuItem 
+                            onClick={onStartTutorial} 
+                            disabled={isLoggingOut}
+                            className="text-romantic"
+                          >
+                            <HelpCircle size={16} className="mr-2" />
+                            Spustit tutoriál
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      <DropdownMenuItem 
+                        onClick={handleLogout} 
+                        disabled={isLoggingOut}
+                        className="text-red-600"
+                      >
+                        {isLoggingOut ? (
+                          <>
+                            <Loader2 size={16} className="mr-2 animate-spin" />
+                            Odhlašování...
+                          </>
+                        ) : (
+                          <>
+                            <LogOut size={16} className="mr-2" />
+                            Odhlásit se
+                          </>
+                        )}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={logout} className="text-red-600">
-                    <LogOut size={16} className="mr-2" />
-                    Odhlásit se
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <motion.button
             className="md:hidden text-charcoal"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.1 }}
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+            <motion.div
+              initial={false}
+              animate={{ rotate: isMenuOpen ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </motion.div>
+          </motion.button>
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-blush">
-            <div className="flex flex-col space-y-4">
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              key="mobile-menu"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden py-4 border-t border-blush overflow-hidden"
+            >
+              <motion.div
+                initial={{ y: -10 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+                className="flex flex-col space-y-4"
+              >
               <Link
                 href="/"
                 onClick={() => setIsMenuOpen(false)}
@@ -163,42 +231,78 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 Admin
               </Link>
 
-              {!user && (
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                  <GlassButton variant="outline" size="sm">
-                    Přihlásit se
-                  </GlassButton>
-                </Link>
-              )}
-
-              {user && (
-                <div className="flex flex-col space-y-2">
-                  <div className="flex items-center text-charcoal">
-                    <User size={16} className="mr-2" />
-                    {user?.firstName || user?.email}
-                  </div>
-                  {onStartTutorial && (
-                    <GlassButton 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        onStartTutorial();
-                        setIsMenuOpen(false);
-                      }} 
-                      className="text-romantic w-full"
+                <AnimatePresence mode="wait">
+                  {!user && (
+                    <motion.div
+                      key="mobile-login"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <HelpCircle size={16} className="mr-2" />
-                      Spustit tutoriál
-                    </GlassButton>
+                      <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                        <GlassButton variant="outline" size="sm">
+                          Přihlásit se
+                        </GlassButton>
+                      </Link>
+                    </motion.div>
                   )}
-                  <GlassButton variant="outline" size="sm" onClick={logout} className="text-red-600 w-full">
-                    Odhlásit se
-                  </GlassButton>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+
+                  {user && (
+                    <motion.div
+                      key="mobile-user"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className={`flex items-center text-charcoal transition-opacity ${isLoggingOut ? "opacity-70" : ""}`}>
+                        {isLoggingOut ? (
+                          <Loader2 size={16} className="mr-2 animate-spin" />
+                        ) : (
+                          <User size={16} className="mr-2" />
+                        )}
+                        {user?.firstName || user?.email}
+                      </div>
+                      {onStartTutorial && (
+                        <GlassButton 
+                          variant="outline" 
+                          size="sm" 
+                          disabled={isLoggingOut}
+                          onClick={() => {
+                            onStartTutorial();
+                            setIsMenuOpen(false);
+                          }} 
+                          className="text-romantic w-full"
+                        >
+                          <HelpCircle size={16} className="mr-2" />
+                          Spustit tutoriál
+                        </GlassButton>
+                      )}
+                      <GlassButton 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={isLoggingOut}
+                        onClick={handleLogout} 
+                        className="text-red-600 w-full"
+                      >
+                        {isLoggingOut ? (
+                          <>
+                            <Loader2 size={16} className="mr-2 animate-spin" />
+                            Odhlašování...
+                          </>
+                        ) : (
+                          "Odhlásit se"
+                        )}
+                      </GlassButton>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );

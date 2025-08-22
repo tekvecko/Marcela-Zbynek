@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (user: User, token: string) => void;
   logout: () => void;
   isLoading: boolean;
+  isLoggingOut: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     // Check for existing session on app start
@@ -50,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    setIsLoggingOut(true);
+    
     if (token) {
       try {
         await fetch("/api/auth/logout", {
@@ -63,14 +67,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Add a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     setUser(null);
     setToken(null);
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
+    setIsLoggingOut(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading, isLoggingOut }}>
       {children}
     </AuthContext.Provider>
   );
