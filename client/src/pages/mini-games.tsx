@@ -54,7 +54,7 @@ const gameColors = {
 export default function MiniGames() {
   const [, setLocation] = useLocation();
 
-  const { data: games = [], isLoading } = useQuery<MiniGame[]>({
+  const { data: games = [], isLoading, error } = useQuery<MiniGame[]>({
     queryKey: ["/api/mini-games"],
   });
 
@@ -65,6 +65,18 @@ export default function MiniGames() {
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-romantic"></div>
             <p className="mt-4 text-charcoal/70">Načítání mini-her...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-charcoal/70">Chyba při načítání mini-her. Zkuste se přihlásit.</p>
           </div>
         </div>
       </div>
@@ -142,7 +154,7 @@ export default function MiniGames() {
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {games.map((game) => {
+            {games && games.length > 0 && games.map((game) => {
               const IconComponent = gameIcons[game.gameType as keyof typeof gameIcons] || GamepadIcon;
               const gradientColor = gameColors[game.gameType as keyof typeof gameColors] || "from-gray-500 to-gray-600";
 
@@ -192,7 +204,7 @@ export default function MiniGames() {
             })}
           </div>
 
-          {games.length === 0 && (
+          {(!games || games.length === 0) && (
             <div className="text-center py-12">
               <GamepadIcon size={48} className="text-charcoal/30 mx-auto mb-4" />
               <p className="text-charcoal/60 text-lg">Zatím nejsou dostupné žádné mini-hry.</p>

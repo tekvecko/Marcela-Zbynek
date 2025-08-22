@@ -572,7 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mini-games API routes
-  app.get("/api/mini-games", authenticateUser, async (req: AuthRequest, res) => {
+  app.get("/api/mini-games", async (req, res) => {
     try {
       const games = await miniGamesStorage.getMiniGames();
       res.json(games);

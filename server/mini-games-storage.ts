@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { miniGames, miniGameScores } from "../shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface MiniGame {
   id: string;
@@ -91,7 +91,7 @@ export class MiniGamesStorage {
         .select()
         .from(miniGameScores)
         .where(eq(miniGameScores.gameId, gameId))
-        .orderBy(miniGameScores.score);
+        .orderBy(sql`${miniGameScores.score} DESC`);
       return scores;
     } catch (error) {
       console.error('Error fetching mini-game scores:', error);
@@ -119,7 +119,7 @@ export class MiniGamesStorage {
         .select()
         .from(miniGameScores)
         .where(eq(miniGameScores.gameId, gameId))
-        .orderBy(miniGameScores.score)
+        .orderBy(sql`${miniGameScores.score} DESC`)
         .limit(limit);
       return scores;
     } catch (error) {
