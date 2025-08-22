@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, LogOut, User, HelpCircle, Loader2, Trophy } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,15 +19,71 @@ interface NavigationProps {
 
 export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show navigation when at the top of the page
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+      } 
+      // Hide when scrolling down, show when scrolling up
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide navigation
+        setIsVisible(false);
+        // Close mobile menu if open when hiding
+        if (isMenuOpen) {
+          setIsMenuOpen(false);
+        }
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up - show navigation
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    // Add scroll event listener with throttling
+    let timeoutId: NodeJS.Timeout;
+    const throttledHandleScroll = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(handleScroll, 10);
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [lastScrollY, isMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush">
+    <motion.nav 
+      className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush"
+      initial={{ y: 0 }}
+      animate={{ 
+        y: isVisible ? 0 : -100,
+        opacity: isVisible ? 1 : 0
+      }}
+      transition={{ 
+        duration: 0.3, 
+        ease: "easeInOut"
+      }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
@@ -179,7 +235,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
         {/* Mobile Navigation */}
         <AnimatePresence>
-          {isMenuOpen && (
+          {isMenuOpen && isVisible && (
             <motion.div
               key="mobile-menu"
               initial={{ opacity: 0, height: 0 }}
@@ -317,6 +373,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           )}
         </AnimatePresence>
       </div>
-    </nav>
+    </motion.nav>
   );
 }
