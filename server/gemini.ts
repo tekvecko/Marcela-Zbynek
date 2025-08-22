@@ -125,14 +125,14 @@ Odpovězte ve formátu JSON s těmito poli:
           }
         }
         
-        throw new Error("Invalid JSON structure or missing required fields");
+        throw new Error("Neplatná struktura JSON nebo chybí požadovaná pole");
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
         const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
-        throw new Error(`Failed to parse Gemini response: ${errorMessage}`);
+        throw new Error(`Chyba při parsování odpovědi Gemini: ${errorMessage}`);
       }
     } else {
-      throw new Error("Empty response from Gemini");
+      throw new Error("Prázdná odpověď od Gemini");
     }
   } catch (error) {
     console.error(`Gemini verification error (attempt ${retryCount + 1}):`, error);

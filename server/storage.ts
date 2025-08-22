@@ -545,7 +545,7 @@ export class MemStorage implements IStorage {
     // Get current photo
     const photo = this.uploadedPhotos.get(photoId);
     if (!photo) {
-      throw new Error('Photo not found');
+      throw new Error('Fotka nebyla nalezena');
     }
 
     // Check current like status
@@ -656,8 +656,8 @@ export class MemStorage implements IStorage {
   // Auth methods
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
     const id = randomUUID();
-    const saltRounds = 12;
-    const passwordHash = userData.passwordHash ? await bcrypt.hash(userData.passwordHash, saltRounds) : null;
+    // Password is already hashed in the registration route, so don't hash it again
+    const passwordHash = userData.passwordHash ?? null;
 
     const authUser: AuthUser = {
       id,
@@ -1202,7 +1202,7 @@ export class DatabaseStorage implements IStorage {
       // Check current photo existence
       const [photo] = await tx.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, photoId));
       if (!photo) {
-        throw new Error('Photo not found');
+        throw new Error('Fotka nebyla nalezena');
       }
 
       // Check current like status

@@ -12,8 +12,20 @@ import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "
 import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
 
-// Simple rate limiting middleware
+// Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Cleanup expired entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  const entries = Array.from(rateLimitMap.entries());
+  for (const [key, value] of entries) {
+    if (now > value.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+  console.log(`Rate limit map cleaned up. Current size: ${rateLimitMap.size}`);
+}, 5 * 60 * 1000); // 5 minutes
 
 const createRateLimit = (maxRequests: number, windowMs: number) => {
   return (req: any, res: any, next: any) => {
@@ -49,7 +61,10 @@ if (!fs.existsSync(uploadDir)) {
 
 const upload = multer({
   dest: uploadDir,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { 
+    fileSize: 5 * 1024 * 1024, // Reduced to 5MB for better performance
+    files: 1, // Only allow single file upload
+  },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
       'image/jpeg', 
@@ -59,12 +74,28 @@ const upload = multer({
       'image/heif',
       'image/webp'
     ];
+    
+    // Check file type
     console.log('File mime type:', file.mimetype);
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
     }
+    
+    // Additional filename validation
+    if (!file.originalname || file.originalname.length > 255) {
+      return cb(new Error('Neplatný název souboru'));
+    }
+    
+    // Check for suspicious file extensions
+    const suspiciousExtensions = ['.exe', '.bat', '.sh', '.php', '.js', '.html'];
+    const fileName = file.originalname.toLowerCase();
+    for (const ext of suspiciousExtensions) {
+      if (fileName.includes(ext)) {
+        return cb(new Error('Podezřelý typ souboru'));
+      }
+    }
+    
+    cb(null, true);
   }
 });
 
@@ -188,6 +219,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = registerSchema.parse(req.body);
 
+      // Check if email already exists
+      const existingUser = await storage.getAuthUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Tento e-mail je již registrován." });
+      }
+
       // Hash the password
       const passwordHash = await bcrypt.hash(validatedData.password, 12);
 
@@ -290,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const challenges = await storage.getQuestChallenges();
       res.json(challenges);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch quest challenges" });
+      res.status(500).json({ message: "Chyba při načítání fotovýzev" });
     }
   });
 
@@ -321,7 +358,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!req.file) {
         console.log('No file in request');
-        return res.status(400).json({ message: "No photo uploaded" });
+        return res.status(400).json({ message: "Nebyla nahrána žádná fotka" });
+      }
+
+      // Additional server-side validation
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(400).json({ message: "Soubor je příliš velký. Maximum je 5MB." });
+      }
+      
+      if (!req.file.originalname || req.file.originalname.trim() === '') {
+        return res.status(400).json({ message: "Neplatný název souboru" });
       }
 
       const validatedData = photoUploadSchema.parse(req.body);
@@ -357,10 +403,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
           } catch (verificationError) {
             console.error('AI verification failed:', verificationError);
-            // Fallback to manual verification
-            isVerified = true; // Be permissive on errors
-            verificationScore = 70;
-            aiAnalysis = "Automatické ověření se nezdařilo, ale fotka byla přijata.";
+            // Be strict when AI fails to prevent invalid photos from being approved
+            isVerified = false;
+            verificationScore = 0;
+            aiAnalysis = "Automatické ověření se nezdařilo z technických důvodů. Zkuste prosím nahrát fotku znovu.";
           }
         } else {
           console.log(`Challenge not found for questId: ${validatedData.questId}`);
@@ -529,19 +575,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate photoId format
       if (!photoId || typeof photoId !== 'string' || photoId.length > 100) {
-        return res.status(400).json({ message: "Invalid photo ID format" });
+        return res.status(400).json({ message: "Neplatný formát ID fotky" });
       }
 
       // Basic sanitization for photoId
       const sanitizedPhotoId = photoId.trim();
       if (!/^[\w\-]+$/.test(sanitizedPhotoId)) {
-        return res.status(400).json({ message: "Invalid photo ID characters" });
+        return res.status(400).json({ message: "Neplatné znaky v ID fotky" });
       }
 
       // Use authenticated user's email as voter name with additional validation
       const voterName = req.user.email;
       if (!voterName || typeof voterName !== 'string' || voterName.length > 255) {
-        return res.status(400).json({ message: "Invalid user email" });
+        return res.status(400).json({ message: "Neplatný e-mail uživatele" });
       }
 
       // Check if photo exists first
