@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GlassButton from "@/components/ui/glass-button";
+import Navigation from "@/components/navigation";
 import { 
   Trophy, 
   Medal, 
@@ -153,8 +154,9 @@ export default function Leaderboards() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage">
+      <Navigation />
+      <div className="max-w-6xl mx-auto space-y-8 p-4 md:p-8">
         
         {/* Hero Section */}
         <div className="text-center space-y-6 relative">
