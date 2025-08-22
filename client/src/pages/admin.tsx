@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -343,60 +344,81 @@ export default function AdminPage() {
           </p>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          <Card data-testid="card-stat-challenges">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Výzvy</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-challenges-count">
-                {stats.activeChallenges}/{stats.totalChallenges}
-              </div>
-              <p className="text-xs text-muted-foreground">aktivní/celkem</p>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-stat-photos">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fotky</CardTitle>
-              <Camera className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-photos-count">
-                {stats.verifiedPhotos}/{stats.totalPhotos}
-              </div>
-              <p className="text-xs text-muted-foreground">ověřené/celkem</p>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-stat-likes">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Srdíčka</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-likes-count">
-                {stats.totalLikes}
-              </div>
-              <p className="text-xs text-muted-foreground">celkem</p>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-stat-users">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Uživatelé</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-users-count">
-                {stats.uniqueUploaders}
-              </div>
-              <p className="text-xs text-muted-foreground">aktivní</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Enhanced Statistics Cards with Animations */}
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {[
+            { key: 'challenges', icon: Trophy, title: 'Výzvy', value: `${stats.activeChallenges}/${stats.totalChallenges}`, subtitle: 'aktivní/celkem', color: 'text-blue-600' },
+            { key: 'photos', icon: Camera, title: 'Fotky', value: `${stats.verifiedPhotos}/${stats.totalPhotos}`, subtitle: 'ověřené/celkem', color: 'text-green-600' },
+            { key: 'likes', icon: Heart, title: 'Srdíčka', value: stats.totalLikes, subtitle: 'celkem', color: 'text-red-600' },
+            { key: 'users', icon: Users, title: 'Uživatelé', value: stats.uniqueUploaders, subtitle: 'aktivní', color: 'text-purple-600' }
+          ].map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={stat.key}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <motion.div
+                  whileHover={{ 
+                    scale: 1.05, 
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)" 
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card data-testid={`card-stat-${stat.key}`} className="overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 2, delay: 1 + index * 0.2, repeat: 1 }}
+                      >
+                        <Icon className={`h-4 w-4 ${stat.color}`} />
+                      </motion.div>
+                    </CardHeader>
+                    <CardContent>
+                      <motion.div 
+                        className="text-2xl font-bold" 
+                        data-testid={`text-${stat.key}-count`}
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3, delay: 0.3 + index * 0.1 }}
+                      >
+                        {stat.value}
+                      </motion.div>
+                      <motion.p 
+                        className="text-xs text-muted-foreground"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+                      >
+                        {stat.subtitle}
+                      </motion.p>
+                    </CardContent>
+                    
+                    {/* Subtle glow effect */}
+                    <motion.div
+                      className="absolute inset-0 rounded-lg"
+                      style={{
+                        background: `radial-gradient(circle at center, ${stat.color.replace('text-', '').replace('-600', '')}/10, transparent 70%)`
+                      }}
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </Card>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="challenges" className="space-y-6">
