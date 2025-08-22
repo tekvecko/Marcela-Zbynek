@@ -757,7 +757,6 @@ export class DatabaseStorage implements IStorage {
         target: users.id,
         set: {
           ...userData,
-,
         },
       })
       .returning();
