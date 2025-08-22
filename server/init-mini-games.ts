@@ -44,79 +44,43 @@ const defaultMiniGames = [
   },
   {
     title: "Pexeso lásky 💝",
-    description: "Najděte páry romantic symbolů!",
+    description: "Najděte páry svatebních symbolů v této hře na paměť",
     gameType: "memory",
     points: 15,
     timeLimit: 90,
     gameData: {
       pairs: [
-        { id: 1, symbol: "💕", name: "Srdce" },
-        { id: 2, symbol: "🌹", name: "Růže" },
-        { id: 3, symbol: "💍", name: "Prstýnek" },
-        { id: 4, symbol: "👰", name: "Nevěsta" },
-        { id: 5, symbol: "🤵", name: "Ženich" },
-        { id: 6, symbol: "💒", name: "Kostel" },
-        { id: 7, symbol: "🍰", name: "Dort" },
-        { id: 8, symbol: "💐", name: "Kytice" }
+        { symbol: "💕", name: "Srdce" },
+        { symbol: "💍", name: "Prsteny" },
+        { symbol: "💒", name: "Kostel" },
+        { symbol: "💐", name: "Kytice" },
+        { symbol: "🥂", name: "Přípitek" },
+        { symbol: "🍰", name: "Dort" },
+        { symbol: "👰", name: "Nevěsta" },
+        { symbol: "🤵", name: "Ženich" }
       ]
     }
   },
   {
-    title: "Svatební slova 📝",
-    description: "Spojte svatební pojmy s jejich významy!",
+    title: "Spojte slova 📝",
+    description: "Spojte svatební pojmy s jejich významy",
     gameType: "word_match",
-    points: 12,
+    points: 10,
     timeLimit: 60,
     gameData: {
       pairs: [
-        { word: "Polterabend", meaning: "Německá tradice rozbíjení nádobí" },
-        { word: "Podvazek", meaning: "Tradiční svatební doplněk nevěsty" },
-        { word: "Družička", meaning: "Pomocnice nevěsty při svatbě" },
-        { word: "Svědek", meaning: "Oficiální svědek svatebního obřadu" },
-        { word: "Krejčovec", meaning: "Šije svatební šaty" },
-        { word: "Konfety", meaning: "Házejí se na novomanžele" }
+        { word: "Závoj", match: "Doplněk nevěsty" },
+        { word: "Družička", match: "Pomocnice nevěsty" },
+        { word: "Svědek", match: "Pomocník ženicha" },
+        { word: "Kytice", match: "Květiny pro nevěstu" },
+        { word: "Prsteny", match: "Symbol věrnosti" },
+        { word: "Dort", match: "Sladký vrchol" }
       ]
     }
   },
   {
-    title: "Fakta o páru 💏",
-    description: "Pravda nebo lež? Tipujte správně!",
-    gameType: "couple_facts",
-    points: 18,
-    timeLimit: 75,
-    gameData: {
-      statements: [
-        {
-          statement: "Marcela a Zbyněk mají oba rádi sci-fi filmy",
-          isTrue: true,
-          explanation: "Oba jsou velkými fanoušky sci-fi!"
-        },
-        {
-          statement: "Jejich první rande bylo v kině",
-          isTrue: false,
-          explanation: "První rande bylo na koncertu!"
-        },
-        {
-          statement: "Zbyněk umí vařit lepší guláš než Marcela",
-          isTrue: true,
-          explanation: "Zbyněk je skutečný kuchař!"
-        },
-        {
-          statement: "Marcela řídí rychleji než Zbyněk",
-          isTrue: false,
-          explanation: "Zbyněk je rychlejší řidič!"
-        },
-        {
-          statement: "Oba umí hrát na hudební nástroj",
-          isTrue: true,
-          explanation: "Marcela na klavír, Zbyněk na kytaru!"
-        }
-      ]
-    }
-  },
-  {
-    title: "Rychlé reakce 🏃‍♀️",
-    description: "Klikejte na srdíčka co nejrychleji!",
+    title: "Rychlost reakce ⚡",
+    description: "Rychle klikejte na správné symboly lásky!",
     gameType: "reaction_speed",
     points: 10,
     timeLimit: 30,
@@ -131,24 +95,23 @@ const defaultMiniGames = [
 export async function initializeDefaultMiniGames() {
   try {
     console.log("🔄 Kontroluji existující mini-hry...");
-    
+
     const existingGames = await miniGamesStorage.getMiniGames();
-    
+
     if (existingGames.length > 0) {
       console.log("✅ Mini-hry již existují, přeskakuji inicializaci");
       return;
     }
-    
+
     console.log("🆕 Vytvářím výchozí mini-hry...");
-    
+
     for (const game of defaultMiniGames) {
       await miniGamesStorage.createMiniGame(game);
       console.log(`   ✓ Vytvořena mini-hra: ${game.title}`);
     }
-    
-    console.log(`🎉 Úspěšně vytvořeno ${defaultMiniGames.length} mini-her!`);
-    
+
+    console.log("✅ Výchozí mini-hry byly úspěšně vytvořeny");
   } catch (error) {
-    console.error("❌ Chyba při vytváření výchozích mini-her:", error);
+    console.error("❌ Chyba při vytváření mini-her:", error);
   }
 }
