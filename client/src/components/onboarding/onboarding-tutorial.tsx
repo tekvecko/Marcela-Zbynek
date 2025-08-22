@@ -95,8 +95,22 @@ export default function OnboardingTutorial() {
       }
     } else {
       setHighlightedElement(null);
+      // For center-positioned steps without elements, scroll to top to ensure tutorial is visible
+      if (step.position === "center") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   }, [currentStep, isOnboardingOpen]);
+
+  // Ensure page scrolls to show tutorial when it first opens
+  useEffect(() => {
+    if (isOnboardingOpen) {
+      // Scroll to top with a slight delay to ensure smooth transition
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100);
+    }
+  }, [isOnboardingOpen]);
 
   useEffect(() => {
     if (!isOnboardingOpen) {
