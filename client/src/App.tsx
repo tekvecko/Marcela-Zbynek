@@ -18,7 +18,6 @@ import NotFound from "@/pages/not-found";
 import MiniGames from "@/pages/mini-games";
 import MiniGamePlay from "@/pages/mini-game-play";
 import LeaderboardsPage from "@/pages/leaderboards";
-import { PWAInstallPrompt } from "@/components/ui/pwa-install-prompt";
 
 function Router() {
   return (
@@ -48,7 +47,6 @@ function App() {
         <OnboardingProvider>
           <TooltipProvider>
             <Toaster />
-            <PWAInstallPrompt />
             <Router />
           </TooltipProvider>
         </OnboardingProvider>
