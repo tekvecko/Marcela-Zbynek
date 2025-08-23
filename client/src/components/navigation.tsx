@@ -352,15 +352,14 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   x: { duration: 0.2 }
                 }
               }}
-              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm relative"
+              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm fixed left-0 right-0 z-50"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.90))',
                 borderRadius: '0 0 1rem 1rem',
                 marginTop: '0.5rem',
-                marginLeft: '-2rem',
-                marginRight: '-2rem',
-                paddingLeft: '2rem',
-                paddingRight: '2rem'
+                paddingLeft: '1rem',
+                paddingRight: '1rem',
+                top: 'calc(100% - 0.5rem)'
               }}
             >
               <motion.div
