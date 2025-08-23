@@ -92,7 +92,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-4xl"
+        className="fixed top-4 left-4 right-4 z-50 max-w-6xl mx-auto"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: isVisible ? 0 : -100,
