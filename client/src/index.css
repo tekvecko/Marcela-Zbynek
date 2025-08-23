@@ -217,6 +217,41 @@
   .animate-fade-in {
     animation: fadeIn 0.8s ease-out;
   }
+
+  /* Responzivní utility třídy */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-padding {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Flexibilní text velikosti */
+  .text-responsive-xs {
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+  }
+
+  .text-responsive-sm {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+  }
+
+  .text-responsive-base {
+    font-size: clamp(1rem, 3vw, 1.125rem);
+  }
+
+  .text-responsive-lg {
+    font-size: clamp(1.125rem, 4vw, 1.5rem);
+  }
+
+  .text-responsive-xl {
+    font-size: clamp(1.25rem, 5vw, 2rem);
+  }
 }
 
 @keyframes heartBeat {
@@ -245,6 +280,51 @@
   to { 
     opacity: 1; 
     transform: translateY(0); 
+  }
+}
+
+/* Responzivní layout pravidla */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Úprava paddingu pro malé obrazovky */
+  .space-y-6 > * {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Menší fonty na mobilech */
+  h1 { font-size: 1.875rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.25rem !important; }
+}
+
+@media (max-width: 768px) {
+  /* Úprava navigace pro tablety */
+  .md\:hidden {
+    display: block !important;
+  }
+  
+  /* Kompaktnější layout */
+  .space-y-8 > * {
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+/* Responzivní grid systém */
+@media (max-width: 640px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
