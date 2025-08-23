@@ -80,16 +80,19 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         return;
       }
       
-      // Smart visibility logic
-      if (currentScrollY <= 50) {
+      // Smart visibility logic - improved for mobile
+      const hideThreshold = window.innerWidth < 768 ? 80 : 50;
+      const velocityThreshold = window.innerWidth < 768 ? 0.05 : 0.1;
+      
+      if (currentScrollY <= hideThreshold) {
         // Always show at top
         setIsVisible(true);
-      } else if (direction === 'down' && velocity > 0.1) {
-        // Hide when scrolling down
+      } else if (direction === 'down' && velocity > velocityThreshold) {
+        // Hide when scrolling down with appropriate velocity
         setIsVisible(false);
         if (isMenuOpen) setIsMenuOpen(false);
-      } else if (direction === 'up' && velocity > 0.1) {
-        // Show when scrolling up
+      } else if (direction === 'up' && velocity > velocityThreshold) {
+        // Show when scrolling up with appropriate velocity
         setIsVisible(true);
       }
       
@@ -117,7 +120,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   return (
     <motion.nav 
       ref={navRef}
-      className="fixed top-2 left-2 w-[calc(100%-16px)] sm:w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-xl sm:rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
+      className="fixed top-2 left-1/2 transform -translate-x-1/2 w-[calc(100%-8px)] sm:w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-xl sm:rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
       initial={{ y: 0, scale: 1 }}
       animate={{ 
         y: isVisible ? 0 : -120,
@@ -142,7 +145,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         transition: { duration: 0.2 }
       }}
     >
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center py-3 sm:py-4">
           {/* Desktop Logo */}
           <div className="hidden md:flex items-center">
@@ -200,7 +203,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2 lg:space-x-4 xl:space-x-6">
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-2 xl:space-x-4">
             {[
               { href: '/', label: 'Domů', exact: true },
               { href: '/photo-quest', label: 'Photo Quest', exact: true },
@@ -215,7 +218,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 <motion.div key={href} className="relative">
                   <Link
                     href={href}
-                    className={`relative px-2 lg:px-3 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${
+                    className={`relative px-2 lg:px-3 py-2 rounded-lg transition-all duration-200 text-xs lg:text-sm xl:text-base ${
                       isActive 
                         ? 'text-romantic font-semibold bg-romantic/10' 
                         : 'text-charcoal hover:text-romantic hover:bg-romantic/5'
@@ -242,7 +245,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="ml-2 lg:ml-4"
+                  className="ml-1 lg:ml-2 xl:ml-4"
                 >
                   <Link href="/login">
                     <GlassButton variant="outline" size="sm" className="text-xs lg:text-sm">
@@ -259,7 +262,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.2 }}
-                  className="ml-2 lg:ml-4"
+                  className="ml-1 lg:ml-2 xl:ml-4"
                 >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -352,14 +355,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   x: { duration: 0.2 }
                 }
               }}
-              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm fixed left-0 right-0 z-50"
+              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm absolute left-0 right-0 z-50"
               style={{
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.90))',
                 borderRadius: '0 0 1rem 1rem',
                 marginTop: '0.5rem',
                 paddingLeft: '1rem',
                 paddingRight: '1rem',
-                top: 'calc(100% - 0.5rem)'
+                top: 'calc(100% - 0.5rem)',
+                width: 'calc(100% + 2px)',
+                marginLeft: '-1px'
               }}
             >
               <motion.div

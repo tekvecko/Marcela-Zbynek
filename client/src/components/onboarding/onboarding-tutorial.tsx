@@ -60,8 +60,8 @@ const onboardingSteps: OnboardingStep[] = [
   {
     id: "mobile-menu",
     title: "Mobilní menu",
-    description: "Na mobilních zařízeních použijte toto tlačítko pro otevření navigačního menu.",
-    element: "button.md\\:hidden",
+    description: "Na mobilních zařízeních použijte srdce pro otevření navigačního menu.",
+    element: "[data-testid='mobile-heart-menu-toggle']",
     position: "left"
   },
   {
@@ -90,9 +90,9 @@ export default function OnboardingTutorial() {
     const rect = element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const cardWidth = 400; // approximate card width
-    const cardHeight = 300; // approximate card height
-    const margin = 20;
+    const cardWidth = Math.min(400, viewportWidth - 40); // responsive card width
+    const cardHeight = Math.min(300, viewportHeight - 100); // responsive card height
+    const margin = viewportWidth < 640 ? 10 : 20; // smaller margin on mobile
 
     let x = viewportWidth / 2 - cardWidth / 2; // default to center
     let y = viewportHeight / 2 - cardHeight / 2;
@@ -393,15 +393,15 @@ export default function OnboardingTutorial() {
       <div 
         className="fixed z-[105] transition-all duration-500 ease-out"
         style={{
-          left: cardPosition.position === 'center' ? '50%' : `${Math.max(20, Math.min(cardPosition.x, window.innerWidth - 420))}px`,
-          top: cardPosition.position === 'center' ? '50%' : `${Math.max(20, cardPosition.y)}px`,
+          left: cardPosition.position === 'center' ? '50%' : `${Math.max(10, Math.min(cardPosition.x, window.innerWidth - Math.min(400, window.innerWidth - 20)))}px`,
+          top: cardPosition.position === 'center' ? '50%' : `${Math.max(80, cardPosition.y)}px`,
           transform: cardPosition.position === 'center' ? 'translate(-50%, -50%)' : 'none',
         }}
       >
         <Card 
           ref={tutorialCardRef}
           tabIndex={-1}
-          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-2xl w-[400px] max-w-[calc(100vw-40px)] outline-none transform transition-all duration-300 hover:scale-[1.02]"
+          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-2xl w-[400px] max-w-[calc(100vw-20px)] sm:max-w-[calc(100vw-40px)] outline-none transform transition-all duration-300 hover:scale-[1.02]"
           style={{
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(var(--romantic-rgb), 0.1)',
           }}
