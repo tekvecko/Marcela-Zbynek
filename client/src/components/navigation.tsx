@@ -72,8 +72,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       // Update scroll progress for animations
       scrollProgress.set(Math.min(currentScrollY / 100, 100));
       
-      // Always show navigation when tutorial is active or hovered
-      if (isTutorialActive || isHovered) {
+      // Always show navigation when tutorial is active, hovered, or mobile menu is open
+      if (isTutorialActive || isHovered || isMenuOpen) {
         setIsVisible(true);
         setLastScrollY(currentScrollY);
         lastTime = currentTime;
