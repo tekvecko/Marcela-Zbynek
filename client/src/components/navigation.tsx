@@ -1,17 +1,8 @@
-import { useState, useEffect, useRef } from "react";
-import { User, HelpCircle, Loader2, Home, Camera, Gamepad2, Trophy, Image, Heart, Settings } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import GlassButton from "@/components/ui/glass-button";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import likeVideo from "../assets/like.webm";
 
 interface NavigationProps {
   onStartTutorial?: () => void;
@@ -25,15 +16,15 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
   
-  // Navigation items with icons
+  // Navigation items with like.webm
   const navigationItems = [
-    { href: '/', label: 'Domů', icon: Home, exact: true },
-    { href: '/photo-quest', label: 'Photo Quest', icon: Camera, exact: true },
-    { href: '/mini-games', label: 'Mini-hry', icon: Gamepad2, exact: false },
-    { href: '/leaderboards', label: 'Žebříčky', icon: Trophy, exact: true },
-    { href: '/gallery', label: 'Galerie', icon: Image, exact: true },
-    { href: '/details', label: 'Detaily', icon: Heart, exact: true },
-    { href: '/admin', label: 'Admin', icon: Settings, exact: true }
+    { href: '/', exact: true },
+    { href: '/photo-quest', exact: true },
+    { href: '/mini-games', exact: false },
+    { href: '/leaderboards', exact: true },
+    { href: '/gallery', exact: true },
+    { href: '/details', exact: true },
+    { href: '/admin', exact: true }
   ];
 
   // Check if tutorial is active
@@ -112,6 +103,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  const VideoElement = ({ className = "w-8 h-8", autoPlay = true, muted = true }) => (
+    <video 
+      className={className}
+      autoPlay={autoPlay}
+      loop
+      muted={muted}
+      playsInline
+    >
+      <source src={likeVideo} type="video/webm" />
+    </video>
+  );
+
   return (
     <>
       {/* Modern Floating Navigation */}
@@ -133,49 +136,35 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 group">
+            {/* Logo replaced with like.webm */}
+            <a href="/" className="flex items-center space-x-2 group">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="font-script text-lg sm:text-xl font-bold text-romantic group-hover:text-love transition-colors"
+                className="flex items-center space-x-2"
               >
-                Marcela
-                <motion.span 
-                  className="mx-1"
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    rotate: [0, 10, 0]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  ❤️
-                </motion.span>
-                Zbyněk
+                <VideoElement className="w-12 h-8" />
+                <VideoElement className="w-6 h-6" />
+                <VideoElement className="w-12 h-8" />
               </motion.div>
-            </Link>
+            </a>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - all items as like.webm */}
             <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map(({ href, label, icon: Icon, exact }) => {
+              {navigationItems.map(({ href, exact }, index) => {
                 const isActive = exact ? location === href : location.startsWith(href);
                 return (
                   <motion.div key={href} className="relative">
-                    <Link
+                    <a
                       href={href}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 text-sm ${
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
                         isActive 
-                          ? 'text-romantic bg-romantic/10 font-medium' 
-                          : 'text-gray-600 hover:text-romantic hover:bg-romantic/5'
+                          ? 'bg-romantic/10' 
+                          : 'hover:bg-romantic/5'
                       }`}
                     >
-                      <Icon size={16} />
-                      <span>{label}</span>
-                    </Link>
+                      <VideoElement className="w-6 h-6" />
+                    </a>
                     {isActive && (
                       <motion.div
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-romantic rounded-full"
@@ -190,9 +179,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
             {/* Mobile Menu Button & User Menu */}
             <div className="flex items-center space-x-2">
-              {/* Mobile Menu Toggle */}
+              {/* Mobile Menu Toggle - like.webm */}
               <motion.button
-                className="lg:hidden p-2 rounded-xl bg-romantic/10 text-romantic"
+                className="lg:hidden p-2 rounded-xl bg-romantic/10"
                 onClick={toggleMenu}
                 whileTap={{ scale: 0.95 }}
                 whileHover={{ scale: 1.05 }}
@@ -205,7 +194,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   }}
                   transition={{ duration: 0.2 }}
                 >
-                  ❤️
+                  <VideoElement className="w-8 h-8" />
                 </motion.div>
               </motion.button>
 
@@ -219,11 +208,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Link href="/login">
-                      <GlassButton variant="outline" size="sm" className="text-sm">
-                        Přihlásit se
-                      </GlassButton>
-                    </Link>
+                    <a 
+                      href="/login"
+                      className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
+                    >
+                      <VideoElement className="w-6 h-6" />
+                    </a>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -232,58 +222,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
+                    className="relative"
                   >
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLoggingOut}
-                          className="bg-romantic/10 hover:bg-romantic/20 text-romantic border border-romantic/20"
-                        >
-                          {isLoggingOut ? (
-                            <Loader2 size={16} className="mr-2 animate-spin" />
-                          ) : (
-                            <User size={16} className="mr-2" />
-                          )}
-                          <span className="hidden sm:inline truncate max-w-20">
-                            {user?.firstName || user?.email}
-                          </span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white/95 backdrop-blur-xl border-white/20">
-                        {onStartTutorial && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={onStartTutorial}
-                              disabled={isLoggingOut}
-                              className="text-romantic"
-                            >
-                              <HelpCircle size={16} className="mr-2" />
-                              Spustit tutoriál
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                          </>
-                        )}
-                        <DropdownMenuItem
-                          onClick={handleLogout}
-                          disabled={isLoggingOut}
-                          className="text-red-600"
-                        >
-                          {isLoggingOut ? (
-                            <>
-                              <Loader2 size={16} className="mr-2 animate-spin" />
-                              Odhlašování...
-                            </>
-                          ) : (
-                            <>
-                              <User size={16} className="mr-2" />
-                              Odhlásit se
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <motion.button
+                      onClick={onStartTutorial || handleLogout}
+                      disabled={isLoggingOut}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <VideoElement className="w-6 h-6" />
+                    </motion.button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -302,7 +251,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               >
                 <div className="p-4">
                   <div className="grid grid-cols-2 gap-2">
-                    {navigationItems.map(({ href, label, icon: Icon, exact }, index) => {
+                    {navigationItems.map(({ href, exact }, index) => {
                       const isActive = exact ? location === href : location.startsWith(href);
                       return (
                         <motion.div
@@ -315,17 +264,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           }}
                           exit={{ opacity: 0, y: 20 }}
                         >
-                          <Link
+                          <a
                             href={href}
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex flex-col items-center space-y-2 p-3 rounded-xl transition-all duration-200 ${
                               isActive 
-                                ? 'text-romantic bg-romantic/10 font-medium shadow-sm' 
-                                : 'text-gray-600 hover:text-romantic hover:bg-romantic/5'
+                                ? 'bg-romantic/10 shadow-sm' 
+                                : 'hover:bg-romantic/5'
                             }`}
                           >
-                            <Icon size={20} />
-                            <span className="text-xs font-medium">{label}</span>
+                            <VideoElement className="w-8 h-8" />
+                            <VideoElement className="w-16 h-4" />
                             {isActive && (
                               <motion.div
                                 className="w-4 h-0.5 bg-romantic rounded-full"
@@ -333,7 +282,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                               />
                             )}
-                          </Link>
+                          </a>
                         </motion.div>
                       );
                     })}
@@ -349,28 +298,19 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     >
                       <div className="flex items-center justify-between p-3 bg-romantic/5 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-romantic/20 rounded-full flex items-center justify-center">
-                            <User size={16} className="text-romantic" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm text-gray-900">
-                              {user?.firstName || user?.email}
-                            </p>
-                            <p className="text-xs text-gray-500">Přihlášen</p>
-                          </div>
+                          <VideoElement className="w-8 h-8" />
+                          <VideoElement className="w-20 h-6" />
                         </div>
                         {onStartTutorial && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <button
                             onClick={() => {
                               onStartTutorial();
                               setIsMenuOpen(false);
                             }}
-                            className="text-romantic hover:bg-romantic/10"
+                            className="p-2 rounded-xl hover:bg-romantic/10 transition-all"
                           >
-                            <HelpCircle size={16} />
-                          </Button>
+                            <VideoElement className="w-6 h-6" />
+                          </button>
                         )}
                       </div>
                     </motion.div>
