@@ -154,9 +154,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           {/* Mobile Logo with Heart Menu Animation */}
           <div className="md:hidden flex items-center justify-between flex-1 relative">
             <motion.div
-              className="flex items-center absolute left-0"
+              className="flex items-center"
               animate={{
-                x: 0
+                x: isMenuOpen ? 0 : 0
               }}
               transition={{ type: "spring", stiffness: 300, damping: 30, duration: 0.4 }}
             >
@@ -357,8 +357,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
                 borderRadius: '0 0 1rem 1rem',
                 marginTop: '0.5rem',
-                marginLeft: '-1rem',
-                paddingLeft: '1rem'
+                marginLeft: '-2rem',
+                marginRight: '-2rem',
+                paddingLeft: '2rem',
+                paddingRight: '2rem'
               }}
             >
               <motion.div
@@ -399,8 +401,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                         onClick={() => setIsMenuOpen(false)}
                         className={`flex items-center space-x-3 p-3 sm:p-4 rounded-xl transition-all duration-200 group ${
                           isActive 
-                            ? 'text-romantic font-semibold bg-romantic/10 border-l-4 border-romantic ml-2' 
-                            : 'text-charcoal hover:text-romantic hover:bg-romantic/5 hover:translate-x-2 ml-2'
+                            ? 'text-romantic font-semibold bg-romantic/10 border-l-4 border-romantic' 
+                            : 'text-charcoal hover:text-romantic hover:bg-romantic/5 hover:translate-x-1'
                         }`}
                       >
                         <motion.span 
