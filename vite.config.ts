@@ -33,5 +33,12 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    middlewareMode: false,
+    hmr: {
+      port: 24678,
+    },
+  },
+  define: {
+    __SW_DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
   },
 });
