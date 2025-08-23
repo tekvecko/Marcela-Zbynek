@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { Menu, X, LogOut, User, HelpCircle, Loader2, Trophy } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Menu, X, LogOut, User, HelpCircle, Loader2, Trophy, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import GlassButton from "@/components/ui/glass-button";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,20 @@ interface NavigationProps {
 export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrollVelocity, setScrollVelocity] = useState(0);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | 'none'>('none');
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
+  const lastScrollTime = useRef(Date.now());
+  const navRef = useRef<HTMLElement>(null);
+  
+  // Motion values for advanced animations
+  const scrollProgress = useMotionValue(0);
+  const navOpacity = useTransform(scrollProgress, [0, 100], [1, 0.95]);
+  const navScale = useTransform(scrollProgress, [0, 100], [1, 0.98]);
 
   // Check if tutorial is active
   useEffect(() => {
@@ -40,54 +50,69 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
+  // Enhanced scroll handling with velocity detection
   useEffect(() => {
+    let rafId: number;
+    let lastTime = Date.now();
+    
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const currentTime = Date.now();
+      const timeDelta = currentTime - lastTime;
+      const scrollDelta = currentScrollY - lastScrollY;
       
-      // Always show navigation when tutorial is active
-      if (isTutorialActive) {
+      // Calculate scroll velocity (pixels per millisecond)
+      const velocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
+      setScrollVelocity(velocity);
+      
+      // Determine scroll direction
+      const direction = scrollDelta > 0 ? 'down' : scrollDelta < 0 ? 'up' : 'none';
+      setScrollDirection(direction);
+      
+      // Update scroll progress for animations
+      scrollProgress.set(Math.min(currentScrollY / 100, 100));
+      
+      // Always show navigation when tutorial is active or hovered
+      if (isTutorialActive || isHovered) {
         setIsVisible(true);
+        setLastScrollY(currentScrollY);
+        lastTime = currentTime;
         return;
       }
       
-      // Show navigation when at the top of the page
-      if (currentScrollY <= 0) {
+      // Smart visibility logic
+      if (currentScrollY <= 50) {
+        // Always show at top
         setIsVisible(true);
-      } 
-      // Hide when scrolling down, show when scrolling up
-      else if (currentScrollY > lastScrollY && currentScrollY > 150) {
-        // Scrolling down - hide navigation
+      } else if (direction === 'down' && velocity > 0.5 && currentScrollY > 200) {
+        // Hide when scrolling down fast
         setIsVisible(false);
-        // Close mobile menu if open when hiding
-        if (isMenuOpen) {
-          setIsMenuOpen(false);
-        }
-      } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show navigation
+        if (isMenuOpen) setIsMenuOpen(false);
+      } else if (direction === 'up' && velocity > 0.2) {
+        // Show when scrolling up with any meaningful velocity
         setIsVisible(true);
+      } else if (currentScrollY > lastScrollY + 100) {
+        // Hide if scrolled down significantly without velocity check
+        setIsVisible(false);
+        if (isMenuOpen) setIsMenuOpen(false);
       }
       
       setLastScrollY(currentScrollY);
+      lastTime = currentTime;
     };
 
-    // Add scroll event listener with throttling
-    let timeoutId: NodeJS.Timeout;
     const throttledHandleScroll = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      timeoutId = setTimeout(handleScroll, 10);
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(handleScroll);
     };
 
     window.addEventListener('scroll', throttledHandleScroll, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', throttledHandleScroll);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [lastScrollY, isMenuOpen, isTutorialActive]);
+  }, [lastScrollY, isMenuOpen, isTutorialActive, isHovered, scrollProgress]);
 
   const handleLogout = async () => {
     await logout();
@@ -95,15 +120,30 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
   return (
     <motion.nav 
-      className="fixed top-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-2xl shadow-lg border border-blush/30"
-      initial={{ y: 0 }}
+      ref={navRef}
+      className="fixed top-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
+      initial={{ y: 0, scale: 1 }}
       animate={{ 
-        y: isVisible ? 0 : -100,
-        opacity: isVisible ? 1 : 0
+        y: isVisible ? 0 : -120,
+        opacity: isVisible ? 1 : 0,
+        scale: isHovered ? 1.02 : 1
+      }}
+      style={{
+        opacity: navOpacity,
+        scale: navScale
       }}
       transition={{ 
-        duration: 0.3, 
-        ease: "easeInOut"
+        duration: isHovered ? 0.2 : 0.4, 
+        ease: isHovered ? "easeOut" : "easeInOut",
+        type: "spring",
+        stiffness: 300,
+        damping: 30
+      }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      whileHover={{ 
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        transition: { duration: 0.2 }
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -113,49 +153,39 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link
-              href="/"
-              className={`transition-colors ${location === '/' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Domů
-            </Link>
-            <Link
-              href="/photo-quest"
-              className={`transition-colors ${location === '/photo-quest' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Photo Quest
-            </Link>
-            <Link
-              href="/mini-games"
-              className={`transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Mini-hry
-            </Link>
-            <Link
-              href="/leaderboards"
-              className={`transition-colors ${location === '/leaderboards' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Žebříčky
-            </Link>
-            <Link
-              href="/gallery"
-              className={`transition-colors ${location === '/gallery' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Galerie
-            </Link>
-            <Link
-              href="/details"
-              className={`transition-colors ${location === '/details' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Detaily
-            </Link>
-            <Link
-              href="/admin"
-              className={`transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-            >
-              Admin
-            </Link>
+          <div className="hidden md:flex items-center space-x-6">
+            {[
+              { href: '/', label: 'Domů', exact: true },
+              { href: '/photo-quest', label: 'Photo Quest', exact: true },
+              { href: '/mini-games', label: 'Mini-hry', exact: false },
+              { href: '/leaderboards', label: 'Žebříčky', exact: true },
+              { href: '/gallery', label: 'Galerie', exact: true },
+              { href: '/details', label: 'Detaily', exact: true },
+              { href: '/admin', label: 'Admin', exact: true }
+            ].map(({ href, label, exact }) => {
+              const isActive = exact ? location === href : location.startsWith(href);
+              return (
+                <motion.div key={href} className="relative">
+                  <Link
+                    href={href}
+                    className={`relative px-3 py-2 rounded-lg transition-all duration-200 ${
+                      isActive 
+                        ? 'text-romantic font-semibold bg-romantic/10' 
+                        : 'text-charcoal hover:text-romantic hover:bg-romantic/5'
+                    }`}
+                  >
+                    {label}
+                    {isActive && (
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-romantic rounded-full"
+                        layoutId="activeTab"
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                </motion.div>
+              );
+            })}
 
             <AnimatePresence mode="wait">
               {!user && (
@@ -238,158 +268,261 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             </AnimatePresence>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Enhanced Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-charcoal"
+            className="md:hidden p-2 rounded-lg text-charcoal hover:bg-romantic/10 transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.1 }}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            data-testid="mobile-menu-toggle"
           >
             <motion.div
               initial={false}
-              animate={{ rotate: isMenuOpen ? 90 : 0 }}
-              transition={{ duration: 0.2 }}
+              animate={{ 
+                rotate: isMenuOpen ? 180 : 0,
+                scale: isMenuOpen ? 1.1 : 1
+              }}
+              transition={{ 
+                duration: 0.3,
+                type: "spring",
+                stiffness: 300,
+                damping: 20
+              }}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </motion.div>
+            {scrollDirection !== 'none' && (
+              <motion.div
+                className="absolute -bottom-1 left-1/2 transform -translate-x-1/2"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ 
+                  opacity: scrollVelocity > 0.3 ? 1 : 0,
+                  scale: scrollVelocity > 0.3 ? 1 : 0
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown 
+                  size={12} 
+                  className={`text-romantic transform ${
+                    scrollDirection === 'up' ? 'rotate-180' : ''
+                  } transition-transform duration-200`}
+                />
+              </motion.div>
+            )}
           </motion.button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Enhanced Mobile Navigation */}
         <AnimatePresence>
           {isMenuOpen && isVisible && (
             <motion.div
               key="mobile-menu"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="md:hidden py-4 border-t border-blush overflow-hidden"
+              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              animate={{ 
+                opacity: 1, 
+                height: "auto", 
+                scale: 1,
+                transition: {
+                  height: { duration: 0.3, ease: "easeOut" },
+                  opacity: { duration: 0.2, delay: 0.1 },
+                  scale: { duration: 0.2, delay: 0.1 }
+                }
+              }}
+              exit={{ 
+                opacity: 0, 
+                height: 0, 
+                scale: 0.95,
+                transition: {
+                  height: { duration: 0.2 },
+                  opacity: { duration: 0.15 },
+                  scale: { duration: 0.15 }
+                }
+              }}
+              className="md:hidden py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))'
+              }}
             >
               <motion.div
-                initial={{ y: -10 }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.2, delay: 0.1 }}
-                className="flex flex-col space-y-4"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ 
+                  y: 0, 
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.05,
+                    delayChildren: 0.1
+                  }
+                }}
+                className="flex flex-col space-y-3"
               >
-              <Link
-                href="/"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Domů
-              </Link>
-              <Link
-                href="/photo-quest"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/photo-quest' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Photo Quest
-              </Link>
-              <Link
-                href="/mini-games"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location.startsWith('/mini-games') ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Mini-hry
-              </Link>
-              <Link
-                href="/leaderboards"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/leaderboards' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Žebříčky
-              </Link>
-              <Link
-                href="/gallery"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/gallery' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Galerie
-              </Link>
-              <Link
-                href="/details"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/details' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Detaily
-              </Link>
-              <Link
-                href="/admin"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-left transition-colors ${location === '/admin' ? 'text-romantic font-semibold' : 'text-charcoal hover:text-romantic'}`}
-              >
-                Admin
-              </Link>
-
-                <AnimatePresence mode="wait">
-                  {!user && (
+                {[
+                  { href: '/', label: 'Domů', icon: '🏠', exact: true },
+                  { href: '/photo-quest', label: 'Photo Quest', icon: '📸', exact: true },
+                  { href: '/mini-games', label: 'Mini-hry', icon: '🎮', exact: false },
+                  { href: '/leaderboards', label: 'Žebříčky', icon: '🏆', exact: true },
+                  { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true },
+                  { href: '/details', label: 'Detaily', icon: '💍', exact: true },
+                  { href: '/admin', label: 'Admin', icon: '⚙️', exact: true }
+                ].map(({ href, label, icon, exact }, index) => {
+                  const isActive = exact ? location === href : location.startsWith(href);
+                  return (
                     <motion.div
-                      key="mobile-login"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ duration: 0.2 }}
+                      key={href}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ 
+                        x: 0, 
+                        opacity: 1,
+                        transition: { delay: index * 0.05 }
+                      }}
+                      className="relative"
                     >
-                      <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                        <GlassButton variant="outline" size="sm">
-                          Přihlásit se
-                        </GlassButton>
+                      <Link
+                        href={href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group ${
+                          isActive 
+                            ? 'text-romantic font-semibold bg-romantic/10 border-l-4 border-romantic' 
+                            : 'text-charcoal hover:text-romantic hover:bg-romantic/5 hover:translate-x-1'
+                        }`}
+                      >
+                        <motion.span 
+                          className="text-lg"
+                          whileHover={{ scale: 1.2, rotate: 5 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                        >
+                          {icon}
+                        </motion.span>
+                        <span className="font-medium">{label}</span>
+                        {isActive && (
+                          <motion.div
+                            className="ml-auto w-2 h-2 bg-romantic rounded-full"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                          />
+                        )}
                       </Link>
                     </motion.div>
-                  )}
+                  );
+                })}
 
-                  {user && (
-                    <motion.div
-                      key="mobile-user"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex flex-col space-y-2"
-                    >
-                      <div className={`flex items-center text-charcoal transition-opacity ${isLoggingOut ? "opacity-70" : ""}`}>
-                        {isLoggingOut ? (
-                          <Loader2 size={16} className="mr-2 animate-spin" />
-                        ) : (
-                          <User size={16} className="mr-2" />
-                        )}
-                        {user?.firstName || user?.email}
-                      </div>
-                      {onStartTutorial && (
-                        <GlassButton
-                          variant="outline"
-                          size="sm"
-                          disabled={isLoggingOut}
-                          onClick={() => {
-                            onStartTutorial();
-                            setIsMenuOpen(false);
-                          }}
-                          className="text-romantic w-full"
-                        >
-                          <HelpCircle size={16} className="mr-2" />
-                          Spustit tutoriál
-                        </GlassButton>
-                      )}
-                      <GlassButton
-                        variant="outline"
-                        size="sm"
-                        disabled={isLoggingOut}
-                        onClick={handleLogout}
-                        className="text-red-600 w-full"
+                {/* Enhanced Mobile User Section */}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ 
+                    y: 0, 
+                    opacity: 1,
+                    transition: { delay: 0.3 }
+                  }}
+                  className="pt-4 mt-4 border-t border-blush/30"
+                >
+                  <AnimatePresence mode="wait">
+                    {!user && (
+                      <motion.div
+                        key="mobile-login"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
                       >
-                        {isLoggingOut ? (
-                          <>
-                            <Loader2 size={16} className="mr-2 animate-spin" />
-                            Odhlašování...
-                          </>
-                        ) : (
-                          "Odhlásit se"
-                        )}
-                      </GlassButton>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full"
+                          >
+                            <GlassButton variant="outline" size="lg" className="w-full justify-center">
+                              <User size={18} className="mr-2" />
+                              Přihlásit se
+                            </GlassButton>
+                          </motion.div>
+                        </Link>
+                      </motion.div>
+                    )}
+
+                    {user && (
+                      <motion.div
+                        key="mobile-user"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
+                      >
+                        <motion.div 
+                          className={`flex items-center p-3 rounded-xl bg-white/20 border border-white/30 transition-opacity ${
+                            isLoggingOut ? "opacity-70" : ""
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                        >
+                          <motion.div
+                            animate={{ 
+                              rotate: isLoggingOut ? 360 : 0,
+                              transition: { duration: 1, repeat: isLoggingOut ? Infinity : 0 }
+                            }}
+                          >
+                            {isLoggingOut ? (
+                              <Loader2 size={20} className="mr-3 text-romantic" />
+                            ) : (
+                              <User size={20} className="mr-3 text-romantic" />
+                            )}
+                          </motion.div>
+                          <div className="flex-1">
+                            <p className="font-medium text-charcoal">
+                              {user?.firstName || user?.email}
+                            </p>
+                            <p className="text-sm text-charcoal/60">
+                              {isLoggingOut ? 'Odhlašování...' : 'Přihlášen'}
+                            </p>
+                          </div>
+                        </motion.div>
+                        
+                        <div className="space-y-2">
+                          {onStartTutorial && (
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <GlassButton
+                                variant="outline"
+                                size="lg"
+                                disabled={isLoggingOut}
+                                onClick={() => {
+                                  onStartTutorial();
+                                  setIsMenuOpen(false);
+                                }}
+                                className="text-romantic w-full justify-center"
+                              >
+                                <HelpCircle size={18} className="mr-2" />
+                                Spustit tutoriál
+                              </GlassButton>
+                            </motion.div>
+                          )}
+                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <GlassButton
+                              variant="outline"
+                              size="lg"
+                              disabled={isLoggingOut}
+                              onClick={handleLogout}
+                              className="text-red-600 w-full justify-center hover:bg-red-50"
+                            >
+                              {isLoggingOut ? (
+                                <>
+                                  <Loader2 size={18} className="mr-2 animate-spin" />
+                                  Odhlašování...
+                                </>
+                              ) : (
+                                <>
+                                  <LogOut size={18} className="mr-2" />
+                                  Odhlásit se
+                                </>
+                              )}
+                            </GlassButton>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               </motion.div>
             </motion.div>
           )}
