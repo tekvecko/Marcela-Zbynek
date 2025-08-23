@@ -40,59 +40,128 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Android-like scroll handling
+  // Enhanced Android-like scroll handling
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
+    let showTimeout: NodeJS.Timeout;
+    let scrollVelocity = 0;
+    let lastScrollTime = Date.now();
+    let scrollHistory: number[] = [];
     
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
-          const scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
-          const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+          const currentTime = Date.now();
+          const timeDelta = currentTime - lastScrollTime;
+          const scrollDelta = currentScrollY - lastScrollY;
+          
+          // Calculate scroll velocity (pixels per ms)
+          scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
+          
+          // Track scroll history for better decision making
+          scrollHistory.push(scrollDelta);
+          if (scrollHistory.length > 5) scrollHistory.shift();
+          
+          // Calculate average scroll direction from history
+          const avgScrollDelta = scrollHistory.reduce((a, b) => a + b, 0) / scrollHistory.length;
+          const isScrollingDown = avgScrollDelta > 0;
+          const isScrollingUp = avgScrollDelta < 0;
           
           // Always show when tutorial is active or menu is open
           if (isTutorialActive || isMenuOpen) {
             setIsVisible(true);
             setLastScrollY(currentScrollY);
+            lastScrollTime = currentTime;
             ticking = false;
             return;
           }
           
-          // Clear any pending hide timeout
+          // Clear any pending timeouts
           if (hideTimeout) clearTimeout(hideTimeout);
+          if (showTimeout) clearTimeout(showTimeout);
           
-          // Android-like behavior
-          if (currentScrollY < 10) {
-            // Always show at very top
-            setIsVisible(true);
-          } else if (scrollDirection === 'down' && scrollDelta > 5) {
-            // Hide when scrolling down with minimum delta
-            if (currentScrollY > 100) {
-              // Add slight delay before hiding (Android-like)
+          // Enhanced Android-like behavior
+          if (currentScrollY < 20) {
+            // Always show at very top with smooth transition
+            showTimeout = setTimeout(() => setIsVisible(true), 50);
+          } else if (isScrollingDown && Math.abs(avgScrollDelta) > 2 && scrollVelocity > 0.1) {
+            // Hide when consistently scrolling down with sufficient velocity
+            if (currentScrollY > 80) {
               hideTimeout = setTimeout(() => {
                 setIsVisible(false);
                 setIsMenuOpen(false);
-              }, 150);
+              }, scrollVelocity > 0.5 ? 100 : 200); // Faster hide for fast scrolling
             }
-          } else if (scrollDirection === 'up' && scrollDelta > 3) {
-            // Show immediately when scrolling up (even with small delta)
+          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 1) {
+            // Show immediately when scrolling up (even small movements)
             setIsVisible(true);
+          } else if (scrollVelocity < 0.05 && currentScrollY > 100) {
+            // Auto-show after scroll stops (Android behavior)
+            showTimeout = setTimeout(() => setIsVisible(true), 1500);
           }
           
           setLastScrollY(currentScrollY);
+          lastScrollTime = currentTime;
           ticking = false;
         });
         ticking = true;
       }
     };
 
+    // Touch events for mobile (Android-like)
+    let touchStartY = 0;
+    let touchMoveY = 0;
+    let isTouching = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+      isTouching = true;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isTouching) return;
+      touchMoveY = e.touches[0].clientY;
+      const touchDelta = touchStartY - touchMoveY;
+      
+      // Immediate response to touch gestures
+      if (Math.abs(touchDelta) > 10) {
+        if (touchDelta > 0) {
+          // Swiping up - hide nav
+          if (!isTutorialActive && !isMenuOpen) {
+            setIsVisible(false);
+            setIsMenuOpen(false);
+          }
+        } else {
+          // Swiping down - show nav
+          setIsVisible(true);
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isTouching = false;
+      // Auto-show after touch interaction ends
+      setTimeout(() => {
+        if (!isTutorialActive && !isMenuOpen && window.scrollY > 100) {
+          setIsVisible(true);
+        }
+      }, 1000);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
+      if (showTimeout) clearTimeout(showTimeout);
     };
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
@@ -127,10 +196,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         }}
         transition={{ 
           type: "spring", 
-          stiffness: 400, 
-          damping: 30,
-          mass: 1,
-          duration: isVisible ? 0.4 : 0.3
+          stiffness: isVisible ? 300 : 500, 
+          damping: isVisible ? 25 : 35,
+          mass: 0.8,
+          velocity: isVisible ? 0 : -50
         }}
       >
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
