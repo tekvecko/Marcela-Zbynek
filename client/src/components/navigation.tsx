@@ -72,8 +72,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       // Update scroll progress for animations
       scrollProgress.set(Math.min(currentScrollY / 100, 100));
       
-      // Always show navigation when tutorial is active or hovered
-      if (isTutorialActive || isHovered) {
+      // Always show navigation when tutorial is active, hovered, or mobile menu is open
+      if (isTutorialActive || isHovered || isMenuOpen) {
         setIsVisible(true);
         setLastScrollY(currentScrollY);
         lastTime = currentTime;
@@ -84,17 +84,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       if (currentScrollY <= 50) {
         // Always show at top
         setIsVisible(true);
-      } else if (direction === 'down' && velocity > 0.5 && currentScrollY > 200) {
-        // Hide when scrolling down fast
+      } else if (direction === 'down' && velocity > 0.1) {
+        // Hide when scrolling down
         setIsVisible(false);
         if (isMenuOpen) setIsMenuOpen(false);
-      } else if (direction === 'up' && velocity > 0.2) {
-        // Show when scrolling up with any meaningful velocity
+      } else if (direction === 'up' && velocity > 0.1) {
+        // Show when scrolling up
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY + 100) {
-        // Hide if scrolled down significantly without velocity check
-        setIsVisible(false);
-        if (isMenuOpen) setIsMenuOpen(false);
       }
       
       setLastScrollY(currentScrollY);
@@ -121,7 +117,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   return (
     <motion.nav 
       ref={navRef}
-      className="fixed top-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
+      className="fixed top-2 left-1/2 transform -translate-x-1/2 w-[calc(100%-16px)] sm:w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-xl sm:rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
       initial={{ y: 0, scale: 1 }}
       animate={{ 
         y: isVisible ? 0 : -120,
@@ -146,16 +142,25 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         transition: { duration: 0.2 }
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center">
-            <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors md:block hidden">
-              Marcela <span className="heart-decoration text-3xl">❤️</span> Zbyněk
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex justify-between items-center py-3 sm:py-4">
+          {/* Desktop Logo */}
+          <div className="hidden md:flex items-center">
+            <Link href="/" className="font-script text-xl lg:text-2xl text-romantic font-bold hover:text-love transition-colors">
+              Marcela <span className="heart-decoration text-2xl lg:text-3xl">❤️</span> Zbyněk
             </Link>
+          </div>
             
-            {/* Mobile logo with clickable heart */}
-            <div className="md:hidden flex items-center">
-              <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
+          {/* Mobile Logo with Heart Menu Animation */}
+          <div className="md:hidden flex items-center justify-between flex-1 relative">
+            <motion.div
+              className="flex items-center"
+              animate={{
+                x: isMenuOpen ? 0 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, duration: 0.4 }}
+            >
+              <Link href="/" className="font-script text-lg sm:text-xl text-romantic font-bold hover:text-love transition-colors">
                 Marcela
               </Link>
               <motion.button
@@ -167,24 +172,35 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 data-testid="mobile-heart-menu-toggle"
               >
                 <motion.span 
-                  className="heart-decoration text-3xl block"
+                  className="heart-decoration text-2xl sm:text-3xl block"
                   animate={{
                     color: isMenuOpen ? '#e11d48' : '#d946ef',
-                    rotate: isMenuOpen ? 10 : 0
+                    rotate: isMenuOpen ? 10 : 0,
+                    scale: isMenuOpen ? 1.1 : 1
                   }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.3 }}
                 >
                   ❤️
                 </motion.span>
               </motion.button>
-              <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
+            </motion.div>
+            
+            {/* Zbyněk stays in place on the right */}
+            <motion.div
+              className="absolute right-0"
+              animate={{
+                opacity: isMenuOpen ? 0.7 : 1
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              <Link href="/" className="font-script text-lg sm:text-xl text-romantic font-bold hover:text-love transition-colors">
                 Zbyněk
               </Link>
-            </div>
+            </motion.div>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4 xl:space-x-6">
             {[
               { href: '/', label: 'Domů', exact: true },
               { href: '/photo-quest', label: 'Photo Quest', exact: true },
@@ -199,7 +215,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 <motion.div key={href} className="relative">
                   <Link
                     href={href}
-                    className={`relative px-3 py-2 rounded-lg transition-all duration-200 ${
+                    className={`relative px-2 lg:px-3 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${
                       isActive 
                         ? 'text-romantic font-semibold bg-romantic/10' 
                         : 'text-charcoal hover:text-romantic hover:bg-romantic/5'
@@ -226,9 +242,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
+                  className="ml-2 lg:ml-4"
                 >
                   <Link href="/login">
-                    <GlassButton variant="outline" size="sm">
+                    <GlassButton variant="outline" size="sm" className="text-xs lg:text-sm">
                       Přihlásit se
                     </GlassButton>
                   </Link>
@@ -242,6 +259,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.2 }}
+                  className="ml-2 lg:ml-4"
                 >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -249,16 +267,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                         variant="ghost"
                         size="sm"
                         disabled={isLoggingOut}
-                        className={`bg-white/20 backdrop-blur-sm border-white/20 hover:bg-white/30 text-charcoal transition-all ${
+                        className={`bg-white/20 backdrop-blur-sm border-white/20 hover:bg-white/30 text-charcoal transition-all text-xs lg:text-sm px-2 lg:px-3 ${
                           isLoggingOut ? "opacity-70" : ""
                         }`}
                       >
                         {isLoggingOut ? (
-                          <Loader2 size={16} className="mr-2 animate-spin" />
+                          <Loader2 size={14} className="mr-1 lg:mr-2 animate-spin" />
                         ) : (
-                          <User size={16} className="mr-2" />
+                          <User size={14} className="mr-1 lg:mr-2" />
                         )}
-                        {user?.firstName || user?.email}
+                        <span className="truncate max-w-20 lg:max-w-none">
+                          {user?.firstName || user?.email}
+                        </span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-white/90 backdrop-blur-sm">
@@ -307,30 +327,40 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           {isMenuOpen && isVisible && (
             <motion.div
               key="mobile-menu"
-              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              initial={{ opacity: 0, height: 0, x: -20, scale: 0.95 }}
               animate={{ 
                 opacity: 1, 
                 height: "auto", 
+                x: 0,
                 scale: 1,
                 transition: {
-                  height: { duration: 0.3, ease: "easeOut" },
-                  opacity: { duration: 0.2, delay: 0.1 },
-                  scale: { duration: 0.2, delay: 0.1 }
+                  height: { duration: 0.4, ease: "easeOut" },
+                  opacity: { duration: 0.3, delay: 0.1 },
+                  scale: { duration: 0.3, delay: 0.1 },
+                  x: { duration: 0.3, delay: 0.1 }
                 }
               }}
               exit={{ 
                 opacity: 0, 
                 height: 0, 
+                x: -20,
                 scale: 0.95,
                 transition: {
-                  height: { duration: 0.2 },
-                  opacity: { duration: 0.15 },
-                  scale: { duration: 0.15 }
+                  height: { duration: 0.25 },
+                  opacity: { duration: 0.2 },
+                  scale: { duration: 0.2 },
+                  x: { duration: 0.2 }
                 }
               }}
-              className="md:hidden py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm"
+              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm relative"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))'
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
+                borderRadius: '0 0 1rem 1rem',
+                marginTop: '0.5rem',
+                marginLeft: '-2rem',
+                marginRight: '-2rem',
+                paddingLeft: '2rem',
+                paddingRight: '2rem'
               }}
             >
               <motion.div
@@ -369,23 +399,23 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                       <Link
                         href={href}
                         onClick={() => setIsMenuOpen(false)}
-                        className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group ${
+                        className={`flex items-center space-x-3 p-3 sm:p-4 rounded-xl transition-all duration-200 group ${
                           isActive 
                             ? 'text-romantic font-semibold bg-romantic/10 border-l-4 border-romantic' 
                             : 'text-charcoal hover:text-romantic hover:bg-romantic/5 hover:translate-x-1'
                         }`}
                       >
                         <motion.span 
-                          className="text-lg"
+                          className="text-lg sm:text-xl flex-shrink-0"
                           whileHover={{ scale: 1.2, rotate: 5 }}
                           transition={{ type: "spring", stiffness: 400, damping: 15 }}
                         >
                           {icon}
                         </motion.span>
-                        <span className="font-medium">{label}</span>
+                        <span className="font-medium text-sm sm:text-base flex-1">{label}</span>
                         {isActive && (
                           <motion.div
-                            className="ml-auto w-2 h-2 bg-romantic rounded-full"
+                            className="w-2 h-2 bg-romantic rounded-full flex-shrink-0"
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
