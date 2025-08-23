@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Check, ArrowDown, ArrowUp, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -82,7 +82,83 @@ export default function OnboardingTutorial() {
     prevStep 
   } = useOnboardingContext();
   const [highlightedElement, setHighlightedElement] = useState<Element | null>(null);
+  const [cardPosition, setCardPosition] = useState<{x: number, y: number, position: string}>({x: 0, y: 0, position: 'center'});
   const tutorialCardRef = useRef<HTMLDivElement>(null);
+
+  // Calculate optimal position for tutorial card based on highlighted element
+  const calculateCardPosition = (element: Element, stepPosition: string) => {
+    const rect = element.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const cardWidth = 400; // approximate card width
+    const cardHeight = 300; // approximate card height
+    const margin = 20;
+
+    let x = viewportWidth / 2 - cardWidth / 2; // default to center
+    let y = viewportHeight / 2 - cardHeight / 2;
+    let position = stepPosition;
+
+    // Try to position based on element location and step preference
+    switch (stepPosition) {
+      case 'bottom':
+        if (rect.bottom + cardHeight + margin < viewportHeight) {
+          y = rect.bottom + margin;
+          position = 'bottom';
+        } else if (rect.top - cardHeight - margin > 0) {
+          y = rect.top - cardHeight - margin;
+          position = 'top';
+        }
+        break;
+      case 'top':
+        if (rect.top - cardHeight - margin > 0) {
+          y = rect.top - cardHeight - margin;
+          position = 'top';
+        } else if (rect.bottom + cardHeight + margin < viewportHeight) {
+          y = rect.bottom + margin;
+          position = 'bottom';
+        }
+        break;
+      case 'left':
+        if (rect.left - cardWidth - margin > 0) {
+          x = rect.left - cardWidth - margin;
+          y = Math.max(margin, Math.min(rect.top, viewportHeight - cardHeight - margin));
+          position = 'left';
+        } else if (rect.right + cardWidth + margin < viewportWidth) {
+          x = rect.right + margin;
+          y = Math.max(margin, Math.min(rect.top, viewportHeight - cardHeight - margin));
+          position = 'right';
+        }
+        break;
+      case 'right':
+        if (rect.right + cardWidth + margin < viewportWidth) {
+          x = rect.right + margin;
+          y = Math.max(margin, Math.min(rect.top, viewportHeight - cardHeight - margin));
+          position = 'right';
+        } else if (rect.left - cardWidth - margin > 0) {
+          x = rect.left - cardWidth - margin;
+          y = Math.max(margin, Math.min(rect.top, viewportHeight - cardHeight - margin));
+          position = 'left';
+        }
+        break;
+    }
+
+    // Ensure card stays within viewport bounds
+    x = Math.max(margin, Math.min(x, viewportWidth - cardWidth - margin));
+    y = Math.max(margin, Math.min(y, viewportHeight - cardHeight - margin));
+
+    return { x, y, position };
+  };
+
+  // Get arrow icon based on card position relative to highlighted element
+  const getArrowIcon = (position: string) => {
+    switch (position) {
+      case 'top': return ArrowDown;
+      case 'bottom': return ArrowUp;
+      case 'left': return ArrowRight;
+      case 'right': return ArrowLeft;
+      default: return null;
+    }
+  };
 
   useEffect(() => {
     if (!isOnboardingOpen) return;
@@ -92,16 +168,43 @@ export default function OnboardingTutorial() {
       const element = document.querySelector(step.element);
       if (element) {
         setHighlightedElement(element);
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        
+        // Calculate optimal card position
+        const position = calculateCardPosition(element, step.position || 'bottom');
+        setCardPosition(position);
+        
+        // Smooth scroll to element with better positioning
+        setTimeout(() => {
+          element.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "center",
+            inline: "center"
+          });
+        }, 100);
       }
     } else {
       setHighlightedElement(null);
+      setCardPosition({x: 0, y: 0, position: 'center'});
       // For center-positioned steps without elements, scroll to top to ensure tutorial is visible
       if (step.position === "center") {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     }
   }, [currentStep, isOnboardingOpen]);
+
+  // Update card position when window resizes
+  useEffect(() => {
+    if (!isOnboardingOpen || !highlightedElement) return;
+    
+    const handleResize = () => {
+      const step = onboardingSteps[currentStep];
+      const position = calculateCardPosition(highlightedElement, step.position || 'bottom');
+      setCardPosition(position);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOnboardingOpen, highlightedElement, currentStep]);
 
   // Ensure page scrolls to show tutorial when it first opens and focus on tutorial card
   useEffect(() => {
@@ -168,78 +271,191 @@ export default function OnboardingTutorial() {
     closeOnboarding();
   };
 
+  const ArrowIcon = highlightedElement ? getArrowIcon(cardPosition.position) : null;
+
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-black/50 z-[100]" onClick={skipTutorial} />
+      {/* Spotlight Overlay with SVG clipping */}
+      <div className="fixed inset-0 z-[100]" onClick={skipTutorial}>
+        <svg className="absolute inset-0 w-full h-full">
+          <defs>
+            <mask id="spotlight-mask">
+              <rect width="100%" height="100%" fill="white" />
+              {highlightedElement && (
+                <ellipse
+                  cx={highlightedElement.getBoundingClientRect().left + highlightedElement.getBoundingClientRect().width / 2}
+                  cy={highlightedElement.getBoundingClientRect().top + highlightedElement.getBoundingClientRect().height / 2}
+                  rx={highlightedElement.getBoundingClientRect().width / 2 + 40}
+                  ry={highlightedElement.getBoundingClientRect().height / 2 + 40}
+                  fill="black"
+                />
+              )}
+            </mask>
+          </defs>
+          <rect 
+            width="100%" 
+            height="100%" 
+            fill="rgba(0, 0, 0, 0.75)" 
+            mask="url(#spotlight-mask)"
+          />
+        </svg>
+      </div>
       
-      {/* Highlighted element border */}
+      {/* Enhanced highlighted element with pulsing animation */}
       {highlightedElement && (
-        <div
-          className="fixed pointer-events-none z-[101] border-4 border-romantic rounded-lg shadow-lg"
-          style={{
-            top: highlightedElement.getBoundingClientRect().top - 4,
-            left: highlightedElement.getBoundingClientRect().left - 4,
-            width: highlightedElement.getBoundingClientRect().width + 8,
-            height: highlightedElement.getBoundingClientRect().height + 8,
-          }}
-        />
+        <>
+          {/* Pulsing glow effect */}
+          <div
+            className="fixed pointer-events-none z-[101] animate-pulse"
+            style={{
+              top: highlightedElement.getBoundingClientRect().top - 12,
+              left: highlightedElement.getBoundingClientRect().left - 12,
+              width: highlightedElement.getBoundingClientRect().width + 24,
+              height: highlightedElement.getBoundingClientRect().height + 24,
+              borderRadius: '12px',
+              background: 'linear-gradient(45deg, rgba(var(--romantic-rgb), 0.3), rgba(var(--romantic-rgb), 0.1))',
+              filter: 'blur(8px)',
+            }}
+          />
+          
+          {/* Main border with animation */}
+          <div
+            className="fixed pointer-events-none z-[102] border-4 border-romantic rounded-lg shadow-2xl transition-all duration-300"
+            style={{
+              top: highlightedElement.getBoundingClientRect().top - 4,
+              left: highlightedElement.getBoundingClientRect().left - 4,
+              width: highlightedElement.getBoundingClientRect().width + 8,
+              height: highlightedElement.getBoundingClientRect().height + 8,
+              boxShadow: '0 0 0 2px rgba(var(--romantic-rgb), 0.2), 0 0 20px rgba(var(--romantic-rgb), 0.3)',
+            }}
+          />
+          
+          {/* Corner indicators */}
+          <div
+            className="fixed pointer-events-none z-[103]"
+            style={{
+              top: highlightedElement.getBoundingClientRect().top - 8,
+              left: highlightedElement.getBoundingClientRect().left - 8,
+            }}
+          >
+            <div className="w-4 h-4 border-l-4 border-t-4 border-romantic rounded-tl-lg animate-pulse" />
+          </div>
+          <div
+            className="fixed pointer-events-none z-[103]"
+            style={{
+              top: highlightedElement.getBoundingClientRect().top - 8,
+              right: window.innerWidth - highlightedElement.getBoundingClientRect().right - 8,
+            }}
+          >
+            <div className="w-4 h-4 border-r-4 border-t-4 border-romantic rounded-tr-lg animate-pulse" />
+          </div>
+          <div
+            className="fixed pointer-events-none z-[103]"
+            style={{
+              bottom: window.innerHeight - highlightedElement.getBoundingClientRect().bottom - 8,
+              left: highlightedElement.getBoundingClientRect().left - 8,
+            }}
+          >
+            <div className="w-4 h-4 border-l-4 border-b-4 border-romantic rounded-bl-lg animate-pulse" />
+          </div>
+          <div
+            className="fixed pointer-events-none z-[103]"
+            style={{
+              bottom: window.innerHeight - highlightedElement.getBoundingClientRect().bottom - 8,
+              right: window.innerWidth - highlightedElement.getBoundingClientRect().right - 8,
+            }}
+          >
+            <div className="w-4 h-4 border-r-4 border-b-4 border-romantic rounded-br-lg animate-pulse" />
+          </div>
+        </>
       )}
 
-      {/* Tutorial Card */}
-      <div className="fixed inset-0 z-[102] flex items-center justify-center p-4">
+      {/* Visual arrow connecting tutorial card to highlighted element */}
+      {highlightedElement && ArrowIcon && cardPosition.position !== 'center' && (
+        <div
+          className="fixed pointer-events-none z-[104] text-romantic animate-bounce"
+          style={{
+            top: cardPosition.position === 'top' ? cardPosition.y + 280 : 
+                 cardPosition.position === 'bottom' ? cardPosition.y - 30 :
+                 cardPosition.y + 140,
+            left: cardPosition.position === 'left' ? cardPosition.x + 380 :
+                  cardPosition.position === 'right' ? cardPosition.x - 30 :
+                  cardPosition.x + 190,
+          }}
+        >
+          <ArrowIcon size={24} className="drop-shadow-lg" />
+        </div>
+      )}
+
+      {/* Tutorial Card - Dynamically positioned */}
+      <div 
+        className="fixed z-[105] transition-all duration-500 ease-out"
+        style={{
+          left: cardPosition.position === 'center' ? '50%' : `${cardPosition.x}px`,
+          top: cardPosition.position === 'center' ? '50%' : `${cardPosition.y}px`,
+          transform: cardPosition.position === 'center' ? 'translate(-50%, -50%)' : 'none',
+        }}
+      >
         <Card 
           ref={tutorialCardRef}
           tabIndex={-1}
-          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-xl max-w-md w-full mx-4 sm:max-w-lg outline-none"
+          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-2xl w-[400px] outline-none transform transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(var(--romantic-rgb), 0.1)',
+          }}
         >
           <CardContent className="p-6">
-            {/* Header */}
+            {/* Header with enhanced styling */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-romantic rounded-full flex items-center justify-center text-white text-sm font-bold">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-romantic to-romantic/80 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg animate-pulse">
                   {currentStep + 1}
                 </div>
-                <span className="text-sm text-charcoal/60">
-                  {currentStep + 1} z {totalSteps}
-                </span>
+                <div>
+                  <span className="text-sm text-charcoal/60 block">
+                    Krok {currentStep + 1} z {totalSteps}
+                  </span>
+                  <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                    <div 
+                      className="bg-romantic h-1 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={skipTutorial}
-                className="text-charcoal/60 hover:text-charcoal"
+                className="text-charcoal/60 hover:text-charcoal hover:bg-romantic/10 transition-all"
                 data-testid="button-skip-tutorial"
               >
                 <X size={16} />
               </Button>
             </div>
 
-            {/* Progress Bar */}
-            <Progress value={progress} className="mb-6 h-2" />
-
-            {/* Content */}
+            {/* Content with enhanced typography */}
             <div className="text-center mb-6">
-              <h3 className="font-display text-lg sm:text-xl font-bold text-charcoal mb-3">
+              <h3 className="font-display text-xl font-bold text-charcoal mb-3 leading-tight">
                 {currentStepData.title}
               </h3>
-              <p className="text-sm sm:text-base text-charcoal/70 leading-relaxed">
+              <p className="text-base text-charcoal/70 leading-relaxed">
                 {currentStepData.description}
               </p>
             </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between gap-2">
+            {/* Enhanced Navigation */}
+            <div className="flex items-center justify-between gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="flex items-center space-x-1 text-xs sm:text-sm"
+                className="flex items-center space-x-2 text-sm border-romantic/20 hover:border-romantic/40 hover:bg-romantic/5 transition-all disabled:opacity-50"
                 data-testid="button-prev-step"
               >
-                <ChevronLeft size={14} />
-                <span className="hidden sm:inline">Zpět</span>
+                <ChevronLeft size={16} />
+                <span>Zpět</span>
               </Button>
 
               {currentStep === totalSteps - 1 ? (
@@ -247,10 +463,10 @@ export default function OnboardingTutorial() {
                   variant="primary"
                   size="sm"
                   onClick={completeTutorial}
-                  className="flex items-center space-x-1 text-xs sm:text-sm"
+                  className="flex items-center space-x-2 text-sm bg-gradient-to-r from-romantic to-romantic/80 hover:from-romantic/90 hover:to-romantic/70 shadow-lg hover:shadow-xl transition-all"
                   data-testid="button-complete-tutorial"
                 >
-                  <Check size={14} />
+                  <Check size={16} />
                   <span>Dokončit</span>
                 </GlassButton>
               ) : (
@@ -258,20 +474,20 @@ export default function OnboardingTutorial() {
                   variant="primary"
                   size="sm"
                   onClick={nextStep}
-                  className="flex items-center space-x-1 text-xs sm:text-sm"
+                  className="flex items-center space-x-2 text-sm bg-gradient-to-r from-romantic to-romantic/80 hover:from-romantic/90 hover:to-romantic/70 shadow-lg hover:shadow-xl transition-all"
                   data-testid="button-next-step"
                 >
                   <span>Další</span>
-                  <ChevronRight size={14} />
+                  <ChevronRight size={16} />
                 </GlassButton>
               )}
             </div>
 
-            {/* Skip option */}
+            {/* Enhanced Skip option */}
             <div className="text-center mt-4">
               <button
                 onClick={skipTutorial}
-                className="text-sm text-charcoal/50 hover:text-charcoal/70 transition-colors"
+                className="text-sm text-charcoal/50 hover:text-charcoal/70 hover:underline transition-all"
                 data-testid="button-skip-tutorial-text"
               >
                 Přeskočit tutoriál
@@ -279,6 +495,11 @@ export default function OnboardingTutorial() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Keyboard shortcuts hint */}
+      <div className="fixed bottom-4 right-4 z-[106] bg-black/20 text-white text-xs px-3 py-2 rounded-lg backdrop-blur-sm">
+        <div>← → navigace | ESC zavřít</div>
       </div>
     </>
   );
