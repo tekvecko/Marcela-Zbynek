@@ -90,59 +90,15 @@ export default function OnboardingTutorial() {
     const rect = element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const isMobile = viewportWidth < 768;
-    const isSmallMobile = viewportWidth < 480;
-    
-    // Responsive card dimensions
-    const cardWidth = isSmallMobile ? viewportWidth - 20 : isMobile ? Math.min(350, viewportWidth - 40) : 400;
-    const cardHeight = isMobile ? 280 : 300;
-    const margin = isMobile ? 10 : 20;
+    const cardWidth = 400; // approximate card width
+    const cardHeight = 300; // approximate card height
+    const margin = 20;
 
-    // On mobile, prefer center positioning for most cases or smart positioning
-    if (isMobile) {
-      // For mobile menu step, position near the top right where the button is
-      if (stepPosition === 'left' && element.classList.contains('md:hidden')) {
-        return {
-          x: viewportWidth - cardWidth - margin,
-          y: rect.bottom + margin,
-          position: 'bottom'
-        };
-      }
-      
-      // For countdown, position it above or below based on viewport
-      if (stepPosition === 'top' && element.id === 'countdown') {
-        const elementTop = rect.top;
-        const spaceAbove = elementTop;
-        const spaceBelow = viewportHeight - rect.bottom;
-        
-        if (spaceBelow > cardHeight + margin) {
-          return {
-            x: margin,
-            y: rect.bottom + margin,
-            position: 'bottom'
-          };
-        } else if (spaceAbove > cardHeight + margin) {
-          return {
-            x: margin,
-            y: elementTop - cardHeight - margin,
-            position: 'top'
-          };
-        }
-      }
-      
-      // Default mobile positioning - center but ensure visibility
-      return {
-        x: margin,
-        y: Math.max(margin, Math.min((viewportHeight - cardHeight) / 2, viewportHeight - cardHeight - margin)),
-        position: 'center'
-      };
-    }
-
-    let x = (viewportWidth - cardWidth) / 2; // default to center
-    let y = (viewportHeight - cardHeight) / 2;
+    let x = viewportWidth / 2 - cardWidth / 2; // default to center
+    let y = viewportHeight / 2 - cardHeight / 2;
     let position = stepPosition;
 
-    // Desktop positioning logic
+    // Try to position based on element location and step preference
     switch (stepPosition) {
       case 'bottom':
         if (rect.bottom + cardHeight + margin < viewportHeight) {
@@ -209,19 +165,7 @@ export default function OnboardingTutorial() {
 
     const step = onboardingSteps[currentStep];
     if (step.element) {
-      let element = null;
-      
-      // Try different selectors for mobile menu button
-      if (step.id === 'mobile-menu') {
-        element = document.querySelector('button.md\\:hidden') || 
-                 document.querySelector('button[class*="md:hidden"]') ||
-                 document.querySelector('nav button:has(.lucide-menu)') ||
-                 document.querySelector('nav motion\\:button.md\\:hidden') ||
-                 document.querySelector('nav [class*="md:hidden"]');
-      } else {
-        element = document.querySelector(step.element);
-      }
-      
+      const element = document.querySelector(step.element);
       if (element) {
         setHighlightedElement(element);
         
@@ -231,29 +175,14 @@ export default function OnboardingTutorial() {
         
         // Smooth scroll to element with better positioning
         setTimeout(() => {
-          // For mobile elements, scroll more gently to avoid hiding the nav
-          const scrollOptions = {
-            behavior: "smooth" as ScrollBehavior,
-            block: step.id === 'mobile-menu' ? "start" as ScrollLogicalPosition : "center" as ScrollLogicalPosition,
-            inline: "center" as ScrollLogicalPosition
-          };
-          
-          element.scrollIntoView(scrollOptions);
+          element.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "center",
+            inline: "center"
+          });
         }, 100);
       } else {
-        // Fallback for mobile menu - just highlight the nav area
-        if (step.id === 'mobile-menu') {
-          const nav = document.querySelector('nav');
-          if (nav) {
-            setHighlightedElement(nav);
-            const position = calculateCardPosition(nav, 'bottom');
-            setCardPosition(position);
-          }
-        } else {
-          console.warn(`Tutorial element not found: ${step.element}`);
-          setHighlightedElement(null);
-          setCardPosition({x: 0, y: 0, position: 'center'});
-        }
+        console.warn(`Tutorial element not found: ${step.element}`);
       }
     } else {
       setHighlightedElement(null);
@@ -348,7 +277,7 @@ export default function OnboardingTutorial() {
 
   return (
     <>
-      {/* Spotlight Overlay with SVG clipping - Responsive */}
+      {/* Spotlight Overlay with SVG clipping */}
       <div className="fixed inset-0 z-[100]" onClick={skipTutorial}>
         <svg className="absolute inset-0 w-full h-full">
           <defs>
@@ -358,8 +287,8 @@ export default function OnboardingTutorial() {
                 <ellipse
                   cx={highlightedElement.getBoundingClientRect().left + highlightedElement.getBoundingClientRect().width / 2}
                   cy={highlightedElement.getBoundingClientRect().top + highlightedElement.getBoundingClientRect().height / 2}
-                  rx={Math.max(highlightedElement.getBoundingClientRect().width / 2 + 40, 60)}
-                  ry={Math.max(highlightedElement.getBoundingClientRect().height / 2 + 40, 60)}
+                  rx={highlightedElement.getBoundingClientRect().width / 2 + 40}
+                  ry={highlightedElement.getBoundingClientRect().height / 2 + 40}
                   fill="black"
                 />
               )}
@@ -368,7 +297,7 @@ export default function OnboardingTutorial() {
           <rect 
             width="100%" 
             height="100%" 
-            fill={window.innerWidth < 768 ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0.75)"} 
+            fill="rgba(0, 0, 0, 0.75)" 
             mask="url(#spotlight-mask)"
           />
         </svg>
@@ -462,17 +391,17 @@ export default function OnboardingTutorial() {
 
       {/* Tutorial Card - Dynamically positioned */}
       <div 
-        className="fixed z-[105] transition-all duration-500 ease-out px-2 sm:px-0"
+        className="fixed z-[105] transition-all duration-500 ease-out"
         style={{
-          left: cardPosition.position === 'center' ? '50%' : `${cardPosition.x}px`,
-          top: cardPosition.position === 'center' ? '50%' : `${cardPosition.y}px`,
+          left: cardPosition.position === 'center' ? '50%' : `${Math.max(20, Math.min(cardPosition.x, window.innerWidth - 420))}px`,
+          top: cardPosition.position === 'center' ? '50%' : `${Math.max(20, cardPosition.y)}px`,
           transform: cardPosition.position === 'center' ? 'translate(-50%, -50%)' : 'none',
         }}
       >
         <Card 
           ref={tutorialCardRef}
           tabIndex={-1}
-          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-2xl w-full sm:w-[400px] max-w-[400px] outline-none transform transition-all duration-300 hover:scale-[1.02]"
+          className="bg-white/95 backdrop-blur-md border-romantic/20 shadow-2xl w-[400px] max-w-[calc(100vw-40px)] outline-none transform transition-all duration-300 hover:scale-[1.02]"
           style={{
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(var(--romantic-rgb), 0.1)',
           }}
@@ -571,7 +500,7 @@ export default function OnboardingTutorial() {
       </div>
 
       {/* Keyboard shortcuts hint */}
-      <div className="fixed bottom-4 right-4 z-[106] bg-black/20 text-white text-xs px-2 sm:px-3 py-1 sm:py-2 rounded-lg backdrop-blur-sm hidden sm:block">
+      <div className="fixed bottom-4 right-4 z-[106] bg-black/20 text-white text-xs px-3 py-2 rounded-lg backdrop-blur-sm">
         <div>← → navigace | ESC zavřít</div>
       </div>
     </>
