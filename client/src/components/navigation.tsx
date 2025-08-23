@@ -16,15 +16,15 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
   
-  // Navigation items with like.webm
+  // Navigation items with Czech labels
   const navigationItems = [
-    { href: '/', exact: true },
-    { href: '/photo-quest', exact: true },
-    { href: '/mini-games', exact: false },
-    { href: '/leaderboards', exact: true },
-    { href: '/gallery', exact: true },
-    { href: '/details', exact: true },
-    { href: '/admin', exact: true }
+    { href: '/', label: 'Domů', icon: '🏠', exact: true },
+    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true },
+    { href: '/mini-games', label: 'Mini-hry', icon: '🎮', exact: false },
+    { href: '/leaderboards', label: 'Žebříčky', icon: '🏆', exact: true },
+    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true },
+    { href: '/details', label: 'Detaily', icon: '💒', exact: true },
+    { href: '/admin', label: 'Admin', icon: '⚙️', exact: true }
   ];
 
   // Check if tutorial is active
@@ -205,34 +205,37 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-            {/* Logo replaced with like.webm */}
+            {/* Logo with single like.webm video */}
             <a href="/" className="flex items-center space-x-2 group">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center space-x-2"
               >
-                <VideoElement className="w-12 h-8" />
-                <VideoElement className="w-6 h-6" />
-                <VideoElement className="w-12 h-8" />
+                <VideoElement className="w-8 h-8" />
+                <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
+                  M&Z
+                </div>
               </motion.div>
             </a>
 
-            {/* Desktop Navigation - all items as like.webm */}
+            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map(({ href, exact }, index) => {
+              {navigationItems.map(({ href, label, icon, exact }, index) => {
                 const isActive = exact ? location === href : location.startsWith(href);
+                if (href === '/admin' && !user?.isAdmin) return null;
                 return (
                   <motion.div key={href} className="relative">
                     <a
                       href={href}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
                         isActive 
-                          ? 'bg-romantic/10' 
-                          : 'hover:bg-romantic/5'
+                          ? 'bg-romantic/10 text-romantic' 
+                          : 'hover:bg-romantic/5 text-gray-700'
                       }`}
                     >
-                      <VideoElement className="w-6 h-6" />
+                      <span className="text-lg">{icon}</span>
+                      <span className="font-medium text-sm">{label}</span>
                     </a>
                     {isActive && (
                       <motion.div
@@ -248,22 +251,42 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
             {/* Mobile Menu Button & User Menu */}
             <div className="flex items-center space-x-2">
-              {/* Mobile Menu Toggle - like.webm */}
+              {/* Mobile Menu Toggle */}
               <motion.button
                 className="lg:hidden p-2 rounded-xl bg-romantic/10"
                 onClick={toggleMenu}
                 whileTap={{ scale: 0.95 }}
                 whileHover={{ scale: 1.05 }}
-                data-testid="mobile-heart-menu-toggle"
+                data-testid="mobile-menu-toggle"
               >
                 <motion.div
                   animate={{ 
-                    rotate: isMenuOpen ? 180 : 0,
-                    scale: isMenuOpen ? 1.1 : 1
+                    rotate: isMenuOpen ? 180 : 0
                   }}
                   transition={{ duration: 0.2 }}
                 >
-                  <VideoElement className="w-8 h-8" />
+                  <div className="w-6 h-6 flex flex-col justify-center items-center">
+                    <motion.div
+                      className="w-4 h-0.5 bg-romantic rounded-full mb-1"
+                      animate={{ 
+                        rotate: isMenuOpen ? 45 : 0,
+                        y: isMenuOpen ? 6 : 0
+                      }}
+                    />
+                    <motion.div
+                      className="w-4 h-0.5 bg-romantic rounded-full mb-1"
+                      animate={{ 
+                        opacity: isMenuOpen ? 0 : 1
+                      }}
+                    />
+                    <motion.div
+                      className="w-4 h-0.5 bg-romantic rounded-full"
+                      animate={{ 
+                        rotate: isMenuOpen ? -45 : 0,
+                        y: isMenuOpen ? -6 : 0
+                      }}
+                    />
+                  </div>
                 </motion.div>
               </motion.button>
 
@@ -281,7 +304,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                       href="/login"
                       className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
                     >
-                      <VideoElement className="w-6 h-6" />
+                      <span className="text-lg">👤</span>
+                      <span className="text-sm font-medium">Přihlášení</span>
                     </a>
                   </motion.div>
                 ) : (
@@ -300,7 +324,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <VideoElement className="w-6 h-6" />
+                      {user?.profileImageUrl ? (
+                        <img 
+                          src={user.profileImageUrl} 
+                          alt={user.firstName || 'User'} 
+                          className="w-6 h-6 rounded-full"
+                        />
+                      ) : (
+                        <span className="text-lg">👤</span>
+                      )}
+                      {onStartTutorial && <span className="text-lg">❓</span>}
                     </motion.button>
                   </motion.div>
                 )}
@@ -320,8 +353,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               >
                 <div className="p-4">
                   <div className="grid grid-cols-2 gap-2">
-                    {navigationItems.map(({ href, exact }, index) => {
+                    {navigationItems.map(({ href, label, icon, exact }, index) => {
                       const isActive = exact ? location === href : location.startsWith(href);
+                      if (href === '/admin' && !user?.isAdmin) return null;
                       return (
                         <motion.div
                           key={href}
@@ -338,12 +372,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex flex-col items-center space-y-2 p-3 rounded-xl transition-all duration-200 ${
                               isActive 
-                                ? 'bg-romantic/10 shadow-sm' 
-                                : 'hover:bg-romantic/5'
+                                ? 'bg-romantic/10 shadow-sm text-romantic' 
+                                : 'hover:bg-romantic/5 text-gray-700'
                             }`}
                           >
-                            <VideoElement className="w-8 h-8" />
-                            <VideoElement className="w-16 h-4" />
+                            <span className="text-2xl">{icon}</span>
+                            <span className="text-xs font-medium text-center">{label}</span>
                             {isActive && (
                               <motion.div
                                 className="w-4 h-0.5 bg-romantic rounded-full"
@@ -367,8 +401,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     >
                       <div className="flex items-center justify-between p-3 bg-romantic/5 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <VideoElement className="w-8 h-8" />
-                          <VideoElement className="w-20 h-6" />
+                          {user?.profileImageUrl ? (
+                            <img 
+                              src={user.profileImageUrl} 
+                              alt={user.firstName || 'User'} 
+                              className="w-8 h-8 rounded-full"
+                            />
+                          ) : (
+                            <span className="text-2xl">👤</span>
+                          )}
+                          <div className="text-sm font-medium text-gray-700">
+                            {user?.firstName} {user?.lastName}
+                          </div>
                         </div>
                         {onStartTutorial && (
                           <button
@@ -377,8 +421,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                               setIsMenuOpen(false);
                             }}
                             className="p-2 rounded-xl hover:bg-romantic/10 transition-all"
+                            title="Spustit návod"
                           >
-                            <VideoElement className="w-6 h-6" />
+                            <span className="text-lg">❓</span>
                           </button>
                         )}
                       </div>
