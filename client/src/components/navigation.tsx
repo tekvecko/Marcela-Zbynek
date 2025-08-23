@@ -84,17 +84,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       if (currentScrollY <= 50) {
         // Always show at top
         setIsVisible(true);
-      } else if (direction === 'down' && velocity > 0.5 && currentScrollY > 200) {
-        // Hide when scrolling down fast
+      } else if (direction === 'down' && velocity > 0.1) {
+        // Hide when scrolling down
         setIsVisible(false);
         if (isMenuOpen) setIsMenuOpen(false);
-      } else if (direction === 'up' && velocity > 0.2) {
-        // Show when scrolling up with any meaningful velocity
+      } else if (direction === 'up' && velocity > 0.1) {
+        // Show when scrolling up
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY + 100) {
-        // Hide if scrolled down significantly without velocity check
-        setIsVisible(false);
-        if (isMenuOpen) setIsMenuOpen(false);
       }
       
       setLastScrollY(currentScrollY);
@@ -147,14 +143,14 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center py-4 md:justify-between justify-center">
           <div className="flex items-center">
             <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors md:block hidden">
               Marcela <span className="heart-decoration text-3xl">❤️</span> Zbyněk
             </Link>
             
             {/* Mobile logo with clickable heart */}
-            <div className="md:hidden flex items-center">
+            <div className="md:hidden flex items-center justify-center w-full">
               <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
                 Marcela
               </Link>
