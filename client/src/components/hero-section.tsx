@@ -20,7 +20,7 @@ export default function HeroSection() {
   const currentSize = maxSize - (maxSize - 25) * scrollProgress; // 25vw is approximately equivalent to w-64
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center romantic-gradient overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center romantic-gradient overflow-hidden pt-4">
       {/* Floating hearts decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 text-romantic text-2xl animate-float opacity-30">❤️</div>

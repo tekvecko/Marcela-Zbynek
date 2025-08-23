@@ -276,7 +276,7 @@ export default function OnboardingTutorial() {
   const ArrowIcon = highlightedElement ? getArrowIcon(cardPosition.position) : null;
 
   return (
-    <>
+    <div data-onboarding-active="true">
       {/* Spotlight Overlay with SVG clipping */}
       <div className="fixed inset-0 z-[100]" onClick={skipTutorial}>
         <svg className="absolute inset-0 w-full h-full">
@@ -503,6 +503,6 @@ export default function OnboardingTutorial() {
       <div className="fixed bottom-4 right-4 z-[106] bg-black/20 text-white text-xs px-3 py-2 rounded-lg backdrop-blur-sm">
         <div>← → navigace | ESC zavřít</div>
       </div>
-    </>
+    </div>
   );
 }
