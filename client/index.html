@@ -22,6 +22,78 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New version available
+                    if (confirm('Nová verze aplikace je dostupná. Chcete ji nainstalovat?')) {
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+
+      // PWA Install prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button or banner
+        const installBanner = document.createElement('div');
+        installBanner.innerHTML = `
+          <div style="position: fixed; top: 0; left: 0; right: 0; background: #ff6b9d; color: white; padding: 10px; text-align: center; z-index: 9999;">
+            <span>Nainstalujte si svatební aplikaci pro lepší zážitek!</span>
+            <button onclick="installPWA()" style="margin-left: 10px; background: white; color: #ff6b9d; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+              Instalovat
+            </button>
+            <button onclick="this.parentElement.parentElement.remove()" style="margin-left: 10px; background: transparent; color: white; border: 1px solid white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+              Zavřít
+            </button>
+          </div>
+        `;
+        document.body.appendChild(installBanner);
+      });
+
+      window.installPWA = async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`User response to the install prompt: ${outcome}`);
+          deferredPrompt = null;
+          
+          // Remove install banner
+          const banner = document.querySelector('[style*="position: fixed; top: 0"]');
+          if (banner) banner.remove();
+        }
+      };
+
+      // Handle app installed
+      window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA was installed');
+        // Remove install banner if still visible
+        const banner = document.querySelector('[style*="position: fixed; top: 0"]');
+        if (banner) banner.remove();
+      });
+    </script>
+    
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>
