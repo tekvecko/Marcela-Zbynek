@@ -117,7 +117,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   return (
     <motion.nav 
       ref={navRef}
-      className="fixed top-2 left-1/2 transform -translate-x-1/2 w-[calc(100%-16px)] sm:w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-xl sm:rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
+      className="fixed top-2 left-2 w-[calc(100%-16px)] sm:w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-xl sm:rounded-2xl shadow-lg border border-blush/30 hover:shadow-xl hover:border-blush/50 transition-all duration-300"
       initial={{ y: 0, scale: 1 }}
       animate={{ 
         y: isVisible ? 0 : -120,
