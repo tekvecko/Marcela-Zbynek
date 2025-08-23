@@ -49,36 +49,60 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Simplified scroll handling
+  // Android-like scroll handling
   useEffect(() => {
+    let ticking = false;
+    let hideTimeout: NodeJS.Timeout;
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Always show when tutorial is active or menu is open
-      if (isTutorialActive || isMenuOpen) {
-        setIsVisible(true);
-        return;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
+          const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+          
+          // Always show when tutorial is active or menu is open
+          if (isTutorialActive || isMenuOpen) {
+            setIsVisible(true);
+            setLastScrollY(currentScrollY);
+            ticking = false;
+            return;
+          }
+          
+          // Clear any pending hide timeout
+          if (hideTimeout) clearTimeout(hideTimeout);
+          
+          // Android-like behavior
+          if (currentScrollY < 10) {
+            // Always show at very top
+            setIsVisible(true);
+          } else if (scrollDirection === 'down' && scrollDelta > 5) {
+            // Hide when scrolling down with minimum delta
+            if (currentScrollY > 100) {
+              // Add slight delay before hiding (Android-like)
+              hideTimeout = setTimeout(() => {
+                setIsVisible(false);
+                setIsMenuOpen(false);
+              }, 150);
+            }
+          } else if (scrollDirection === 'up' && scrollDelta > 3) {
+            // Show immediately when scrolling up (even with small delta)
+            setIsVisible(true);
+          }
+          
+          setLastScrollY(currentScrollY);
+          ticking = false;
+        });
+        ticking = true;
       }
-      
-      // Show/hide based on scroll direction
-      if (currentScrollY < 100) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 200) {
-        setIsVisible(false);
-        setIsMenuOpen(false);
-      } else if (currentScrollY < lastScrollY) {
-        setIsVisible(true);
-      }
-      
-      setLastScrollY(currentScrollY);
     };
 
-    const throttledScroll = () => {
-      requestAnimationFrame(handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (hideTimeout) clearTimeout(hideTimeout);
     };
-
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-    return () => window.removeEventListener('scroll', throttledScroll);
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
   const handleLogout = async () => {
@@ -100,9 +124,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         }}
         transition={{ 
           type: "spring", 
-          stiffness: 260, 
-          damping: 20,
-          duration: 0.3
+          stiffness: 400, 
+          damping: 30,
+          mass: 1,
+          duration: isVisible ? 0.4 : 0.3
         }}
       >
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
