@@ -151,33 +151,53 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             </Link>
           </div>
             
-          {/* Mobile Centered Logo with Heart Menu */}
-          <div className="md:hidden flex items-center justify-center flex-1">
-            <Link href="/" className="font-script text-lg sm:text-xl text-romantic font-bold hover:text-love transition-colors">
-              Marcela
-            </Link>
-            <motion.button
-              className="mx-2 p-1 rounded-full hover:bg-romantic/10 transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              data-testid="mobile-heart-menu-toggle"
+          {/* Mobile Logo with Heart Menu Animation */}
+          <div className="md:hidden flex items-center justify-between flex-1 relative">
+            <motion.div
+              className="flex items-center"
+              animate={{
+                x: isMenuOpen ? -20 : 0,
+                justifyContent: isMenuOpen ? 'flex-start' : 'center'
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, duration: 0.4 }}
             >
-              <motion.span 
-                className="heart-decoration text-2xl sm:text-3xl block"
-                animate={{
-                  color: isMenuOpen ? '#e11d48' : '#d946ef',
-                  rotate: isMenuOpen ? 10 : 0
-                }}
-                transition={{ duration: 0.2 }}
+              <Link href="/" className="font-script text-lg sm:text-xl text-romantic font-bold hover:text-love transition-colors">
+                Marcela
+              </Link>
+              <motion.button
+                className="mx-2 p-1 rounded-full hover:bg-romantic/10 transition-colors"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                data-testid="mobile-heart-menu-toggle"
               >
-                ❤️
-              </motion.span>
-            </motion.button>
-            <Link href="/" className="font-script text-lg sm:text-xl text-romantic font-bold hover:text-love transition-colors">
-              Zbyněk
-            </Link>
+                <motion.span 
+                  className="heart-decoration text-2xl sm:text-3xl block"
+                  animate={{
+                    color: isMenuOpen ? '#e11d48' : '#d946ef',
+                    rotate: isMenuOpen ? 10 : 0,
+                    scale: isMenuOpen ? 1.1 : 1
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  ❤️
+                </motion.span>
+              </motion.button>
+            </motion.div>
+            
+            {/* Zbyněk stays in place on the right */}
+            <motion.div
+              className="absolute right-0"
+              animate={{
+                opacity: isMenuOpen ? 0.7 : 1
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              <Link href="/" className="font-script text-lg sm:text-xl text-romantic font-bold hover:text-love transition-colors">
+                Zbyněk
+              </Link>
+            </motion.div>
           </div>
 
           {/* Desktop Navigation */}
@@ -308,30 +328,36 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           {isMenuOpen && isVisible && (
             <motion.div
               key="mobile-menu"
-              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              initial={{ opacity: 0, height: 0, scale: 0.95, y: -10 }}
               animate={{ 
                 opacity: 1, 
                 height: "auto", 
                 scale: 1,
+                y: 0,
                 transition: {
-                  height: { duration: 0.3, ease: "easeOut" },
-                  opacity: { duration: 0.2, delay: 0.1 },
-                  scale: { duration: 0.2, delay: 0.1 }
+                  height: { duration: 0.4, ease: "easeOut" },
+                  opacity: { duration: 0.3, delay: 0.1 },
+                  scale: { duration: 0.3, delay: 0.1 },
+                  y: { duration: 0.3, delay: 0.1 }
                 }
               }}
               exit={{ 
                 opacity: 0, 
                 height: 0, 
                 scale: 0.95,
+                y: -10,
                 transition: {
-                  height: { duration: 0.2 },
-                  opacity: { duration: 0.15 },
-                  scale: { duration: 0.15 }
+                  height: { duration: 0.25 },
+                  opacity: { duration: 0.2 },
+                  scale: { duration: 0.2 },
+                  y: { duration: 0.2 }
                 }
               }}
-              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm"
+              className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm relative"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))'
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
+                borderRadius: '0 0 1rem 1rem',
+                marginTop: '0.5rem'
               }}
             >
               <motion.div
