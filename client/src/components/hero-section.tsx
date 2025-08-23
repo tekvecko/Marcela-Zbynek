@@ -1,31 +1,17 @@
 import flowerArchPhoto from '../assets/IMG-20250707-WA0007.jpg';
 import { Link } from "wouter";
-import { useEffect, useState } from "react";
 import GlassButton from "@/components/ui/glass-button";
 
 export default function HeroSection() {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Calculate parallax offset for background image
-  const parallaxOffset = scrollY * 0.5; // Move slower than scroll speed
-
   return (
     <>
-      {/* Fixed background image layer */}
+      {/* Static background image layer */}
       <div 
         className="fixed inset-0 z-0"
         style={{
           backgroundImage: `url(${flowerArchPhoto})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-          transform: `translateY(${parallaxOffset}px)`,
         }}
       >
         {/* Gradient overlay for better text readability */}
