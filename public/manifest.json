@@ -1,41 +1,51 @@
 {
-  "name": "Marcela ❤️ Zbyněk",
-  "short_name": "M❤️Z Svatba",
-  "description": "Svatební web s foto questy a galerií",
+  "name": "Svatební Fotovýzvy",
+  "short_name": "Fotovýzvy",
+  "description": "Interaktivní svatební fotografické výzvy",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fdf8f6",
-  "theme_color": "#e91e63",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6b9d",
+  "categories": ["entertainment", "photo", "social"],
+  "screenshots": [
+    {
+      "src": "icon-512.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    }
+  ],
   "icons": [
     {
-      "src": "/icon-192.svg",
+      "src": "icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.svg", 
+      "src": "icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["lifestyle", "social"],
+  "prefer_related_applications": false,
+  "related_applications": [],
   "shortcuts": [
     {
-      "name": "Photo Quest",
-      "short_name": "Quest",
-      "description": "Plňte fotografické úkoly",
+      "name": "Fotovýzvy",
+      "short_name": "Výzvy",
+      "description": "Zobrazit fotovýzvy",
       "url": "/photo-quest",
-      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+      "icons": [{ "src": "icon-192.svg", "sizes": "192x192" }]
     },
     {
       "name": "Galerie",
-      "short_name": "Galerie", 
-      "description": "Prohlédněte si svatební fotky",
+      "short_name": "Galerie",
+      "description": "Zobrazit galerii fotek",
       "url": "/gallery",
-      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+      "icons": [{ "src": "icon-192.svg", "sizes": "192x192" }]
     }
   ]
 }
