@@ -21,19 +21,41 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
+
+  // Check if tutorial is active
+  useEffect(() => {
+    const checkTutorial = () => {
+      const tutorialActive = document.querySelector('[data-onboarding-active]') !== null;
+      setIsTutorialActive(tutorialActive);
+    };
+    
+    // Check initially and set up observer
+    checkTutorial();
+    const observer = new MutationObserver(checkTutorial);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      
+      // Always show navigation when tutorial is active
+      if (isTutorialActive) {
+        setIsVisible(true);
+        return;
+      }
       
       // Show navigation when at the top of the page
       if (currentScrollY <= 0) {
         setIsVisible(true);
       } 
       // Hide when scrolling down, show when scrolling up
-      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      else if (currentScrollY > lastScrollY && currentScrollY > 150) {
         // Scrolling down - hide navigation
         setIsVisible(false);
         // Close mobile menu if open when hiding
@@ -65,7 +87,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         clearTimeout(timeoutId);
       }
     };
-  }, [lastScrollY, isMenuOpen]);
+  }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
   const handleLogout = async () => {
     await logout();
@@ -73,7 +95,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
   return (
     <motion.nav 
-      className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-blush"
+      className="fixed top-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl bg-white/95 backdrop-blur-md z-50 rounded-2xl shadow-lg border border-blush/30"
       initial={{ y: 0 }}
       animate={{ 
         y: isVisible ? 0 : -100,
