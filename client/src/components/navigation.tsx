@@ -154,10 +154,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           {/* Mobile Logo with Heart Menu Animation */}
           <div className="md:hidden flex items-center justify-between flex-1 relative">
             <motion.div
-              className="flex items-center"
+              className="flex items-center absolute left-0"
               animate={{
-                x: isMenuOpen ? -20 : 0,
-                justifyContent: isMenuOpen ? 'flex-start' : 'center'
+                x: 0
               }}
               transition={{ type: "spring", stiffness: 300, damping: 30, duration: 0.4 }}
             >
@@ -328,36 +327,38 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           {isMenuOpen && isVisible && (
             <motion.div
               key="mobile-menu"
-              initial={{ opacity: 0, height: 0, scale: 0.95, y: -10 }}
+              initial={{ opacity: 0, height: 0, x: -20, scale: 0.95 }}
               animate={{ 
                 opacity: 1, 
                 height: "auto", 
+                x: 0,
                 scale: 1,
-                y: 0,
                 transition: {
                   height: { duration: 0.4, ease: "easeOut" },
                   opacity: { duration: 0.3, delay: 0.1 },
                   scale: { duration: 0.3, delay: 0.1 },
-                  y: { duration: 0.3, delay: 0.1 }
+                  x: { duration: 0.3, delay: 0.1 }
                 }
               }}
               exit={{ 
                 opacity: 0, 
                 height: 0, 
+                x: -20,
                 scale: 0.95,
-                y: -10,
                 transition: {
                   height: { duration: 0.25 },
                   opacity: { duration: 0.2 },
                   scale: { duration: 0.2 },
-                  y: { duration: 0.2 }
+                  x: { duration: 0.2 }
                 }
               }}
               className="md:hidden py-4 sm:py-6 border-t border-blush/30 overflow-hidden backdrop-blur-sm relative"
               style={{
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
                 borderRadius: '0 0 1rem 1rem',
-                marginTop: '0.5rem'
+                marginTop: '0.5rem',
+                marginLeft: '-1rem',
+                paddingLeft: '1rem'
               }}
             >
               <motion.div
@@ -398,8 +399,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                         onClick={() => setIsMenuOpen(false)}
                         className={`flex items-center space-x-3 p-3 sm:p-4 rounded-xl transition-all duration-200 group ${
                           isActive 
-                            ? 'text-romantic font-semibold bg-romantic/10 border-l-4 border-romantic' 
-                            : 'text-charcoal hover:text-romantic hover:bg-romantic/5 hover:translate-x-1'
+                            ? 'text-romantic font-semibold bg-romantic/10 border-l-4 border-romantic ml-2' 
+                            : 'text-charcoal hover:text-romantic hover:bg-romantic/5 hover:translate-x-2 ml-2'
                         }`}
                       >
                         <motion.span 
