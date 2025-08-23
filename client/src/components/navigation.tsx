@@ -148,9 +148,40 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
-            Marcela <span className="heart-decoration text-3xl">❤️</span> Zbyněk
-          </Link>
+          <div className="flex items-center">
+            <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors md:block hidden">
+              Marcela <span className="heart-decoration text-3xl">❤️</span> Zbyněk
+            </Link>
+            
+            {/* Mobile logo with clickable heart */}
+            <div className="md:hidden flex items-center">
+              <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
+                Marcela
+              </Link>
+              <motion.button
+                className="mx-2 p-1 rounded-full hover:bg-romantic/10 transition-colors"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                data-testid="mobile-heart-menu-toggle"
+              >
+                <motion.span 
+                  className="heart-decoration text-3xl block"
+                  animate={{
+                    color: isMenuOpen ? '#e11d48' : '#d946ef',
+                    rotate: isMenuOpen ? 10 : 0
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  ❤️
+                </motion.span>
+              </motion.button>
+              <Link href="/" className="font-script text-2xl text-romantic font-bold hover:text-love transition-colors">
+                Zbyněk
+              </Link>
+            </div>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
@@ -268,102 +299,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             </AnimatePresence>
           </div>
 
-          {/* Enhanced Mobile Menu Button with Heart */}
-          <motion.button
-            className="md:hidden p-2 rounded-lg text-charcoal hover:bg-romantic/10 transition-colors relative"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            whileTap={{ scale: 0.9 }}
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            data-testid="mobile-menu-toggle"
-          >
-            <motion.div
-              className="relative w-6 h-6 flex items-center justify-center"
-              initial={false}
-              animate={{ 
-                rotate: isMenuOpen ? 180 : 0,
-                scale: isMenuOpen ? 1.1 : 1
-              }}
-              transition={{ 
-                duration: 0.3,
-                type: "spring",
-                stiffness: 300,
-                damping: 20
-              }}
-            >
-              {/* Heart container with hamburger lines */}
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center"
-                animate={{
-                  color: isMenuOpen ? '#e11d48' : '#6b7280'
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                <span className="text-2xl">💖</span>
-              </motion.div>
-              
-              {/* Hamburger lines overlay */}
-              <motion.div
-                className="absolute inset-0 flex flex-col items-center justify-center space-y-1"
-                animate={{
-                  opacity: isMenuOpen ? 0 : 0.8
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                <motion.div 
-                  className="w-3 h-0.5 bg-white rounded-full"
-                  animate={{
-                    rotate: isMenuOpen ? 45 : 0,
-                    y: isMenuOpen ? 2 : 0
-                  }}
-                />
-                <motion.div 
-                  className="w-3 h-0.5 bg-white rounded-full"
-                  animate={{
-                    opacity: isMenuOpen ? 0 : 1
-                  }}
-                />
-                <motion.div 
-                  className="w-3 h-0.5 bg-white rounded-full"
-                  animate={{
-                    rotate: isMenuOpen ? -45 : 0,
-                    y: isMenuOpen ? -2 : 0
-                  }}
-                />
-              </motion.div>
-              
-              {/* X icon when menu is open */}
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center"
-                animate={{
-                  opacity: isMenuOpen ? 1 : 0,
-                  scale: isMenuOpen ? 1 : 0.8
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                <X size={16} className="text-white drop-shadow-sm" />
-              </motion.div>
-            </motion.div>
-            
-            {scrollDirection !== 'none' && (
-              <motion.div
-                className="absolute -bottom-1 left-1/2 transform -translate-x-1/2"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ 
-                  opacity: scrollVelocity > 0.3 ? 1 : 0,
-                  scale: scrollVelocity > 0.3 ? 1 : 0
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown 
-                  size={12} 
-                  className={`text-romantic transform ${
-                    scrollDirection === 'up' ? 'rotate-180' : ''
-                  } transition-transform duration-200`}
-                />
-              </motion.div>
-            )}
-          </motion.button>
+          
         </div>
 
         {/* Enhanced Mobile Navigation */}
