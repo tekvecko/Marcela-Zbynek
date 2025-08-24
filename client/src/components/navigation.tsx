@@ -13,6 +13,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [devicePerformance, setDevicePerformance] = useState<'high' | 'medium' | 'low'>('high');
@@ -100,8 +101,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return baseConfig[devicePerformance];
   }, [devicePerformance]);
 
-  // Check if tutorial is active
+  // Check if tutorial is active and ensure component is mounted
   useEffect(() => {
+    setIsMounted(true);
+    setIsVisible(true); // Vždy zobrazit navigaci po načtení
+    
     const checkTutorial = () => {
       setIsTutorialActive(document.querySelector('[data-onboarding-active]') !== null);
     };
@@ -125,8 +129,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           const currentScrollY = window.scrollY;
           const scrollDelta = currentScrollY - lastScrollY;
           
-          // Always show when tutorial is active or menu is open
-          if (isTutorialActive || isMenuOpen) {
+          // Always show when tutorial is active, menu is open, or component just mounted
+          if (isTutorialActive || isMenuOpen || !isMounted) {
             setIsVisible(true);
             setLastScrollY(currentScrollY);
             ticking = false;
@@ -138,18 +142,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           if (showTimeout) clearTimeout(showTimeout);
           
           // Always show when scrolling up, hide when scrolling down
-          if (currentScrollY < 10) {
-            // Always show at very top
+          if (currentScrollY < 20) {
+            // Always show near top
             setIsVisible(true);
-          } else if (scrollDelta < 0) {
-            // Show immediately on ANY upward scroll movement
+          } else if (scrollDelta < -2) {
+            // Show on upward scroll movement (více tolerantní)
             setIsVisible(true);
-          } else if (scrollDelta > 1 && currentScrollY > 50) {
-            // Hide when scrolling down
+          } else if (scrollDelta > 5 && currentScrollY > 100) {
+            // Hide when scrolling down significantly
             hideTimeout = setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
-            }, 150);
+            }, 200);
           }
           
           setLastScrollY(currentScrollY);
@@ -202,21 +206,21 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       
       lastTouchY = touchMoveY;
       
-      // Always show when tutorial is active or menu is open
-      if (isTutorialActive || isMenuOpen) {
+      // Always show when tutorial is active, menu is open, or component just mounted
+      if (isTutorialActive || isMenuOpen || !isMounted) {
         setIsVisible(true);
         return;
       }
       
       // Immediate response to touch gestures - show on ANY downward movement
-      if (Math.abs(touchDelta) > 1) {
-        if (touchDelta > 0 && window.scrollY > 50) {
+      if (Math.abs(touchDelta) > 3) {
+        if (touchDelta > 0 && window.scrollY > 100) {
           // Swiping up (content going up) - hide nav
           touchHideTimeout = setTimeout(() => {
             setIsVisible(false);
             setIsMenuOpen(false);
-          }, 50);
-        } else if (touchDelta < 0) {
+          }, 100);
+        } else if (touchDelta < -3) {
           // Swiping down (content going down) - show nav immediately
           setIsVisible(true);
         }
