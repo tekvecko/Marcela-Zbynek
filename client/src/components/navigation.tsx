@@ -100,74 +100,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return baseConfig[devicePerformance];
   }, [devicePerformance]);
 
-  // Intelligent scroll prediction system
-  const scrollPrediction = useMemo(() => {
-    return {
-      sensitivity: userInteractionPattern === 'touch' ? 0.8 : 1.2,
-      velocityThreshold: devicePerformance === 'high' ? 0.08 : 0.12,
-      hideDelay: devicePerformance === 'high' ? 80 : 150,
-      showDelay: userInteractionPattern === 'touch' ? 800 : 1200,
-      scrollThreshold: isMobile ? 40 : 60
-    };
-  }, [userInteractionPattern, devicePerformance, isMobile]);
-
-  // Enhanced viewport and device detection
-  useEffect(() => {
-    const updateViewport = () => setViewportWidth(window.innerWidth);
-    
-    // Initial viewport detection
-    updateViewport();
-    
-    // Device performance detection
-    const detectPerformance = () => {
-      const connection = (navigator as any).connection;
-      const hardwareConcurrency = navigator.hardwareConcurrency || 2;
-      const memory = (performance as any).memory?.usedJSHeapSize || 0;
-      
-      let score = 0;
-      if (hardwareConcurrency >= 8) score += 2;
-      else if (hardwareConcurrency >= 4) score += 1;
-      
-      if (connection) {
-        if (connection.effectiveType === '4g') score += 2;
-        else if (connection.effectiveType === '3g') score += 1;
-      }
-      
-      if (memory < 50000000) score += 1; // Low memory usage
-      
-      if (score >= 4) setDevicePerformance('high');
-      else if (score >= 2) setDevicePerformance('medium');
-      else setDevicePerformance('low');
-    };
-
-    // User interaction pattern detection
-    const detectInteractionPattern = () => {
-      let touchEvents = 0;
-      let mouseEvents = 0;
-      
-      const handleTouch = () => touchEvents++;
-      const handleMouse = () => mouseEvents++;
-      
-      document.addEventListener('touchstart', handleTouch, { passive: true });
-      document.addEventListener('mousemove', handleMouse, { passive: true });
-      
-      setTimeout(() => {
-        if (touchEvents > mouseEvents * 2) setUserInteractionPattern('touch');
-        else if (mouseEvents > touchEvents * 2) setUserInteractionPattern('mouse');
-        else setUserInteractionPattern('hybrid');
-        
-        document.removeEventListener('touchstart', handleTouch);
-        document.removeEventListener('mousemove', handleMouse);
-      }, 3000);
-    };
-    
-    detectPerformance();
-    detectInteractionPattern();
-    
-    window.addEventListener('resize', updateViewport, { passive: true });
-    return () => window.removeEventListener('resize', updateViewport);
-  }, []);
-
   // Check if tutorial is active
   useEffect(() => {
     const checkTutorial = () => {
@@ -223,24 +155,24 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           if (hideTimeout) clearTimeout(hideTimeout);
           if (showTimeout) clearTimeout(showTimeout);
           
-          // Intelligent adaptive scroll behavior
+          // Enhanced iOS-like behavior
           if (currentScrollY < 15) {
-            // Always show at very top
+            // Always show at very top with iOS smooth transition
             setIsVisible(true);
-          } else if (isScrollingDown && Math.abs(avgScrollDelta) > (1.5 * scrollPrediction.sensitivity) && scrollVelocity > scrollPrediction.velocityThreshold) {
-            // Adaptive hide based on device and interaction pattern
-            if (currentScrollY > scrollPrediction.scrollThreshold) {
+          } else if (isScrollingDown && Math.abs(avgScrollDelta) > 1.5 && scrollVelocity > 0.08) {
+            // Hide when consistently scrolling down (iOS sensitivity)
+            if (currentScrollY > 60) {
               hideTimeout = setTimeout(() => {
                 setIsVisible(false);
                 setIsMenuOpen(false);
-              }, scrollVelocity > 0.3 ? scrollPrediction.hideDelay : scrollPrediction.hideDelay * 1.5);
+              }, scrollVelocity > 0.3 ? 80 : 150); // iOS-like responsive hiding
             }
-          } else if (isScrollingUp && Math.abs(avgScrollDelta) > (0.8 * scrollPrediction.sensitivity)) {
-            // Adaptive show response
+          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.8) {
+            // Show immediately when scrolling up (iOS responsive)
             setIsVisible(true);
-          } else if (scrollVelocity < 0.04 && currentScrollY > scrollPrediction.scrollThreshold) {
-            // Adaptive auto-show timing
-            showTimeout = setTimeout(() => setIsVisible(true), scrollPrediction.showDelay);
+          } else if (scrollVelocity < 0.04 && currentScrollY > 80) {
+            // Auto-show after scroll stops (iOS behavior)
+            showTimeout = setTimeout(() => setIsVisible(true), 1200);
           }
           
           setLastScrollY(currentScrollY);
@@ -266,19 +198,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       touchMoveY = e.touches[0].clientY;
       const touchDelta = touchStartY - touchMoveY;
       
-      // Adaptive touch gesture response
-      const touchThreshold = userInteractionPattern === 'touch' ? 6 : 10;
-      if (Math.abs(touchDelta) > touchThreshold) {
+      // iOS-like responsive touch gestures
+      if (Math.abs(touchDelta) > 8) {
         if (touchDelta > 0) {
-          // Swiping up - adaptive hide timing
+          // Swiping up - hide nav with iOS timing
           if (!isTutorialActive && !isMenuOpen) {
             setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
-            }, devicePerformance === 'high' ? 30 : 80);
+            }, 50);
           }
         } else {
-          // Swiping down - immediate show
+          // Swiping down - show nav immediately (iOS style)
           setIsVisible(true);
         }
       }
@@ -286,12 +217,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
     const handleTouchEnd = () => {
       isTouching = false;
-      // Adaptive auto-show after touch
+      // iOS-like auto-show after touch interaction
       setTimeout(() => {
-        if (!isTutorialActive && !isMenuOpen && window.scrollY > scrollPrediction.scrollThreshold) {
+        if (!isTutorialActive && !isMenuOpen && window.scrollY > 80) {
           setIsVisible(true);
         }
-      }, scrollPrediction.showDelay * 0.8);
+      }, 800);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -307,7 +238,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       if (hideTimeout) clearTimeout(hideTimeout);
       if (showTimeout) clearTimeout(showTimeout);
     };
-  }, [lastScrollY, isMenuOpen, isTutorialActive, scrollPrediction, userInteractionPattern, devicePerformance]);
+  }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
   const handleLogout = async () => {
     await logout();
@@ -316,18 +247,31 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const LogoElement = ({ className = "w-8 h-8" }) => (
-    <img 
-      src={likeGif}
-      alt="M&Z Logo"
-      className={`${className} logo-slow-animation`}
+  const LogoElement = ({ className = "w-8 h-8", onClick }: { className?: string; onClick?: () => void }) => (
+    <motion.button
+      onClick={onClick}
+      className={`${className} logo-toggle-button focus:outline-none focus:ring-2 focus:ring-romantic/20 rounded-lg`}
+      data-testid="logo-menu-toggle"
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       style={{
         backgroundColor: 'transparent',
-        objectFit: 'contain',
-        animationDuration: '3s',
-        animationTimingFunction: 'ease-in-out'
+        border: 'none',
+        padding: '2px'
       }}
-    />
+    >
+      <img 
+        src={likeGif}
+        alt="M&Z Logo - Menu Toggle"
+        className={`w-full h-full transition-all duration-300 ${isMenuOpen ? 'logo-animate' : 'logo-static'}`}
+        style={{
+          backgroundColor: 'transparent',
+          objectFit: 'contain',
+          imageRendering: 'crisp-edges'
+        }}
+      />
+    </motion.button>
   );
 
   return (
@@ -340,12 +284,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           y: isVisible ? 0 : -100,
           opacity: isVisible ? 1 : 0
         }}
-        transition={{
-          ...animationConfig,
-          ...(animationConfig.type === 'spring' && {
-            stiffness: isVisible ? animationConfig.stiffness : animationConfig.stiffness * 1.5,
-            velocity: isVisible ? 0 : -40
-          })
+        transition={{ 
+          type: "spring", 
+          stiffness: isVisible ? 400 : 600, 
+          damping: isVisible ? 28 : 40,
+          mass: 0.6,
+          velocity: isVisible ? 0 : -40,
+          bounce: 0.15
         }}
       >
         <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden" style={{
@@ -355,52 +300,41 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         }}>
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-5 sm:px-7 py-4">
-            {/* Logo with single like.webm video */}
-            <a href="/" className="flex items-center space-x-2 group">
-              <motion.div
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="flex items-center space-x-3"
-              >
-                <LogoElement className="w-8 h-8" />
-                <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
-                  M&Z
-                </div>
-              </motion.div>
-            </a>
+            {/* Logo as Menu Toggle */}
+            <div className="flex items-center space-x-3">
+              <LogoElement 
+                className="w-8 h-8" 
+                onClick={toggleMenu}
+              />
+              <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
+                M&Z
+              </div>
+            </div>
 
-            {/* Adaptive Desktop Navigation */}
-            <div className={`hidden ${viewportBreakpoint === 'md' ? 'md:flex' : 'lg:flex'} items-center space-x-1`}>
-              {visibleNavigationItems.map(({ href, label, icon, exact }, index) => {
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-1">
+              {navigationItems.map(({ href, label, icon, exact }, index) => {
                 const isActive = exact ? location === href : location.startsWith(href);
+                if (href === '/admin' && !user?.isAdmin) return null;
                 return (
-                  <motion.div 
-                    key={href} 
-                    className="relative"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ ...animationConfig, delay: index * 0.05 }}
-                  >
-                    <motion.a
+                  <motion.div key={href} className="relative">
+                    <a
                       href={href}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
                         isActive 
                           ? 'bg-romantic/10 text-romantic' 
                           : 'hover:bg-romantic/5 text-gray-700'
                       }`}
-                      whileHover={{ scale: devicePerformance === 'high' ? 1.05 : 1.02 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={animationConfig}
+                      data-testid={`nav-link-${href.replace('/', '') || 'home'}`}
                     >
                       <span className="text-lg">{icon}</span>
                       <span className="font-medium text-sm">{label}</span>
-                    </motion.a>
+                    </a>
                     {isActive && (
                       <motion.div
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-romantic rounded-full"
                         layoutId="desktopActiveTab"
-                        transition={animationConfig}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       />
                     )}
                   </motion.div>
@@ -408,53 +342,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               })}
             </div>
 
-            {/* Mobile Menu Button & User Menu */}
+            {/* User Menu */}
             <div className="flex items-center space-x-2">
-              {/* Mobile Menu Toggle */}
-              <motion.button
-                className="lg:hidden p-3 rounded-2xl bg-white/60 backdrop-blur-xl shadow-lg border border-white/40"
-                onClick={toggleMenu}
-                whileTap={{ scale: 0.92, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
-                whileHover={{ scale: 1.08, backgroundColor: "rgba(255, 255, 255, 0.7)" }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                data-testid="mobile-menu-toggle"
-                style={{
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)'
-                }}
-              >
-                <motion.div
-                  animate={{ 
-                    rotate: isMenuOpen ? 180 : 0
-                  }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="w-6 h-6 flex flex-col justify-center items-center">
-                    <motion.div
-                      className="w-4 h-0.5 bg-romantic rounded-full mb-1"
-                      animate={{ 
-                        rotate: isMenuOpen ? 45 : 0,
-                        y: isMenuOpen ? 6 : 0
-                      }}
-                    />
-                    <motion.div
-                      className="w-4 h-0.5 bg-romantic rounded-full mb-1"
-                      animate={{ 
-                        opacity: isMenuOpen ? 0 : 1
-                      }}
-                    />
-                    <motion.div
-                      className="w-4 h-0.5 bg-romantic rounded-full"
-                      animate={{ 
-                        rotate: isMenuOpen ? -45 : 0,
-                        y: isMenuOpen ? -6 : 0
-                      }}
-                    />
-                  </div>
-                </motion.div>
-              </motion.button>
-
-              {/* User Menu */}
               <AnimatePresence mode="wait">
                 {!user ? (
                   <motion.div
@@ -520,9 +409,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 }}
               >
                 <div className="p-5">
-                  <div className={`grid ${viewportBreakpoint === 'xs' ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
-                    {visibleNavigationItems.map(({ href, label, icon, exact }, index) => {
+                  <div className="grid grid-cols-2 gap-3">
+                    {navigationItems.map(({ href, label, icon, exact }, index) => {
                       const isActive = exact ? location === href : location.startsWith(href);
+                      if (href === '/admin' && !user?.isAdmin) return null;
                       return (
                         <motion.div
                           key={href}
@@ -530,11 +420,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           animate={{ 
                             opacity: 1, 
                             y: 0,
-                            transition: { ...animationConfig, delay: index * (devicePerformance === 'high' ? 0.03 : 0.08) }
+                            transition: { delay: index * 0.05 }
                           }}
-                          exit={{ opacity: 0, y: 20, transition: animationConfig }}
+                          exit={{ opacity: 0, y: 20 }}
                         >
-                          <motion.a
+                          <a
                             href={href}
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex flex-col items-center space-y-2 p-4 rounded-2xl transition-all duration-300 ${
@@ -542,9 +432,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                                 ? 'bg-romantic/10 shadow-sm text-romantic' 
                                 : 'hover:bg-romantic/5 text-gray-700'
                             }`}
-                            whileHover={{ scale: devicePerformance === 'high' ? 1.05 : 1.02 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={animationConfig}
                           >
                             <span className="text-2xl">{icon}</span>
                             <span className="text-xs font-medium text-center">{label}</span>
@@ -555,7 +442,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                               />
                             )}
-                          </motion.a>
+                          </a>
                         </motion.div>
                       );
                     })}

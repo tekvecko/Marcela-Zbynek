@@ -4,17 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* iOS-like logo animation slowdown */
-@keyframes slowGif {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.95; transform: scale(1.02); }
-  100% { opacity: 1; transform: scale(1); }
+/* Logo animation control - static by default, animate on toggle */
+.logo-static {
+  animation-play-state: paused;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  filter: contrast(1.1) brightness(1.05) grayscale(0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.logo-slow-animation {
-  animation: slowGif 4s ease-in-out infinite;
-  filter: contrast(1.1) brightness(1.05);
+.logo-animate {
+  animation: logoToggleAnimation 0.8s ease-in-out;
+  filter: contrast(1.2) brightness(1.1) saturate(1.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes logoToggleAnimation {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.1); }
+  50% { transform: rotate(180deg) scale(1.05); }
+  75% { transform: rotate(270deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Logo toggle button hover effects */
+.logo-toggle-button:hover .logo-static {
+  filter: contrast(1.15) brightness(1.08) grayscale(0);
+  transform: scale(1.05);
+}
+
+.logo-toggle-button:hover .logo-animate {
+  animation-duration: 0.6s;
 }
 
 :root {
