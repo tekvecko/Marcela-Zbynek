@@ -117,45 +117,42 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Simplified navigation scroll handling for mobile compatibility
+  // Simple and reliable navigation scroll handling
   useEffect(() => {
-    let ticking = false;
     let hideTimeout: NodeJS.Timeout;
     
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const scrollDelta = currentScrollY - lastScrollY;
-          
-          // Always show when tutorial is active, menu is open, or component just mounted
-          if (isTutorialActive || isMenuOpen || !isMounted) {
-            setIsVisible(true);
-            setLastScrollY(currentScrollY);
-            ticking = false;
-            return;
-          }
-          
-          // Clear any pending timeout
-          if (hideTimeout) clearTimeout(hideTimeout);
-          
-          // Show navigation on ANY upward scroll movement (even small ones)
-          if (scrollDelta < -2) {
-            setIsVisible(true);
-          } 
-          // Hide when scrolling down more than threshold
-          else if (scrollDelta > 8) {
-            hideTimeout = setTimeout(() => {
-              setIsVisible(false);
-              setIsMenuOpen(false);
-            }, 100); // Shorter delay for mobile responsiveness
-          }
-          
-          setLastScrollY(currentScrollY);
-          ticking = false;
-        });
-        ticking = true;
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastScrollY;
+      
+      console.log('Scroll delta:', scrollDelta, 'CurrentY:', currentScrollY, 'LastY:', lastScrollY, 'Visible:', isVisible);
+      
+      // Always show when tutorial is active or menu is open
+      if (isTutorialActive || isMenuOpen) {
+        console.log('Blocked by tutorial/menu');
+        setIsVisible(true);
+        setLastScrollY(currentScrollY);
+        return;
       }
+      
+      // Clear any pending timeout
+      if (hideTimeout) clearTimeout(hideTimeout);
+      
+      // Show navigation on ANY upward scroll
+      if (scrollDelta < -1) {
+        console.log('Showing nav - upward scroll');
+        setIsVisible(true);
+      } 
+      // Hide when scrolling down (lowered threshold for better responsiveness)
+      else if (scrollDelta > 5) {
+        console.log('Hiding nav - downward scroll');
+        hideTimeout = setTimeout(() => {
+          setIsVisible(false);
+          setIsMenuOpen(false);
+        }, 150);
+      }
+      
+      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -164,7 +161,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       window.removeEventListener('scroll', handleScroll);
       if (hideTimeout) clearTimeout(hideTimeout);
     };
-  }, [lastScrollY, isMenuOpen, isTutorialActive]);
+  }, [lastScrollY, isMenuOpen, isTutorialActive, isMounted]);
 
   const handleLogout = async () => {
     await logout();
