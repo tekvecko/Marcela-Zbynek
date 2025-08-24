@@ -167,8 +167,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 setIsMenuOpen(false);
               }, scrollVelocity > 0.3 ? 80 : 150); // iOS-like responsive hiding
             }
-          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.5) {
-            // Show immediately when scrolling up (iOS responsive) - lowered threshold for better responsivity
+          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.3) {
+            // Show immediately when scrolling up (iOS responsive) - improved threshold
             setIsVisible(true);
           } else if (scrollVelocity < 0.04 && currentScrollY > 80) {
             // Auto-show after scroll stops (iOS behavior)
@@ -199,7 +199,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       const touchDelta = touchStartY - touchMoveY;
       
       // iOS-like responsive touch gestures - improved for floating behavior
-      if (Math.abs(touchDelta) > 5) {
+      if (Math.abs(touchDelta) > 3) {
         if (touchDelta > 0) {
           // Swiping up - hide nav with iOS timing
           if (!isTutorialActive && !isMenuOpen && window.scrollY > 60) {
@@ -208,7 +208,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               setIsMenuOpen(false);
             }, 50);
           }
-        } else {
+        } else if (touchDelta < -3) {
           // Swiping down - show nav immediately (iOS style) - always show regardless of position
           setIsVisible(true);
         }
