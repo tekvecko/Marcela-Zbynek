@@ -117,21 +117,19 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Simple and reliable navigation scroll handling
+  // Navigation scroll handling with stable references
   useEffect(() => {
     let hideTimeout: NodeJS.Timeout;
+    let localLastScrollY = lastScrollY;
     
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      const scrollDelta = currentScrollY - lastScrollY;
-      
-      console.log('Scroll delta:', scrollDelta, 'CurrentY:', currentScrollY, 'LastY:', lastScrollY, 'Visible:', isVisible);
+      const scrollDelta = currentScrollY - localLastScrollY;
       
       // Always show when tutorial is active or menu is open
       if (isTutorialActive || isMenuOpen) {
-        console.log('Blocked by tutorial/menu');
         setIsVisible(true);
-        setLastScrollY(currentScrollY);
+        localLastScrollY = currentScrollY;
         return;
       }
       
@@ -140,18 +138,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       
       // Show navigation on ANY upward scroll
       if (scrollDelta < -1) {
-        console.log('Showing nav - upward scroll');
         setIsVisible(true);
       } 
-      // Hide when scrolling down (lowered threshold for better responsiveness)
+      // Hide when scrolling down
       else if (scrollDelta > 5) {
-        console.log('Hiding nav - downward scroll');
         hideTimeout = setTimeout(() => {
           setIsVisible(false);
           setIsMenuOpen(false);
         }, 150);
       }
       
+      localLastScrollY = currentScrollY;
       setLastScrollY(currentScrollY);
     };
 
@@ -161,7 +158,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       window.removeEventListener('scroll', handleScroll);
       if (hideTimeout) clearTimeout(hideTimeout);
     };
-  }, [lastScrollY, isMenuOpen, isTutorialActive, isMounted]);
+  }, []); // Empty dependency array to prevent frequent recreations
 
   const handleLogout = async () => {
     await logout();
