@@ -117,7 +117,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Simplified scroll handling - show navigation on ANY upward scroll movement
+  // Sticky navigation scroll handling - show on upward scroll
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
@@ -139,16 +139,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           // Clear any pending timeout
           if (hideTimeout) clearTimeout(hideTimeout);
           
-          // SHOW navigation on ANY upward scroll movement or when near top
-          if (currentScrollY < 50 || scrollDelta < 0) {
+          // SHOW navigation on ANY upward scroll movement
+          if (scrollDelta < 0) {
             setIsVisible(true);
           } 
-          // Hide only when scrolling down significantly and not near top
-          else if (scrollDelta > 8 && currentScrollY > 150) {
+          // Hide when scrolling down
+          else if (scrollDelta > 5) {
             hideTimeout = setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
-            }, 300);
+            }, 150);
           }
           
           setLastScrollY(currentScrollY);
@@ -158,7 +158,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       }
     };
 
-    // Simplified touch events for mobile devices
+    // Touch events for sticky navigation
     let touchStartY = 0;
     let isTouching = false;
     let touchHideTimeout: NodeJS.Timeout;
@@ -175,7 +175,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       if (!isTouching || e.touches.length !== 1) return;
       
       const currentTouchY = e.touches[0].clientY;
-      const touchDelta = touchStartY - currentTouchY; // positive = scrolling up, negative = scrolling down
+      const touchDelta = touchStartY - currentTouchY;
       
       // Always show when tutorial is active, menu is open, or component just mounted
       if (isTutorialActive || isMenuOpen || !isMounted) {
@@ -183,16 +183,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         return;
       }
       
-      // SHOW navigation on ANY downward finger movement (content scrolling up)
-      if (touchDelta < -5) {
+      // SHOW navigation on upward scroll (finger moving down)
+      if (touchDelta < -3) {
         setIsVisible(true);
       }
-      // Hide when scrolling down (upward finger movement) and not near top
-      else if (touchDelta > 10 && window.scrollY > 100) {
+      // Hide when scrolling down (finger moving up)
+      else if (touchDelta > 8) {
         touchHideTimeout = setTimeout(() => {
           setIsVisible(false);
           setIsMenuOpen(false);
-        }, 200);
+        }, 100);
       }
     };
 
@@ -255,7 +255,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="fixed top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
+        className="sticky top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: isVisible ? 0 : -100,
@@ -269,10 +269,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           velocity: isVisible ? 0 : -40,
           bounce: 0.15
         }}
-        style={{
-          position: 'fixed',
-          zIndex: 9999
-        }}
+        
       >
         <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden pointer-events-auto" style={{
           backdropFilter: 'blur(40px) saturate(180%)',
