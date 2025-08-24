@@ -235,7 +235,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="sticky top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
+        className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: isVisible ? 0 : -100,
@@ -258,11 +258,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           zIndex: 10000
         }}>
           {/* Main Navigation Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-7 py-4">
+          <div className="flex items-center justify-between px-3 sm:px-5 md:px-7 py-3 sm:py-4">
             {/* Logo as Menu Toggle */}
             <div className="flex items-center space-x-3">
               <LogoElement 
-                className="w-8 h-8" 
+                className="w-7 h-7 sm:w-8 sm:h-8" 
                 onClick={toggleMenu}
               />
               <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
@@ -392,8 +392,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                   willChange: 'transform, opacity, height'
                 }}
               >
-                <div className="p-5">
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 sm:p-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
                     {navigationItems.map(({ href, label, icon, exact }, index) => {
                       const isActive = exact ? location === href : location.startsWith(href);
                       if (href === '/admin' && !user?.isAdmin) return null;
@@ -436,14 +436,14 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           <a
                             href={href}
                             onClick={() => setIsMenuOpen(false)}
-                            className={`flex flex-col items-center space-y-2 p-4 rounded-2xl transition-all duration-300 ${
+                            className={`flex flex-col items-center space-y-1 sm:space-y-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 ${
                               isActive 
                                 ? 'bg-romantic/10 shadow-sm text-romantic' 
                                 : 'hover:bg-romantic/5 text-gray-700'
                             }`}
                           >
-                            <span className="text-2xl">{icon}</span>
-                            <span className="text-xs font-medium text-center">{label}</span>
+                            <span className="text-xl sm:text-2xl">{icon}</span>
+                            <span className="text-xs font-medium text-center leading-tight">{label}</span>
                             {isActive && (
                               <motion.div
                                 className="w-4 h-0.5 bg-romantic rounded-full"
