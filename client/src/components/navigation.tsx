@@ -117,10 +117,19 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Navigation scroll handling with stable references
+  // Mobile-first navigation scroll handling
   useEffect(() => {
     let hideTimeout: NodeJS.Timeout;
-    let localLastScrollY = lastScrollY;
+    let localLastScrollY = 0;
+    let isScrolling = false;
+    
+    const handleScrollStart = () => {
+      isScrolling = true;
+    };
+    
+    const handleScrollEnd = () => {
+      isScrolling = false;
+    };
     
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -133,32 +142,43 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         return;
       }
       
+      // Skip if scroll distance is too small
+      if (Math.abs(scrollDelta) < 2) {
+        return;
+      }
+      
       // Clear any pending timeout
       if (hideTimeout) clearTimeout(hideTimeout);
       
-      // Show navigation on ANY upward scroll
-      if (scrollDelta < -1) {
+      // Show navigation on upward scroll
+      if (scrollDelta < -3) {
         setIsVisible(true);
       } 
       // Hide when scrolling down
-      else if (scrollDelta > 5) {
+      else if (scrollDelta > 10) {
         hideTimeout = setTimeout(() => {
-          setIsVisible(false);
-          setIsMenuOpen(false);
-        }, 150);
+          if (!isScrolling && !isMenuOpen && !isTutorialActive) {
+            setIsVisible(false);
+            setIsMenuOpen(false);
+          }
+        }, 300);
       }
       
       localLastScrollY = currentScrollY;
-      setLastScrollY(currentScrollY);
     };
 
+    // Use both scroll and touch events for better mobile compatibility
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('touchstart', handleScrollStart, { passive: true });
+    window.addEventListener('touchend', handleScrollEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', handleScrollStart);
+      window.removeEventListener('touchend', handleScrollEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
     };
-  }, []); // Empty dependency array to prevent frequent recreations
+  }, [isTutorialActive, isMenuOpen]); // Include necessary dependencies
 
   const handleLogout = async () => {
     await logout();
