@@ -147,8 +147,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       setScrollVelocity(velocity);
       
       // Calculate dynamic animation duration based on velocity
-      // Faster scroll = faster animation (0.1-0.6 seconds range)
-      const dynamicDuration = Math.max(0.1, Math.min(0.6, 0.4 - velocity * 0.5));
+      // Faster scroll = faster animation (0.15-0.45 seconds range for smoother feel)
+      const dynamicDuration = Math.max(0.15, Math.min(0.45, 0.35 - velocity * 0.3));
       setAnimationDuration(dynamicDuration);
       
       // Always show when tutorial is active or menu is open
@@ -159,22 +159,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         return;
       }
       
-      // Skip if scroll distance is too small
-      if (Math.abs(scrollDelta) < 2) {
-        return;
-      }
-      
       // Clear any pending timeout
       if (hideTimeout) clearTimeout(hideTimeout);
       
-      // Show navigation on upward scroll
-      if (scrollDelta < -2) {
+      // Show navigation on upward scroll - IMMEDIATE response to any upward movement
+      if (scrollDelta < 0) {
         setIsVisible(true);
       } 
-      // Hide when scrolling down (immediate response)
-      else if (scrollDelta > 3) {
+      // Hide when scrolling down - HIGHER threshold for hiding
+      else if (scrollDelta > 15) {
         // Use velocity-based delay - faster scroll = immediate hiding
-        const delay = Math.max(20, Math.min(150, 150 - velocity * 100));
+        const delay = Math.max(50, Math.min(200, 200 - velocity * 150));
         hideTimeout = setTimeout(() => {
           if (!isScrolling && !isMenuOpen && !isTutorialActive) {
             setIsVisible(false);
@@ -190,11 +185,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     // Use both scroll and touch events for better mobile compatibility
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('touchstart', handleScrollStart, { passive: true });
+    window.addEventListener('touchmove', handleScroll, { passive: true });
     window.addEventListener('touchend', handleScrollEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('touchstart', handleScrollStart);
+      window.removeEventListener('touchmove', handleScroll);
       window.removeEventListener('touchend', handleScrollEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
     };
@@ -245,9 +242,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           opacity: isVisible ? 1 : 0
         }}
         transition={{ 
-          type: "tween",
-          duration: animationDuration,
-          ease: scrollVelocity > 0.5 ? "easeOut" : "easeInOut"
+          type: "spring",
+          stiffness: isVisible ? 300 : 400,
+          damping: isVisible ? 25 : 30,
+          mass: 0.8,
+          velocity: isVisible ? 0 : -20
         }}
         
       >
