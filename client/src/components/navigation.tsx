@@ -137,19 +137,19 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           if (hideTimeout) clearTimeout(hideTimeout);
           if (showTimeout) clearTimeout(showTimeout);
           
-          // Simplified logic - show immediately on any upward scroll
+          // Always show when scrolling up, hide when scrolling down
           if (currentScrollY < 10) {
             // Always show at very top
             setIsVisible(true);
-          } else if (scrollDelta < -1) {
-            // Show immediately when scrolling up (any upward movement)
+          } else if (scrollDelta < 0) {
+            // Show immediately on ANY upward scroll movement
             setIsVisible(true);
-          } else if (scrollDelta > 2 && currentScrollY > 50) {
-            // Hide when scrolling down consistently
+          } else if (scrollDelta > 1 && currentScrollY > 50) {
+            // Hide when scrolling down
             hideTimeout = setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
-            }, 100);
+            }, 150);
           }
           
           setLastScrollY(currentScrollY);
@@ -208,30 +208,30 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         return;
       }
       
-      // Immediate response to touch gestures
-      if (Math.abs(touchDelta) > 3) {
-        if (touchDelta > 0 && touchDirection === -1 && window.scrollY > 50) {
-          // Swiping up with upward finger movement - hide nav
+      // Immediate response to touch gestures - show on ANY downward movement
+      if (Math.abs(touchDelta) > 1) {
+        if (touchDelta > 0 && window.scrollY > 50) {
+          // Swiping up (content going up) - hide nav
           touchHideTimeout = setTimeout(() => {
             setIsVisible(false);
             setIsMenuOpen(false);
           }, 50);
-        } else if (touchDelta < -3 && touchDirection === 1) {
-          // Swiping down with downward finger movement - show nav immediately
+        } else if (touchDelta < 0) {
+          // Swiping down (content going down) - show nav immediately
           setIsVisible(true);
         }
       }
       
-      // Quick gesture detection for fast swipes
-      if (touchVelocity > 0.5) {
-        if (touchDirection === -1 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
-          // Fast upward swipe - hide immediately
+      // Direction-based detection for immediate response
+      if (touchDirection === 1) {
+        // ANY downward finger movement - show immediately
+        setIsVisible(true);
+      } else if (touchDirection === -1 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
+        // Upward finger movement - hide
+        touchHideTimeout = setTimeout(() => {
           setIsVisible(false);
           setIsMenuOpen(false);
-        } else if (touchDirection === 1) {
-          // Fast downward swipe - show immediately
-          setIsVisible(true);
-        }
+        }, 100);
       }
     };
 
@@ -243,27 +243,14 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       const totalTime = touchEndTime - touchStartTime;
       const totalDelta = touchStartY - touchMoveY;
       
-      // Final gesture evaluation on touch end
-      if (totalTime < 300 && Math.abs(totalDelta) > 10) {
-        // Quick gesture
+      // Final gesture evaluation on touch end - simplified
+      if (Math.abs(totalDelta) > 5) {
         if (totalDelta > 0 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
-          // Quick upward gesture - hide
+          // Any upward gesture - hide
           setIsVisible(false);
           setIsMenuOpen(false);
-        } else if (totalDelta < -10) {
-          // Quick downward gesture - show
-          setIsVisible(true);
-        }
-      } else if (totalTime > 300 && Math.abs(totalDelta) > 30) {
-        // Slow but significant movement
-        if (totalDelta > 0 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
-          // Slow upward movement - delayed hide
-          touchHideTimeout = setTimeout(() => {
-            setIsVisible(false);
-            setIsMenuOpen(false);
-          }, 200);
-        } else if (totalDelta < -30) {
-          // Slow downward movement - show
+        } else if (totalDelta < 0) {
+          // ANY downward gesture - show immediately
           setIsVisible(true);
         }
       }
