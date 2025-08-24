@@ -375,43 +375,30 @@ export default function Navigation({}: NavigationProps = {}) {
             </div>
           </div>
 
-          {/* Mobile Navigation Menu - 60fps optimized */}
-          <AnimatePresence mode="wait">
+          {/* Mobile Navigation Menu - simplified */}
+          <AnimatePresence>
             {isMenuOpen && (
               <motion.div
                 initial={{ 
                   height: 0, 
-                  opacity: 0,
-                  scaleY: 0,
-                  transformOrigin: "top"
+                  opacity: 0
                 }}
                 animate={{ 
                   height: "auto", 
-                  opacity: 1,
-                  scaleY: 1,
-                  transformOrigin: "top"
+                  opacity: 1
                 }}
                 exit={{ 
                   height: 0, 
-                  opacity: 0,
-                  scaleY: 0,
-                  transformOrigin: "top"
+                  opacity: 0
                 }}
                 transition={{ 
-                  type: "spring",
-                  stiffness: 600,
-                  damping: 40,
-                  mass: 0.8,
-                  velocity: 2,
-                  duration: 0.4,
-                  opacity: { duration: 0.2 }
+                  duration: 0.3,
+                  ease: "easeInOut"
                 }}
-                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden will-change-transform"
+                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden"
                 style={{
                   backdropFilter: 'blur(40px) saturate(150%)',
-                  WebkitBackdropFilter: 'blur(40px) saturate(150%)',
-                  transform: 'translateZ(0)', // Force hardware acceleration
-                  willChange: 'transform, opacity, height'
+                  WebkitBackdropFilter: 'blur(40px) saturate(150%)'
                 }}
               >
                 <div className="p-3 sm:p-5">
@@ -420,41 +407,7 @@ export default function Navigation({}: NavigationProps = {}) {
                       const isActive = exact ? location === href : location.startsWith(href);
                       if (href === '/admin' && !user?.isAdmin) return null;
                       return (
-                        <motion.div
-                          key={href}
-                          initial={{ 
-                            opacity: 0, 
-                            y: 24,
-                            scale: 0.9,
-                            rotateX: -15
-                          }}
-                          animate={{ 
-                            opacity: 1, 
-                            y: 0,
-                            scale: 1,
-                            rotateX: 0,
-                            transition: { 
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 25,
-                              mass: 0.6,
-                              delay: index * 0.08,
-                              duration: 0.5
-                            }
-                          }}
-                          exit={{ 
-                            opacity: 0, 
-                            y: -20,
-                            scale: 0.8,
-                            rotateX: 15,
-                            transition: { duration: 0.2 }
-                          }}
-                          className="will-change-transform"
-                          style={{
-                            transform: 'translateZ(0)',
-                            willChange: 'transform, opacity'
-                          }}
-                        >
+                        <div key={href}>
                           <a
                             href={href}
                             onClick={() => {
@@ -471,14 +424,10 @@ export default function Navigation({}: NavigationProps = {}) {
                             <span className="text-xl sm:text-2xl">{icon}</span>
                             <span className="text-xs font-medium text-center leading-tight">{label}</span>
                             {isActive && (
-                              <motion.div
-                                className="w-4 h-0.5 bg-romantic rounded-full"
-                                layoutId="mobileActiveTab"
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              />
+                              <div className="w-4 h-0.5 bg-romantic rounded-full" />
                             )}
                           </a>
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </div>
