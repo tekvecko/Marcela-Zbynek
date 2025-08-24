@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import likeGif from "../../../like.gif";
+import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
 
 interface NavigationProps {}
 
@@ -241,7 +241,7 @@ export default function Navigation({}: NavigationProps = {}) {
       }}
     >
       <img 
-        src={likeGif}
+        src={logoImage}
         alt="M&Z Logo - Menu Toggle"
         className={`w-full h-full transition-all duration-300 ${isMenuOpen ? 'logo-animate' : 'logo-static'}`}
         style={{
