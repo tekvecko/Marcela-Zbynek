@@ -6,6 +6,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  profileImageUrl?: string;
   isAdmin?: boolean;
 }
 

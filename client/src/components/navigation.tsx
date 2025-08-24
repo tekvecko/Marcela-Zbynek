@@ -127,11 +127,13 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     let lastTimestamp = 0;
     let debounceTimeout: NodeJS.Timeout;
     
-    const SCROLL_THRESHOLD = 8; // Minimum scroll distance to react
-    const DIRECTION_PERSISTENCE_TIME = 200; // ms to wait before changing direction
-    const VELOCITY_THRESHOLD = 2; // Ignore rapid direction changes
-    const HISTORY_SIZE = 5; // Track last N scroll events
-    const DEBOUNCE_DELAY = 100; // ms to debounce scroll events
+    // Adaptive thresholds based on device type
+    const isMobileDevice = window.innerWidth <= 768 || 'ontouchstart' in window;
+    const SCROLL_THRESHOLD = isMobileDevice ? 12 : 8; // Higher threshold for mobile
+    const DIRECTION_PERSISTENCE_TIME = isMobileDevice ? 150 : 200; // Faster response on mobile
+    const VELOCITY_THRESHOLD = isMobileDevice ? 1.5 : 2; // Lower velocity threshold for mobile
+    const HISTORY_SIZE = isMobileDevice ? 3 : 5; // Shorter history for mobile
+    const DEBOUNCE_DELAY = isMobileDevice ? 50 : 100; // Faster debounce for mobile
     
     const getScrollDirection = (history: number[]): 'up' | 'down' | 'stable' => {
       if (history.length < 2) return 'stable';
@@ -217,108 +219,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       }
     };
 
-    // Touch events for sticky navigation
-    let touchStartY = 0;
-    let isTouching = false;
-    let touchHideTimeout: NodeJS.Timeout;
-    let touchHistory: number[] = [];
-    let lastTouchDirectionChangeTime = 0;
-    let touchDebounceTimeout: NodeJS.Timeout;
-
-    const getTouchDirection = (history: number[]): 'up' | 'down' | 'stable' => {
-      if (history.length < 2) return 'stable';
-      
-      const recentHistory = history.slice(-3);
-      const upCount = recentHistory.filter(delta => delta < -SCROLL_THRESHOLD).length;
-      const downCount = recentHistory.filter(delta => delta > SCROLL_THRESHOLD).length;
-      
-      if (upCount > downCount && upCount >= 2) return 'up';
-      if (downCount > upCount && downCount >= 2) return 'down';
-      return 'stable';
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      touchStartY = e.touches[0].clientY;
-      isTouching = true;
-      
-      if (touchHideTimeout) clearTimeout(touchHideTimeout);
-      if (touchDebounceTimeout) clearTimeout(touchDebounceTimeout);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isTouching || e.touches.length !== 1) return;
-      
-      const currentTouchY = e.touches[0].clientY;
-      const touchDelta = touchStartY - currentTouchY;
-      
-      // Always show when tutorial is active, menu is open, or component just mounted
-      if (isTutorialActive || isMenuOpen || !isMounted) {
-        setIsVisible(true);
-        return;
-      }
-      
-      // Update touch history
-      touchHistory.push(touchDelta);
-      if (touchHistory.length > HISTORY_SIZE) {
-        touchHistory.shift();
-      }
-      
-      // Ignore tiny movements
-      if (Math.abs(touchDelta) < 5) {
-        return;
-      }
-      
-      // Clear timeouts
-      if (touchHideTimeout) clearTimeout(touchHideTimeout);
-      if (touchDebounceTimeout) clearTimeout(touchDebounceTimeout);
-      
-      const currentDirection = getTouchDirection(touchHistory);
-      const now = Date.now();
-      
-      // Debounced touch decision making
-      touchDebounceTimeout = setTimeout(() => {
-        // Show navigation on sustained upward scroll (finger moving down)
-        if (currentDirection === 'up' && Math.abs(touchDelta) >= SCROLL_THRESHOLD) {
-          if (now - lastTouchDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
-            setIsVisible(true);
-            lastTouchDirectionChangeTime = now;
-          }
-        }
-        // Hide when scrolling down (finger moving up)
-        else if (currentDirection === 'down' && Math.abs(touchDelta) >= SCROLL_THRESHOLD) {
-          if (now - lastTouchDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
-            touchHideTimeout = setTimeout(() => {
-              setIsVisible(false);
-              setIsMenuOpen(false);
-            }, 150);
-            lastTouchDirectionChangeTime = now;
-          }
-        }
-      }, DEBOUNCE_DELAY);
-    };
-
-    const handleTouchEnd = () => {
-      if (!isTouching) return;
-      isTouching = false;
-      touchStartY = 0;
-      touchHistory = [];
-    };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
-      if (touchHideTimeout) clearTimeout(touchHideTimeout);
       if (debounceTimeout) clearTimeout(debounceTimeout);
-      if (touchDebounceTimeout) clearTimeout(touchDebounceTimeout);
     };
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
