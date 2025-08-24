@@ -179,6 +179,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       loop
       muted={muted}
       playsInline
+      style={{
+        backgroundColor: 'transparent',
+        mixBlendMode: 'normal',
+        objectFit: 'contain'
+      }}
     >
       <source src={likeVideo} type="video/webm" />
     </video>
