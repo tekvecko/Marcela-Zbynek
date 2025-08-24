@@ -5,16 +5,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import likeGif from "../../../like.gif";
 
-interface NavigationProps {
-  onStartTutorial?: () => void;
-}
+interface NavigationProps {}
 
-export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
+export default function Navigation({}: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [devicePerformance, setDevicePerformance] = useState<'high' | 'medium' | 'low'>('high');
   const [userInteractionPattern, setUserInteractionPattern] = useState<'touch' | 'mouse' | 'hybrid'>('mouse');
@@ -103,20 +100,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return baseConfig[devicePerformance];
   }, [devicePerformance]);
 
-  // Check if tutorial is active and ensure component is mounted
+  // Ensure component is mounted
   useEffect(() => {
     setIsMounted(true);
     setIsVisible(true); // Vždy zobrazit navigaci po načtení
-    
-    const checkTutorial = () => {
-      setIsTutorialActive(document.querySelector('[data-onboarding-active]') !== null);
-    };
-    
-    checkTutorial();
-    const observer = new MutationObserver(checkTutorial);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-    
-    return () => observer.disconnect();
   }, []);
 
   // Dynamic navigation scroll handling with velocity-based animation
@@ -151,8 +138,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       const dynamicDuration = Math.max(0.15, Math.min(0.45, 0.35 - velocity * 0.3));
       setAnimationDuration(dynamicDuration);
       
-      // Always show when tutorial is active or menu is open
-      if (isTutorialActive || isMenuOpen) {
+      // Always show when menu is open
+      if (isMenuOpen) {
         setIsVisible(true);
         localLastScrollY = currentScrollY;
         lastScrollTime = currentTime;
@@ -171,7 +158,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         // Use velocity-based delay - faster scroll = immediate hiding
         const delay = Math.max(50, Math.min(200, 200 - velocity * 150));
         hideTimeout = setTimeout(() => {
-          if (!isScrolling && !isMenuOpen && !isTutorialActive) {
+          if (!isScrolling && !isMenuOpen) {
             setIsVisible(false);
             setIsMenuOpen(false);
           }
@@ -195,7 +182,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       window.removeEventListener('touchend', handleScrollEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
     };
-  }, [isTutorialActive, isMenuOpen]); // Include necessary dependencies
+  }, [isMenuOpen]); // Include necessary dependencies
 
   // Cleanup body scroll lock on unmount or menu close
   useEffect(() => {
@@ -365,7 +352,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                     className="relative"
                   >
                     <motion.button
-                      onClick={onStartTutorial || handleLogout}
+                      onClick={handleLogout}
                       disabled={isLoggingOut}
                       className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
                       whileHover={{ scale: 1.05 }}
@@ -380,7 +367,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                       ) : (
                         <span className="text-lg">👤</span>
                       )}
-                      {onStartTutorial && <span className="text-lg">❓</span>}
                     </motion.button>
                   </motion.div>
                 )}
@@ -519,20 +505,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                             {user?.firstName} {user?.lastName}
                           </div>
                         </div>
-                        {onStartTutorial && (
-                          <button
-                            onClick={() => {
-                              onStartTutorial();
-                              setIsMenuOpen(false);
-                              document.body.style.overflow = '';
-                              document.documentElement.style.overflow = '';
-                            }}
-                            className="p-2 rounded-xl hover:bg-romantic/10 transition-all"
-                            title="Spustit návod"
-                          >
-                            <span className="text-lg">❓</span>
-                          </button>
-                        )}
                       </div>
                     </motion.div>
                   )}

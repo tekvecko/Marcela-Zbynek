@@ -1,14 +1,11 @@
 import Navigation from "@/components/navigation";
 import PhotoGallery from "@/components/photo-gallery";
-import OnboardingTrigger from "@/components/onboarding/onboarding-trigger";
-import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 
 export default function GalleryPage() {
-  const { startOnboarding } = useOnboardingContext();
 
   return (
     <div className="min-h-screen bg-cream">
-      <Navigation onStartTutorial={startOnboarding} />
+      <Navigation />
       <PhotoGallery />
       
       {/* Footer */}
@@ -28,8 +25,6 @@ export default function GalleryPage() {
           </div>
         </div>
       </footer>
-      
-      <OnboardingTrigger />
     </div>
   );
 }
