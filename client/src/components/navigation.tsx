@@ -394,18 +394,43 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             </div>
           </div>
 
-          {/* Mobile Navigation Menu */}
-          <AnimatePresence>
+          {/* Mobile Navigation Menu - 60fps optimized */}
+          <AnimatePresence mode="wait">
             {isMenuOpen && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden"
+                initial={{ 
+                  height: 0, 
+                  opacity: 0,
+                  scaleY: 0,
+                  transformOrigin: "top"
+                }}
+                animate={{ 
+                  height: "auto", 
+                  opacity: 1,
+                  scaleY: 1,
+                  transformOrigin: "top"
+                }}
+                exit={{ 
+                  height: 0, 
+                  opacity: 0,
+                  scaleY: 0,
+                  transformOrigin: "top"
+                }}
+                transition={{ 
+                  type: "spring",
+                  stiffness: 600,
+                  damping: 40,
+                  mass: 0.8,
+                  velocity: 2,
+                  duration: 0.4,
+                  opacity: { duration: 0.2 }
+                }}
+                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden will-change-transform"
                 style={{
                   backdropFilter: 'blur(40px) saturate(150%)',
-                  WebkitBackdropFilter: 'blur(40px) saturate(150%)'
+                  WebkitBackdropFilter: 'blur(40px) saturate(150%)',
+                  transform: 'translateZ(0)', // Force hardware acceleration
+                  willChange: 'transform, opacity, height'
                 }}
               >
                 <div className="p-5">
@@ -416,13 +441,38 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                       return (
                         <motion.div
                           key={href}
-                          initial={{ opacity: 0, y: 20 }}
+                          initial={{ 
+                            opacity: 0, 
+                            y: 24,
+                            scale: 0.9,
+                            rotateX: -15
+                          }}
                           animate={{ 
                             opacity: 1, 
                             y: 0,
-                            transition: { delay: index * 0.05 }
+                            scale: 1,
+                            rotateX: 0,
+                            transition: { 
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 25,
+                              mass: 0.6,
+                              delay: index * 0.08,
+                              duration: 0.5
+                            }
                           }}
-                          exit={{ opacity: 0, y: 20 }}
+                          exit={{ 
+                            opacity: 0, 
+                            y: -20,
+                            scale: 0.8,
+                            rotateX: 15,
+                            transition: { duration: 0.2 }
+                          }}
+                          className="will-change-transform"
+                          style={{
+                            transform: 'translateZ(0)',
+                            willChange: 'transform, opacity'
+                          }}
                         >
                           <a
                             href={href}
