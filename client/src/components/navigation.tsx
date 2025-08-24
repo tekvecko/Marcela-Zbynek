@@ -197,12 +197,47 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     };
   }, [isTutorialActive, isMenuOpen]); // Include necessary dependencies
 
+  // Cleanup body scroll lock on unmount or menu close
+  useEffect(() => {
+    return () => {
+      // Always restore scrolling when component unmounts
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, []);
+
+  // Handle body scroll lock when menu state changes
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+  }, [isMenuOpen]);
+
   const handleLogout = async () => {
     await logout();
     setIsMenuOpen(false);
+    // Restore scrolling
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   };
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleMenu = () => {
+    const newState = !isMenuOpen;
+    setIsMenuOpen(newState);
+    
+    // Prevent body scroll when menu is open on mobile
+    if (newState) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+  };
 
   const LogoElement = ({ className = "w-8 h-8", onClick }: { className?: string; onClick?: () => void }) => (
     <motion.button
@@ -435,7 +470,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                         >
                           <a
                             href={href}
-                            onClick={() => setIsMenuOpen(false)}
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              document.body.style.overflow = '';
+                              document.documentElement.style.overflow = '';
+                            }}
                             className={`flex flex-col items-center space-y-1 sm:space-y-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 ${
                               isActive 
                                 ? 'bg-romantic/10 shadow-sm text-romantic' 
@@ -485,6 +524,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                             onClick={() => {
                               onStartTutorial();
                               setIsMenuOpen(false);
+                              document.body.style.overflow = '';
+                              document.documentElement.style.overflow = '';
                             }}
                             className="p-2 rounded-xl hover:bg-romantic/10 transition-all"
                             title="Spustit návod"
@@ -511,7 +552,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
-            onClick={() => setIsMenuOpen(false)}
+            onClick={() => {
+              setIsMenuOpen(false);
+              document.body.style.overflow = '';
+              document.documentElement.style.overflow = '';
+            }}
           />
         )}
       </AnimatePresence>
