@@ -260,15 +260,15 @@ export default function Navigation({}: NavigationProps = {}) {
         className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
-          y: isVisible ? 0 : -100,
-          opacity: isVisible ? 1 : 0
+          y: (isVisible || isMenuOpen) ? 0 : -100,
+          opacity: (isVisible || isMenuOpen) ? 1 : 0
         }}
         transition={{ 
           type: "spring",
-          stiffness: isVisible ? 300 : 400,
-          damping: isVisible ? 25 : 30,
+          stiffness: (isVisible || isMenuOpen) ? 300 : 400,
+          damping: (isVisible || isMenuOpen) ? 25 : 30,
           mass: 0.8,
-          velocity: isVisible ? 0 : -20
+          velocity: (isVisible || isMenuOpen) ? 0 : -20
         }}
         
       >
