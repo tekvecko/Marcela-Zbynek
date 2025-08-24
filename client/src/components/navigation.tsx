@@ -155,7 +155,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           if (hideTimeout) clearTimeout(hideTimeout);
           if (showTimeout) clearTimeout(showTimeout);
           
-          // Enhanced iOS-like behavior
+          // Enhanced iOS-like behavior with always show on scroll up
           if (currentScrollY < 15) {
             // Always show at very top with iOS smooth transition
             setIsVisible(true);
@@ -167,8 +167,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 setIsMenuOpen(false);
               }, scrollVelocity > 0.3 ? 80 : 150); // iOS-like responsive hiding
             }
-          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.8) {
-            // Show immediately when scrolling up (iOS responsive)
+          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.5) {
+            // Show immediately when scrolling up (iOS responsive) - lowered threshold for better responsivity
             setIsVisible(true);
           } else if (scrollVelocity < 0.04 && currentScrollY > 80) {
             // Auto-show after scroll stops (iOS behavior)
@@ -198,18 +198,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       touchMoveY = e.touches[0].clientY;
       const touchDelta = touchStartY - touchMoveY;
       
-      // iOS-like responsive touch gestures
-      if (Math.abs(touchDelta) > 8) {
+      // iOS-like responsive touch gestures - improved for floating behavior
+      if (Math.abs(touchDelta) > 5) {
         if (touchDelta > 0) {
           // Swiping up - hide nav with iOS timing
-          if (!isTutorialActive && !isMenuOpen) {
+          if (!isTutorialActive && !isMenuOpen && window.scrollY > 60) {
             setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
             }, 50);
           }
         } else {
-          // Swiping down - show nav immediately (iOS style)
+          // Swiping down - show nav immediately (iOS style) - always show regardless of position
           setIsVisible(true);
         }
       }
