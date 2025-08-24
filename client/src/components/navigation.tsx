@@ -159,35 +159,121 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       }
     };
 
-    // Touch events for mobile
+    // Enhanced touch events for mobile devices
     let touchStartY = 0;
+    let touchStartTime = 0;
     let isTouching = false;
+    let touchMoveY = 0;
+    let lastTouchY = 0;
+    let touchVelocity = 0;
+    let touchDirection = 0;
+    let touchHideTimeout: NodeJS.Timeout;
+    let touchShowTimeout: NodeJS.Timeout;
 
     const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return; // Only single touch
+      
       touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+      lastTouchY = touchStartY;
       isTouching = true;
+      touchVelocity = 0;
+      touchDirection = 0;
+      
+      // Clear any pending timeouts
+      if (touchHideTimeout) clearTimeout(touchHideTimeout);
+      if (touchShowTimeout) clearTimeout(touchShowTimeout);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isTouching) return;
-      const touchMoveY = e.touches[0].clientY;
-      const touchDelta = touchStartY - touchMoveY;
+      if (!isTouching || e.touches.length !== 1) return;
       
-      // Simple touch detection
-      if (Math.abs(touchDelta) > 2) {
-        if (touchDelta > 0 && !isTutorialActive && !isMenuOpen && window.scrollY > 50) {
-          // Swiping up - hide nav
+      touchMoveY = e.touches[0].clientY;
+      const currentTime = Date.now();
+      const timeDelta = currentTime - touchStartTime;
+      const touchDelta = touchStartY - touchMoveY;
+      const moveDelta = touchMoveY - lastTouchY;
+      
+      // Calculate touch velocity and direction
+      if (timeDelta > 0) {
+        touchVelocity = Math.abs(moveDelta) / Math.max(timeDelta - (touchStartTime + timeDelta - 16), 1); // 16ms frame
+        touchDirection = moveDelta > 0 ? 1 : -1; // 1 = down, -1 = up
+      }
+      
+      lastTouchY = touchMoveY;
+      
+      // Always show when tutorial is active or menu is open
+      if (isTutorialActive || isMenuOpen) {
+        setIsVisible(true);
+        return;
+      }
+      
+      // Immediate response to touch gestures
+      if (Math.abs(touchDelta) > 3) {
+        if (touchDelta > 0 && touchDirection === -1 && window.scrollY > 50) {
+          // Swiping up with upward finger movement - hide nav
+          touchHideTimeout = setTimeout(() => {
+            setIsVisible(false);
+            setIsMenuOpen(false);
+          }, 50);
+        } else if (touchDelta < -3 && touchDirection === 1) {
+          // Swiping down with downward finger movement - show nav immediately
+          setIsVisible(true);
+        }
+      }
+      
+      // Quick gesture detection for fast swipes
+      if (touchVelocity > 0.5) {
+        if (touchDirection === -1 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
+          // Fast upward swipe - hide immediately
           setIsVisible(false);
           setIsMenuOpen(false);
-        } else if (touchDelta < 0) {
-          // Swiping down - show nav immediately
+        } else if (touchDirection === 1) {
+          // Fast downward swipe - show immediately
           setIsVisible(true);
         }
       }
     };
 
     const handleTouchEnd = () => {
+      if (!isTouching) return;
+      
       isTouching = false;
+      const touchEndTime = Date.now();
+      const totalTime = touchEndTime - touchStartTime;
+      const totalDelta = touchStartY - touchMoveY;
+      
+      // Final gesture evaluation on touch end
+      if (totalTime < 300 && Math.abs(totalDelta) > 10) {
+        // Quick gesture
+        if (totalDelta > 0 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
+          // Quick upward gesture - hide
+          setIsVisible(false);
+          setIsMenuOpen(false);
+        } else if (totalDelta < -10) {
+          // Quick downward gesture - show
+          setIsVisible(true);
+        }
+      } else if (totalTime > 300 && Math.abs(totalDelta) > 30) {
+        // Slow but significant movement
+        if (totalDelta > 0 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
+          // Slow upward movement - delayed hide
+          touchHideTimeout = setTimeout(() => {
+            setIsVisible(false);
+            setIsMenuOpen(false);
+          }, 200);
+        } else if (totalDelta < -30) {
+          // Slow downward movement - show
+          setIsVisible(true);
+        }
+      }
+      
+      // Reset touch variables
+      touchStartY = 0;
+      touchMoveY = 0;
+      lastTouchY = 0;
+      touchVelocity = 0;
+      touchDirection = 0;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -202,6 +288,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       window.removeEventListener('touchend', handleTouchEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
       if (showTimeout) clearTimeout(showTimeout);
+      if (touchHideTimeout) clearTimeout(touchHideTimeout);
+      if (touchShowTimeout) clearTimeout(touchShowTimeout);
     };
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
