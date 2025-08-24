@@ -117,11 +117,10 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Simplified and more reliable scroll handling
+  // Simplified scroll handling - show navigation on ANY upward scroll movement
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
-    let showTimeout: NodeJS.Timeout;
     
     const handleScroll = () => {
       if (!ticking) {
@@ -137,23 +136,19 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             return;
           }
           
-          // Clear any pending timeouts
+          // Clear any pending timeout
           if (hideTimeout) clearTimeout(hideTimeout);
-          if (showTimeout) clearTimeout(showTimeout);
           
-          // Always show when scrolling up, hide when scrolling down
-          if (currentScrollY < 20) {
-            // Always show near top
+          // SHOW navigation on ANY upward scroll movement or when near top
+          if (currentScrollY < 50 || scrollDelta < 0) {
             setIsVisible(true);
-          } else if (scrollDelta < -2) {
-            // Show on upward scroll movement (více tolerantní)
-            setIsVisible(true);
-          } else if (scrollDelta > 5 && currentScrollY > 100) {
-            // Hide when scrolling down significantly
+          } 
+          // Hide only when scrolling down significantly and not near top
+          else if (scrollDelta > 8 && currentScrollY > 150) {
             hideTimeout = setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
-            }, 200);
+            }, 300);
           }
           
           setLastScrollY(currentScrollY);
@@ -163,48 +158,24 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       }
     };
 
-    // Enhanced touch events for mobile devices
+    // Simplified touch events for mobile devices
     let touchStartY = 0;
-    let touchStartTime = 0;
     let isTouching = false;
-    let touchMoveY = 0;
-    let lastTouchY = 0;
-    let touchVelocity = 0;
-    let touchDirection = 0;
     let touchHideTimeout: NodeJS.Timeout;
-    let touchShowTimeout: NodeJS.Timeout;
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return; // Only single touch
-      
+      if (e.touches.length !== 1) return;
       touchStartY = e.touches[0].clientY;
-      touchStartTime = Date.now();
-      lastTouchY = touchStartY;
       isTouching = true;
-      touchVelocity = 0;
-      touchDirection = 0;
       
-      // Clear any pending timeouts
       if (touchHideTimeout) clearTimeout(touchHideTimeout);
-      if (touchShowTimeout) clearTimeout(touchShowTimeout);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isTouching || e.touches.length !== 1) return;
       
-      touchMoveY = e.touches[0].clientY;
-      const currentTime = Date.now();
-      const timeDelta = currentTime - touchStartTime;
-      const touchDelta = touchStartY - touchMoveY;
-      const moveDelta = touchMoveY - lastTouchY;
-      
-      // Calculate touch velocity and direction
-      if (timeDelta > 0) {
-        touchVelocity = Math.abs(moveDelta) / Math.max(timeDelta - (touchStartTime + timeDelta - 16), 1); // 16ms frame
-        touchDirection = moveDelta > 0 ? 1 : -1; // 1 = down, -1 = up
-      }
-      
-      lastTouchY = touchMoveY;
+      const currentTouchY = e.touches[0].clientY;
+      const touchDelta = touchStartY - currentTouchY; // positive = scrolling up, negative = scrolling down
       
       // Always show when tutorial is active, menu is open, or component just mounted
       if (isTutorialActive || isMenuOpen || !isMounted) {
@@ -212,59 +183,23 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         return;
       }
       
-      // Immediate response to touch gestures - show on ANY downward movement
-      if (Math.abs(touchDelta) > 3) {
-        if (touchDelta > 0 && window.scrollY > 100) {
-          // Swiping up (content going up) - hide nav
-          touchHideTimeout = setTimeout(() => {
-            setIsVisible(false);
-            setIsMenuOpen(false);
-          }, 100);
-        } else if (touchDelta < -3) {
-          // Swiping down (content going down) - show nav immediately
-          setIsVisible(true);
-        }
-      }
-      
-      // Direction-based detection for immediate response
-      if (touchDirection === 1) {
-        // ANY downward finger movement - show immediately
+      // SHOW navigation on ANY downward finger movement (content scrolling up)
+      if (touchDelta < -5) {
         setIsVisible(true);
-      } else if (touchDirection === -1 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
-        // Upward finger movement - hide
+      }
+      // Hide when scrolling down (upward finger movement) and not near top
+      else if (touchDelta > 10 && window.scrollY > 100) {
         touchHideTimeout = setTimeout(() => {
           setIsVisible(false);
           setIsMenuOpen(false);
-        }, 100);
+        }, 200);
       }
     };
 
     const handleTouchEnd = () => {
       if (!isTouching) return;
-      
       isTouching = false;
-      const touchEndTime = Date.now();
-      const totalTime = touchEndTime - touchStartTime;
-      const totalDelta = touchStartY - touchMoveY;
-      
-      // Final gesture evaluation on touch end - simplified
-      if (Math.abs(totalDelta) > 5) {
-        if (totalDelta > 0 && window.scrollY > 50 && !isTutorialActive && !isMenuOpen) {
-          // Any upward gesture - hide
-          setIsVisible(false);
-          setIsMenuOpen(false);
-        } else if (totalDelta < 0) {
-          // ANY downward gesture - show immediately
-          setIsVisible(true);
-        }
-      }
-      
-      // Reset touch variables
       touchStartY = 0;
-      touchMoveY = 0;
-      lastTouchY = 0;
-      touchVelocity = 0;
-      touchDirection = 0;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -278,9 +213,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
-      if (showTimeout) clearTimeout(showTimeout);
       if (touchHideTimeout) clearTimeout(touchHideTimeout);
-      if (touchShowTimeout) clearTimeout(touchShowTimeout);
     };
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
