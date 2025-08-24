@@ -173,20 +173,33 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const VideoElement = ({ className = "w-8 h-8", autoPlay = true, muted = true }) => (
-    <video 
-      className={className}
-      autoPlay={autoPlay}
-      loop
-      muted={muted}
-      playsInline
-      style={{
-        backgroundColor: 'transparent',
-        mixBlendMode: 'normal',
-        objectFit: 'contain'
+    <div 
+      className="relative"
+      style={{ 
+        background: 'transparent',
+        isolation: 'isolate'
       }}
     >
-      <source src={likeVideo} type="video/webm" />
-    </video>
+      <video 
+        className={`${className} absolute inset-0`}
+        autoPlay={autoPlay}
+        loop
+        muted={muted}
+        playsInline
+        style={{
+          backgroundColor: 'transparent',
+          background: 'transparent',
+          mixBlendMode: 'screen',
+          objectFit: 'contain',
+          willChange: 'auto',
+          contain: 'layout style paint',
+          filter: 'contrast(1.2) brightness(1.1)',
+          isolation: 'isolate'
+        }}
+      >
+        <source src={likeVideo} type="video/webm" />
+      </video>
+    </div>
   );
 
   return (
