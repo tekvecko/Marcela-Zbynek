@@ -117,47 +117,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Sticky navigation scroll handling - show on upward scroll
+  // Simplified navigation scroll handling for mobile compatibility
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
-    let scrollHistory: number[] = [];
-    let lastDirectionChangeTime = 0;
-    let scrollVelocity = 0;
-    let lastTimestamp = 0;
-    let debounceTimeout: NodeJS.Timeout;
-    
-    // Adaptive thresholds based on device type
-    const isMobileDevice = window.innerWidth <= 768 || 'ontouchstart' in window;
-    const SCROLL_THRESHOLD = isMobileDevice ? 12 : 8; // Higher threshold for mobile
-    const DIRECTION_PERSISTENCE_TIME = isMobileDevice ? 150 : 200; // Faster response on mobile
-    const VELOCITY_THRESHOLD = isMobileDevice ? 1.5 : 2; // Lower velocity threshold for mobile
-    const HISTORY_SIZE = isMobileDevice ? 3 : 5; // Shorter history for mobile
-    const DEBOUNCE_DELAY = isMobileDevice ? 50 : 100; // Faster debounce for mobile
-    
-    const getScrollDirection = (history: number[]): 'up' | 'down' | 'stable' => {
-      if (history.length < 2) return 'stable';
-      
-      const recentHistory = history.slice(-3); // Look at last 3 movements
-      const upCount = recentHistory.filter(delta => delta < -SCROLL_THRESHOLD).length;
-      const downCount = recentHistory.filter(delta => delta > SCROLL_THRESHOLD).length;
-      
-      if (upCount > downCount && upCount >= 2) return 'up';
-      if (downCount > upCount && downCount >= 2) return 'down';
-      return 'stable';
-    };
     
     const handleScroll = () => {
       if (!ticking) {
-        requestAnimationFrame((timestamp) => {
+        requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           const scrollDelta = currentScrollY - lastScrollY;
-          const deltaTime = timestamp - lastTimestamp;
-          
-          // Calculate scroll velocity
-          if (deltaTime > 0) {
-            scrollVelocity = Math.abs(scrollDelta) / deltaTime;
-          }
           
           // Always show when tutorial is active, menu is open, or component just mounted
           if (isTutorialActive || isMenuOpen || !isMounted) {
@@ -167,52 +136,22 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             return;
           }
           
-          // Update scroll history
-          scrollHistory.push(scrollDelta);
-          if (scrollHistory.length > HISTORY_SIZE) {
-            scrollHistory.shift();
-          }
-          
-          // Ignore tiny movements or very rapid changes
-          if (Math.abs(scrollDelta) < 3 || scrollVelocity > VELOCITY_THRESHOLD) {
-            setLastScrollY(currentScrollY);
-            lastTimestamp = timestamp;
-            ticking = false;
-            return;
-          }
-          
-          // Clear timeouts
+          // Clear any pending timeout
           if (hideTimeout) clearTimeout(hideTimeout);
-          if (debounceTimeout) clearTimeout(debounceTimeout);
           
-          const currentDirection = getScrollDirection(scrollHistory);
-          const now = timestamp;
-          
-          // Debounced decision making
-          debounceTimeout = setTimeout(() => {
-            // Show navigation on sustained upward scroll
-            if (currentDirection === 'up' && Math.abs(scrollDelta) >= SCROLL_THRESHOLD) {
-              // Check if enough time has passed since last direction change
-              if (now - lastDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
-                setIsVisible(true);
-                lastDirectionChangeTime = now;
-              }
-            }
-            // Hide when scrolling down with sustained movement
-            else if (currentDirection === 'down' && Math.abs(scrollDelta) >= SCROLL_THRESHOLD) {
-              // Check if enough time has passed since last direction change
-              if (now - lastDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
-                hideTimeout = setTimeout(() => {
-                  setIsVisible(false);
-                  setIsMenuOpen(false);
-                }, 200);
-                lastDirectionChangeTime = now;
-              }
-            }
-          }, DEBOUNCE_DELAY);
+          // Show navigation on ANY upward scroll movement (even small ones)
+          if (scrollDelta < -2) {
+            setIsVisible(true);
+          } 
+          // Hide when scrolling down more than threshold
+          else if (scrollDelta > 8) {
+            hideTimeout = setTimeout(() => {
+              setIsVisible(false);
+              setIsMenuOpen(false);
+            }, 100); // Shorter delay for mobile responsiveness
+          }
           
           setLastScrollY(currentScrollY);
-          lastTimestamp = timestamp;
           ticking = false;
         });
         ticking = true;
@@ -224,7 +163,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       if (hideTimeout) clearTimeout(hideTimeout);
-      if (debounceTimeout) clearTimeout(debounceTimeout);
     };
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
