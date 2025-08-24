@@ -138,9 +138,9 @@ export default function Navigation({}: NavigationProps = {}) {
       const dynamicDuration = Math.max(0.15, Math.min(0.45, 0.35 - velocity * 0.3));
       setAnimationDuration(dynamicDuration);
       
-      // Always show when menu is open
+      // Always show when menu is open and prevent any scroll-based hiding
       if (isMenuOpen) {
-        setIsVisible(true);
+        if (!isVisible) setIsVisible(true);
         localLastScrollY = currentScrollY;
         lastScrollTime = currentTime;
         return;
@@ -216,8 +216,9 @@ export default function Navigation({}: NavigationProps = {}) {
     const newState = !isMenuOpen;
     setIsMenuOpen(newState);
     
-    // Prevent body scroll when menu is open on mobile
+    // When opening menu, ensure panel is visible and stable
     if (newState) {
+      setIsVisible(true);
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
     } else {
@@ -257,7 +258,7 @@ export default function Navigation({}: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
+        className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: (isVisible || isMenuOpen) ? 0 : -100,
@@ -265,9 +266,9 @@ export default function Navigation({}: NavigationProps = {}) {
         }}
         transition={{ 
           type: "spring",
-          stiffness: (isVisible || isMenuOpen) ? 300 : 400,
-          damping: (isVisible || isMenuOpen) ? 25 : 30,
-          mass: 0.8,
+          stiffness: isMenuOpen ? 500 : ((isVisible) ? 300 : 400),
+          damping: isMenuOpen ? 35 : ((isVisible) ? 25 : 30),
+          mass: isMenuOpen ? 0.6 : 0.8,
           velocity: (isVisible || isMenuOpen) ? 0 : -20
         }}
         
