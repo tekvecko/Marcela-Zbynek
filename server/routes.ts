@@ -74,18 +74,18 @@ const upload = multer({
       'image/heif',
       'image/webp'
     ];
-
+    
     // Check file type
     console.log('File mime type:', file.mimetype);
     if (!allowedTypes.includes(file.mimetype)) {
       return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
     }
-
+    
     // Additional filename validation
     if (!file.originalname || file.originalname.length > 255) {
       return cb(new Error('Neplatný název souboru'));
     }
-
+    
     // Check for suspicious file extensions
     const suspiciousExtensions = ['.exe', '.bat', '.sh', '.php', '.js', '.html'];
     const fileName = file.originalname.toLowerCase();
@@ -94,7 +94,7 @@ const upload = multer({
         return cb(new Error('Podezřelý typ souboru'));
       }
     }
-
+    
     cb(null, true);
   }
 });
@@ -117,7 +117,7 @@ const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
   };
 
   req.serviceStatus = serviceStatus;
-
+  
   // Přidej warning headers při výpadku
   if (!serviceStatus.database) {
     res.setHeader('X-Service-Warning', 'Database-Unavailable');
@@ -133,7 +133,7 @@ const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-
+  
   // Použij monitoring middleware globálně
   app.use('/api', serviceMonitoringMiddleware);
 
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Simulace výpadku pro testování záložního systému
   app.post('/api/admin/simulate-outage', async (req, res) => {
     const { outageType, duration } = req.body;
-
+    
     try {
       switch (outageType) {
         case 'database':
@@ -183,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             delete process.env.SIMULATE_DB_OUTAGE;
           }, duration || 30000);
           break;
-
+          
         case 'ai':
           // Simuluje nedostupnost AI služby
           process.env.SIMULATE_AI_OUTAGE = 'true';
@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             delete process.env.SIMULATE_AI_OUTAGE;
           }, duration || 30000);
           break;
-
+          
         case 'storage':
           // Simuluje nedostupnost file storage
           process.env.SIMULATE_STORAGE_OUTAGE = 'true';
@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }, duration || 30000);
           break;
       }
-
+      
       res.json({ 
         message: `Simulován výpadek typu: ${outageType} na ${duration || 30000}ms`,
         fallbackInstructions: {
@@ -365,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file.size > 5 * 1024 * 1024) {
         return res.status(400).json({ message: "Soubor je příliš velký. Maximum je 5MB." });
       }
-
+      
       if (!req.file.originalname || req.file.originalname.trim() === '') {
         return res.status(400).json({ message: "Neplatný název souboru" });
       }
@@ -603,10 +603,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use atomic toggle operation to prevent race conditions
       const result = await storage.togglePhotoLike(sanitizedPhotoId, voterName);
-
+      
       // Get updated photo data
       const updatedPhoto = await storage.getUploadedPhoto(sanitizedPhotoId);
-
+      
       res.json({ 
         ...updatedPhoto, 
         userHasLiked: result.userHasLiked, 
@@ -637,11 +637,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { gameId } = req.params;
       const game = await miniGamesStorage.getMiniGame(gameId);
-
+      
       if (!game) {
         return res.status(404).json({ message: "Mini-game not found" });
       }
-
+      
       res.json(game);
     } catch (error) {
       console.error("Error fetching mini-game:", error);
@@ -653,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { gameId } = req.params;
       const { score, maxScore, timeSpent, gameData } = req.body;
-
+      
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
       }
@@ -693,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { gameId } = req.params;
       const limit = parseInt(req.query.limit as string) || 10;
-
+      
       const scores = await miniGamesStorage.getTopScores(gameId, limit);
       res.json(scores);
     } catch (error) {
@@ -705,11 +705,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mini-games/:gameId/my-score", authenticateUser, async (req: AuthRequest, res) => {
     try {
       const { gameId } = req.params;
-
+      
       if (!req.user?.email) {
         return res.status(401).json({ message: "Authentication required" });
       }
-
+      
       const score = await miniGamesStorage.getPlayerScore(gameId, req.user.email);
       res.json(score || null);
     } catch (error) {
@@ -723,12 +723,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const games = await miniGamesStorage.getMiniGames();
       const allScores: any[] = [];
-
+      
       for (const game of games) {
         const scores = await miniGamesStorage.getMiniGameScores(game.id);
         allScores.push(...scores.map(score => ({ ...score, gameTitle: game.title, gamePoints: game.points })));
       }
-
+      
       res.json(allScores);
     } catch (error) {
       console.error("Error fetching all mini-game scores:", error);
