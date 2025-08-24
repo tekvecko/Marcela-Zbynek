@@ -322,7 +322,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="fixed top-4 left-4 right-4 z-50 max-w-6xl mx-auto"
+        className="fixed top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: isVisible ? 0 : -100,
@@ -336,11 +336,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           velocity: isVisible ? 0 : -40,
           bounce: 0.15
         }}
+        style={{
+          position: 'fixed',
+          zIndex: 9999
+        }}
       >
-        <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden" style={{
+        <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden pointer-events-auto" style={{
           backdropFilter: 'blur(40px) saturate(180%)',
           WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+          position: 'relative',
+          zIndex: 10000
         }}>
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-5 sm:px-7 py-4">
@@ -595,7 +601,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
             onClick={() => setIsMenuOpen(false)}
           />
         )}
