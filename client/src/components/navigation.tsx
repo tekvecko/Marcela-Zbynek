@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
-import likeVideo from "../assets/like.webm";
+import likeGif from "../../../like.gif";
 
 interface NavigationProps {
   onStartTutorial?: () => void;
@@ -172,22 +172,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const VideoElement = ({ className = "w-8 h-8", autoPlay = true, muted = true }) => (
-    <video 
+  const LogoElement = ({ className = "w-8 h-8" }) => (
+    <img 
+      src={likeGif}
+      alt="M&Z Logo"
       className={className}
-      autoPlay={autoPlay}
-      loop
-      muted={muted}
-      playsInline
       style={{
-        backgroundColor: 'rgba(0,0,0,0)',
-        background: 'none',
-        filter: 'drop-shadow(0 0 0 transparent)',
-        WebkitMaskComposite: 'source-over'
+        backgroundColor: 'transparent',
+        objectFit: 'contain'
       }}
-    >
-      <source src={likeVideo} type="video/webm" />
-    </video>
+    />
   );
 
   return (
@@ -218,7 +212,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center space-x-2"
               >
-                <VideoElement className="w-8 h-8" />
+                <LogoElement className="w-8 h-8" />
                 <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
                   M&Z
                 </div>
