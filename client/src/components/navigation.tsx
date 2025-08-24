@@ -259,16 +259,17 @@ export default function Navigation({}: NavigationProps = {}) {
       {/* Modern Floating Navigation */}
       <motion.nav
         className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
-        initial={{ opacity: 0 }}
+        initial={{ y: -100, opacity: 0 }}
         animate={{ 
+          y: (isVisible || isMenuOpen) ? 0 : -100,
           opacity: (isVisible || isMenuOpen) ? 1 : 0
         }}
-        style={{
-          transform: (isVisible || isMenuOpen) ? 'translateY(0)' : 'translateY(-100%)'
-        }}
         transition={{ 
-          duration: 0.3,
-          ease: "easeInOut"
+          type: "spring",
+          stiffness: isMenuOpen ? 500 : ((isVisible) ? 300 : 400),
+          damping: isMenuOpen ? 35 : ((isVisible) ? 25 : 30),
+          mass: isMenuOpen ? 0.6 : 0.8,
+          velocity: (isVisible || isMenuOpen) ? 0 : -20
         }}
         
       >
