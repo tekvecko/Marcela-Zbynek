@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -39,67 +40,69 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
   const authMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
-      const payload = isLogin 
-        ? { email: data.email, password: data.password }
-        : data;
-
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(error.message || "Chyba při autentifikaci");
       }
 
       return response.json();
     },
     onSuccess: (data) => {
-      const token = data.token; // Now using JWT tokens
-      localStorage.setItem("auth_token", token);
-      localStorage.setItem("auth_user", JSON.stringify(data.user));
-      onSuccess(data.user, token);
       toast({
-        title: isLogin ? "Přihlášení úspěšné!" : "Registrace úspěšná!",
-        description: `Vítejte${data.user.firstName ? `, ${data.user.firstName}` : ""}!`,
+        title: isLogin ? "✅ Přihlášení úspěšné" : "✅ Registrace úspěšná",
+        description: isLogin 
+          ? "Byli jste úspěšně přihlášeni" 
+          : "Váš účet byl vytvořen a byli jste přihlášeni",
       });
+      onSuccess(data.user, data.token);
     },
     onError: (error: Error) => {
       toast({
-        title: "Chyba",
+        title: "❌ Chyba",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    try {
-      const schema = isLogin ? loginSchema : registerSchema;
-      schema.parse(formData);
-      authMutation.mutate(formData);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-      }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const schema = isLogin ? loginSchema : registerSchema;
+    const result = schema.safeParse(formData);
+    
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.errors.forEach((error) => {
+        if (error.path[0]) {
+          newErrors[error.path[0] as string] = error.message;
+        }
+      });
+      setErrors(newErrors);
+      return;
+    }
+    
+    setErrors({});
+    authMutation.mutate(formData);
+  };
+
+  const clearField = (field: string) => {
+    if (formData[field as keyof typeof formData]) {
+      setFormData(prev => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -135,8 +138,8 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
               </CardTitle>
               <p className="text-charcoal/60">
                 {isLogin 
-                  ? "Přihlaste se pro účast v fotografických výzvách" 
-                  : "Vytvořte si účet pro účast v Photo Quest"
+                  ? "Přihlaste se pro pokračování" 
+                  : "Vytvořte si nový účet"
                 }
               </p>
             </motion.div>
@@ -144,99 +147,91 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <AnimatePresence mode="wait">
-                {!isLogin && (
-                  <motion.div
-                    key="register-fields"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="grid grid-cols-2 gap-4 pb-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">Jméno</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-charcoal/40" />
-                          <Input
-                            id="firstName"
-                            type="text"
-                            placeholder="Vaše jméno"
-                            value={formData.firstName}
-                            onChange={(e) => handleInputChange("firstName", e.target.value)}
-                            className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-romantic/20"
-                            data-testid="input-firstName"
-                          />
-                        </div>
-                        <AnimatePresence>
-                          {errors.firstName && (
-                            <motion.p 
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                              className="text-red-500 text-sm"
-                            >
-                              {errors.firstName}
-                            </motion.p>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Příjmení</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-charcoal/40" />
-                          <Input
-                            id="lastName"
-                            type="text"
-                            placeholder="Vaše příjmení"
-                            value={formData.lastName}
-                            onChange={(e) => handleInputChange("lastName", e.target.value)}
-                            className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-romantic/20"
-                            data-testid="input-lastName"
-                          />
-                        </div>
-                        <AnimatePresence>
-                          {errors.lastName && (
-                            <motion.p 
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                              className="text-red-500 text-sm"
-                            >
-                              {errors.lastName}
-                            </motion.p>
-                          )}
-                        </AnimatePresence>
-                      </div>
+              {!isLogin && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Křestní jméno</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal/50" size={18} />
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        placeholder="Vaše křestní jméno"
+                        data-testid="input-firstName"
+                      />
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
+                    <AnimatePresence>
+                      {errors.firstName && (
+                        <motion.p
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-red-500 text-sm"
+                        >
+                          {errors.firstName}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Příjmení</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal/50" size={18} />
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        placeholder="Vaše příjmení"
+                        data-testid="input-lastName"
+                      />
+                    </div>
+                    <AnimatePresence>
+                      {errors.lastName && (
+                        <motion.p
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-red-500 text-sm"
+                        >
+                          {errors.lastName}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-charcoal/40" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal/50" size={18} />
                   <Input
                     id="email"
+                    name="email"
                     type="email"
-                    placeholder="vas.email@example.com"
                     value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-romantic/20"
+                    onChange={handleInputChange}
+                    className="pl-10"
+                    placeholder="vas@email.cz"
                     data-testid="input-email"
                   />
                 </div>
                 <AnimatePresence>
                   {errors.email && (
-                    <motion.p 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
                       className="text-red-500 text-sm"
                     >
@@ -245,27 +240,28 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                   )}
                 </AnimatePresence>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Heslo</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-charcoal/40" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal/50" size={18} />
                   <Input
                     id="password"
+                    name="password"
                     type="password"
-                    placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="pl-10 transition-all duration-200 focus:ring-2 focus:ring-romantic/20"
+                    onChange={handleInputChange}
+                    className="pl-10"
+                    placeholder="Zadejte heslo"
                     data-testid="input-password"
                   />
                 </div>
                 <AnimatePresence>
                   {errors.password && (
-                    <motion.p 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
                       className="text-red-500 text-sm"
                     >
