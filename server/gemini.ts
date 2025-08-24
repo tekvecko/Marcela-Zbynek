@@ -83,10 +83,19 @@ Odpovězte ve formátu JSON s těmito poli:
           },
           required: ["isValid", "confidence", "explanation"],
         },
+        maxOutputTokens: 1000,
       },
     });
 
-    const response = await model.generateContent(contents);
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Gemini API timeout')), 30000); // 30 second timeout
+    });
+
+    const response = await Promise.race([
+      model.generateContent(contents),
+      timeoutPromise
+    ]) as any;
 
     const rawJson = response.response.text();
     console.log(`Gemini verification response (attempt ${retryCount + 1}): ${rawJson.substring(0, 500)}...`);
@@ -100,6 +109,8 @@ Odpovězte ve formátu JSON s těmito poli:
           .replace(/\n+/g, ' ') // Replace newlines with spaces
           .replace(/\r+/g, ' ') // Replace carriage returns with spaces
           .replace(/\s+/g, ' ') // Collapse multiple spaces
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove additional control characters
+          .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '') // Keep only printable characters
           .trim();
         
         // Try to find the JSON object boundaries
@@ -112,7 +123,11 @@ Odpovězte ve formátu JSON s těmito poli:
           // Additional cleanup for common issues
           jsonString = jsonString
             .replace(/,\s*}/g, '}') // Remove trailing commas
-            .replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+            .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+            .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove any remaining control chars
+            .replace(/\\\\/g, '\\'); // Fix double backslashes
+          
+          console.log('Cleaned JSON string:', jsonString.substring(0, 200) + '...');
           
           const result: PhotoVerificationResult = JSON.parse(jsonString);
           
@@ -142,10 +157,12 @@ Odpovězte ve formátu JSON s těmito poli:
     if (retryCount < maxRetries && 
         (errorMessage.includes('Failed to parse') || 
          errorMessage.includes('Invalid JSON') ||
+         errorMessage.includes('parsování odpovědi') ||
          errorMessage.includes('503') ||
-         errorMessage.includes('429'))) {
+         errorMessage.includes('429') ||
+         errorMessage.includes('RATE_LIMIT_EXCEEDED'))) {
       console.log(`Retrying Gemini verification (attempt ${retryCount + 2}/${maxRetries + 1})...`);
-      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1))); // Exponential backoff
       return attemptGeminiVerification(imagePath, challengeTitle, challengeDescription, retryCount + 1);
     }
     
