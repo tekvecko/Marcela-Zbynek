@@ -18,6 +18,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [viewportWidth, setViewportWidth] = useState(0);
   const [devicePerformance, setDevicePerformance] = useState<'high' | 'medium' | 'low'>('high');
   const [userInteractionPattern, setUserInteractionPattern] = useState<'touch' | 'mouse' | 'hybrid'>('mouse');
+  const [scrollVelocity, setScrollVelocity] = useState(0);
+  const [animationDuration, setAnimationDuration] = useState(0.3);
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
@@ -117,28 +119,43 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Mobile-first navigation scroll handling
+  // Dynamic navigation scroll handling with velocity-based animation
   useEffect(() => {
     let hideTimeout: NodeJS.Timeout;
     let localLastScrollY = 0;
     let isScrolling = false;
+    let lastScrollTime = Date.now();
     
     const handleScrollStart = () => {
       isScrolling = true;
+      lastScrollTime = Date.now();
     };
     
     const handleScrollEnd = () => {
       isScrolling = false;
+      setScrollVelocity(0);
     };
     
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const scrollDelta = currentScrollY - localLastScrollY;
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastScrollTime;
+      
+      // Calculate scroll velocity (pixels per millisecond)
+      const velocity = deltaTime > 0 ? Math.abs(scrollDelta) / deltaTime : 0;
+      setScrollVelocity(velocity);
+      
+      // Calculate dynamic animation duration based on velocity
+      // Faster scroll = faster animation (0.1-0.6 seconds range)
+      const dynamicDuration = Math.max(0.1, Math.min(0.6, 0.4 - velocity * 0.5));
+      setAnimationDuration(dynamicDuration);
       
       // Always show when tutorial is active or menu is open
       if (isTutorialActive || isMenuOpen) {
         setIsVisible(true);
         localLastScrollY = currentScrollY;
+        lastScrollTime = currentTime;
         return;
       }
       
@@ -154,17 +171,20 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       if (scrollDelta < -2) {
         setIsVisible(true);
       } 
-      // Hide when scrolling down (much lower threshold for immediate hiding)
+      // Hide when scrolling down (immediate response)
       else if (scrollDelta > 3) {
+        // Use velocity-based delay - faster scroll = immediate hiding
+        const delay = Math.max(20, Math.min(150, 150 - velocity * 100));
         hideTimeout = setTimeout(() => {
           if (!isScrolling && !isMenuOpen && !isTutorialActive) {
             setIsVisible(false);
             setIsMenuOpen(false);
           }
-        }, 100);
+        }, delay);
       }
       
       localLastScrollY = currentScrollY;
+      lastScrollTime = currentTime;
     };
 
     // Use both scroll and touch events for better mobile compatibility
@@ -225,12 +245,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           opacity: isVisible ? 1 : 0
         }}
         transition={{ 
-          type: "spring", 
-          stiffness: isVisible ? 400 : 600, 
-          damping: isVisible ? 28 : 40,
-          mass: 0.6,
-          velocity: isVisible ? 0 : -40,
-          bounce: 0.15
+          type: "tween",
+          duration: animationDuration,
+          ease: scrollVelocity > 0.5 ? "easeOut" : "easeInOut"
         }}
         
       >
