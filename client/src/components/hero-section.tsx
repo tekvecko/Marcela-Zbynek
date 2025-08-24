@@ -19,7 +19,7 @@ export default function HeroSection() {
       </div>
 
       {/* Hero content section */}
-      <section className="relative z-10 min-h-screen flex items-center justify-center pt-4">
+      <section className="relative z-[1] min-h-screen flex items-center justify-center pt-4">
         {/* Floating hearts decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 text-romantic text-2xl animate-float opacity-30">❤️</div>

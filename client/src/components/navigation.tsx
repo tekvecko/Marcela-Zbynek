@@ -13,6 +13,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [devicePerformance, setDevicePerformance] = useState<'high' | 'medium' | 'low'>('high');
@@ -100,8 +101,11 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return baseConfig[devicePerformance];
   }, [devicePerformance]);
 
-  // Check if tutorial is active
+  // Check if tutorial is active and ensure component is mounted
   useEffect(() => {
+    setIsMounted(true);
+    setIsVisible(true); // Vždy zobrazit navigaci po načtení
+    
     const checkTutorial = () => {
       setIsTutorialActive(document.querySelector('[data-onboarding-active]') !== null);
     };
@@ -113,116 +117,192 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced iOS-like scroll handling
+  // Sticky navigation scroll handling - show on upward scroll
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
-    let showTimeout: NodeJS.Timeout;
-    let scrollVelocity = 0;
-    let lastScrollTime = Date.now();
     let scrollHistory: number[] = [];
+    let lastDirectionChangeTime = 0;
+    let scrollVelocity = 0;
+    let lastTimestamp = 0;
+    let debounceTimeout: NodeJS.Timeout;
+    
+    const SCROLL_THRESHOLD = 8; // Minimum scroll distance to react
+    const DIRECTION_PERSISTENCE_TIME = 200; // ms to wait before changing direction
+    const VELOCITY_THRESHOLD = 2; // Ignore rapid direction changes
+    const HISTORY_SIZE = 5; // Track last N scroll events
+    const DEBOUNCE_DELAY = 100; // ms to debounce scroll events
+    
+    const getScrollDirection = (history: number[]): 'up' | 'down' | 'stable' => {
+      if (history.length < 2) return 'stable';
+      
+      const recentHistory = history.slice(-3); // Look at last 3 movements
+      const upCount = recentHistory.filter(delta => delta < -SCROLL_THRESHOLD).length;
+      const downCount = recentHistory.filter(delta => delta > SCROLL_THRESHOLD).length;
+      
+      if (upCount > downCount && upCount >= 2) return 'up';
+      if (downCount > upCount && downCount >= 2) return 'down';
+      return 'stable';
+    };
     
     const handleScroll = () => {
       if (!ticking) {
-        requestAnimationFrame(() => {
+        requestAnimationFrame((timestamp) => {
           const currentScrollY = window.scrollY;
-          const currentTime = Date.now();
-          const timeDelta = currentTime - lastScrollTime;
           const scrollDelta = currentScrollY - lastScrollY;
+          const deltaTime = timestamp - lastTimestamp;
           
-          // Calculate scroll velocity (pixels per ms)
-          scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
+          // Calculate scroll velocity
+          if (deltaTime > 0) {
+            scrollVelocity = Math.abs(scrollDelta) / deltaTime;
+          }
           
-          // Track scroll history for better decision making
-          scrollHistory.push(scrollDelta);
-          if (scrollHistory.length > 5) scrollHistory.shift();
-          
-          // Calculate average scroll direction from history
-          const avgScrollDelta = scrollHistory.reduce((a, b) => a + b, 0) / scrollHistory.length;
-          const isScrollingDown = avgScrollDelta > 0;
-          const isScrollingUp = avgScrollDelta < 0;
-          
-          // Always show when tutorial is active or menu is open
-          if (isTutorialActive || isMenuOpen) {
+          // Always show when tutorial is active, menu is open, or component just mounted
+          if (isTutorialActive || isMenuOpen || !isMounted) {
             setIsVisible(true);
             setLastScrollY(currentScrollY);
-            lastScrollTime = currentTime;
             ticking = false;
             return;
           }
           
-          // Clear any pending timeouts
-          if (hideTimeout) clearTimeout(hideTimeout);
-          if (showTimeout) clearTimeout(showTimeout);
-          
-          // Enhanced iOS-like behavior
-          if (currentScrollY < 15) {
-            // Always show at very top with iOS smooth transition
-            setIsVisible(true);
-          } else if (isScrollingDown && Math.abs(avgScrollDelta) > 1.5 && scrollVelocity > 0.08) {
-            // Hide when consistently scrolling down (iOS sensitivity)
-            if (currentScrollY > 60) {
-              hideTimeout = setTimeout(() => {
-                setIsVisible(false);
-                setIsMenuOpen(false);
-              }, scrollVelocity > 0.3 ? 80 : 150); // iOS-like responsive hiding
-            }
-          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.8) {
-            // Show immediately when scrolling up (iOS responsive)
-            setIsVisible(true);
-          } else if (scrollVelocity < 0.04 && currentScrollY > 80) {
-            // Auto-show after scroll stops (iOS behavior)
-            showTimeout = setTimeout(() => setIsVisible(true), 1200);
+          // Update scroll history
+          scrollHistory.push(scrollDelta);
+          if (scrollHistory.length > HISTORY_SIZE) {
+            scrollHistory.shift();
           }
           
+          // Ignore tiny movements or very rapid changes
+          if (Math.abs(scrollDelta) < 3 || scrollVelocity > VELOCITY_THRESHOLD) {
+            setLastScrollY(currentScrollY);
+            lastTimestamp = timestamp;
+            ticking = false;
+            return;
+          }
+          
+          // Clear timeouts
+          if (hideTimeout) clearTimeout(hideTimeout);
+          if (debounceTimeout) clearTimeout(debounceTimeout);
+          
+          const currentDirection = getScrollDirection(scrollHistory);
+          const now = timestamp;
+          
+          // Debounced decision making
+          debounceTimeout = setTimeout(() => {
+            // Show navigation on sustained upward scroll
+            if (currentDirection === 'up' && Math.abs(scrollDelta) >= SCROLL_THRESHOLD) {
+              // Check if enough time has passed since last direction change
+              if (now - lastDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
+                setIsVisible(true);
+                lastDirectionChangeTime = now;
+              }
+            }
+            // Hide when scrolling down with sustained movement
+            else if (currentDirection === 'down' && Math.abs(scrollDelta) >= SCROLL_THRESHOLD) {
+              // Check if enough time has passed since last direction change
+              if (now - lastDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
+                hideTimeout = setTimeout(() => {
+                  setIsVisible(false);
+                  setIsMenuOpen(false);
+                }, 200);
+                lastDirectionChangeTime = now;
+              }
+            }
+          }, DEBOUNCE_DELAY);
+          
           setLastScrollY(currentScrollY);
-          lastScrollTime = currentTime;
+          lastTimestamp = timestamp;
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    // Touch events for mobile (iOS-like)
+    // Touch events for sticky navigation
     let touchStartY = 0;
-    let touchMoveY = 0;
     let isTouching = false;
+    let touchHideTimeout: NodeJS.Timeout;
+    let touchHistory: number[] = [];
+    let lastTouchDirectionChangeTime = 0;
+    let touchDebounceTimeout: NodeJS.Timeout;
+
+    const getTouchDirection = (history: number[]): 'up' | 'down' | 'stable' => {
+      if (history.length < 2) return 'stable';
+      
+      const recentHistory = history.slice(-3);
+      const upCount = recentHistory.filter(delta => delta < -SCROLL_THRESHOLD).length;
+      const downCount = recentHistory.filter(delta => delta > SCROLL_THRESHOLD).length;
+      
+      if (upCount > downCount && upCount >= 2) return 'up';
+      if (downCount > upCount && downCount >= 2) return 'down';
+      return 'stable';
+    };
 
     const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
       touchStartY = e.touches[0].clientY;
       isTouching = true;
+      
+      if (touchHideTimeout) clearTimeout(touchHideTimeout);
+      if (touchDebounceTimeout) clearTimeout(touchDebounceTimeout);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isTouching) return;
-      touchMoveY = e.touches[0].clientY;
-      const touchDelta = touchStartY - touchMoveY;
+      if (!isTouching || e.touches.length !== 1) return;
       
-      // iOS-like responsive touch gestures
-      if (Math.abs(touchDelta) > 8) {
-        if (touchDelta > 0) {
-          // Swiping up - hide nav with iOS timing
-          if (!isTutorialActive && !isMenuOpen) {
-            setTimeout(() => {
+      const currentTouchY = e.touches[0].clientY;
+      const touchDelta = touchStartY - currentTouchY;
+      
+      // Always show when tutorial is active, menu is open, or component just mounted
+      if (isTutorialActive || isMenuOpen || !isMounted) {
+        setIsVisible(true);
+        return;
+      }
+      
+      // Update touch history
+      touchHistory.push(touchDelta);
+      if (touchHistory.length > HISTORY_SIZE) {
+        touchHistory.shift();
+      }
+      
+      // Ignore tiny movements
+      if (Math.abs(touchDelta) < 5) {
+        return;
+      }
+      
+      // Clear timeouts
+      if (touchHideTimeout) clearTimeout(touchHideTimeout);
+      if (touchDebounceTimeout) clearTimeout(touchDebounceTimeout);
+      
+      const currentDirection = getTouchDirection(touchHistory);
+      const now = Date.now();
+      
+      // Debounced touch decision making
+      touchDebounceTimeout = setTimeout(() => {
+        // Show navigation on sustained upward scroll (finger moving down)
+        if (currentDirection === 'up' && Math.abs(touchDelta) >= SCROLL_THRESHOLD) {
+          if (now - lastTouchDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
+            setIsVisible(true);
+            lastTouchDirectionChangeTime = now;
+          }
+        }
+        // Hide when scrolling down (finger moving up)
+        else if (currentDirection === 'down' && Math.abs(touchDelta) >= SCROLL_THRESHOLD) {
+          if (now - lastTouchDirectionChangeTime > DIRECTION_PERSISTENCE_TIME) {
+            touchHideTimeout = setTimeout(() => {
               setIsVisible(false);
               setIsMenuOpen(false);
-            }, 50);
+            }, 150);
+            lastTouchDirectionChangeTime = now;
           }
-        } else {
-          // Swiping down - show nav immediately (iOS style)
-          setIsVisible(true);
         }
-      }
+      }, DEBOUNCE_DELAY);
     };
 
     const handleTouchEnd = () => {
+      if (!isTouching) return;
       isTouching = false;
-      // iOS-like auto-show after touch interaction
-      setTimeout(() => {
-        if (!isTutorialActive && !isMenuOpen && window.scrollY > 80) {
-          setIsVisible(true);
-        }
-      }, 800);
+      touchStartY = 0;
+      touchHistory = [];
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -236,7 +316,9 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
       if (hideTimeout) clearTimeout(hideTimeout);
-      if (showTimeout) clearTimeout(showTimeout);
+      if (touchHideTimeout) clearTimeout(touchHideTimeout);
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      if (touchDebounceTimeout) clearTimeout(touchDebounceTimeout);
     };
   }, [lastScrollY, isMenuOpen, isTutorialActive]);
 
@@ -278,7 +360,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="fixed top-4 left-4 right-4 z-50 max-w-6xl mx-auto"
+        className="sticky top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
           y: isVisible ? 0 : -100,
@@ -292,11 +374,14 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           velocity: isVisible ? 0 : -40,
           bounce: 0.15
         }}
+        
       >
-        <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden" style={{
+        <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden pointer-events-auto" style={{
           backdropFilter: 'blur(40px) saturate(180%)',
           WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+          position: 'relative',
+          zIndex: 10000
         }}>
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-5 sm:px-7 py-4">
@@ -551,7 +636,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
             onClick={() => setIsMenuOpen(false)}
           />
         )}
