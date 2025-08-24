@@ -106,83 +106,51 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsVisible(true); // Vždy zobrazit navigaci po načtení
   }, []);
 
-  // Dynamic navigation scroll handling with velocity-based animation
+  // Android-like navigation scroll handling
   useEffect(() => {
-    let hideTimeout: NodeJS.Timeout;
     let localLastScrollY = 0;
-    let isScrolling = false;
-    let lastScrollTime = Date.now();
-    
-    const handleScrollStart = () => {
-      isScrolling = true;
-      lastScrollTime = Date.now();
-    };
-    
-    const handleScrollEnd = () => {
-      isScrolling = false;
-      setScrollVelocity(0);
-    };
+    let ticking = false;
     
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDelta = currentScrollY - localLastScrollY;
-      const currentTime = Date.now();
-      const deltaTime = currentTime - lastScrollTime;
-      
-      // Calculate scroll velocity (pixels per millisecond)
-      const velocity = deltaTime > 0 ? Math.abs(scrollDelta) / deltaTime : 0;
-      setScrollVelocity(velocity);
-      
-      // Calculate dynamic animation duration based on velocity
-      // Faster scroll = faster animation (0.15-0.45 seconds range for smoother feel)
-      const dynamicDuration = Math.max(0.15, Math.min(0.45, 0.35 - velocity * 0.3));
-      setAnimationDuration(dynamicDuration);
-      
-      // Always show when menu is open and prevent any scroll-based hiding
-      if (isMenuOpen) {
-        if (!isVisible) setIsVisible(true);
-        localLastScrollY = currentScrollY;
-        lastScrollTime = currentTime;
-        return;
-      }
-      
-      // Clear any pending timeout
-      if (hideTimeout) clearTimeout(hideTimeout);
-      
-      // Show navigation on upward scroll - IMMEDIATE response to any upward movement
-      if (scrollDelta < 0) {
-        setIsVisible(true);
-      } 
-      // Hide when scrolling down - HIGHER threshold for hiding
-      else if (scrollDelta > 15) {
-        // Use velocity-based delay - faster scroll = immediate hiding
-        const delay = Math.max(50, Math.min(200, 200 - velocity * 150));
-        hideTimeout = setTimeout(() => {
-          if (!isScrolling && !isMenuOpen) {
-            setIsVisible(false);
-            setIsMenuOpen(false);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const scrollDelta = currentScrollY - localLastScrollY;
+          
+          // Always show when menu is open
+          if (isMenuOpen) {
+            if (!isVisible) setIsVisible(true);
+            localLastScrollY = currentScrollY;
+            ticking = false;
+            return;
           }
-        }, delay);
+          
+          // Android-like behavior: immediate response to scroll direction
+          if (currentScrollY <= 10) {
+            // Always show at top of page
+            setIsVisible(true);
+          } else if (scrollDelta > 5) {
+            // Hide on downward scroll (small threshold like Android)
+            setIsVisible(false);
+          } else if (scrollDelta < -5) {
+            // Show on upward scroll (small threshold like Android)
+            setIsVisible(true);
+          }
+          
+          localLastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
       }
-      
-      localLastScrollY = currentScrollY;
-      lastScrollTime = currentTime;
     };
 
-    // Use both scroll and touch events for better mobile compatibility
+    // Use passive scroll listener for better performance
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('touchstart', handleScrollStart, { passive: true });
-    window.addEventListener('touchmove', handleScroll, { passive: true });
-    window.addEventListener('touchend', handleScrollEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('touchstart', handleScrollStart);
-      window.removeEventListener('touchmove', handleScroll);
-      window.removeEventListener('touchend', handleScrollEnd);
-      if (hideTimeout) clearTimeout(hideTimeout);
     };
-  }, [isMenuOpen]); // Include necessary dependencies
+  }, [isMenuOpen, isVisible]);
 
   // Cleanup body scroll lock on unmount or menu close
   useEffect(() => {
@@ -265,11 +233,9 @@ export default function Navigation({}: NavigationProps = {}) {
           opacity: (isVisible || isMenuOpen) ? 1 : 0
         }}
         transition={{ 
-          type: "spring",
-          stiffness: isMenuOpen ? 500 : ((isVisible) ? 300 : 400),
-          damping: isMenuOpen ? 35 : ((isVisible) ? 25 : 30),
-          mass: isMenuOpen ? 0.6 : 0.8,
-          velocity: (isVisible || isMenuOpen) ? 0 : -20
+          type: "tween",
+          duration: 0.25,
+          ease: [0.25, 0.46, 0.45, 0.94], // Android-like easing curve
         }}
         
       >
@@ -375,30 +341,43 @@ export default function Navigation({}: NavigationProps = {}) {
             </div>
           </div>
 
-          {/* Mobile Navigation Menu - simplified */}
-          <AnimatePresence>
+          {/* Mobile Navigation Menu - 60fps optimized */}
+          <AnimatePresence mode="wait">
             {isMenuOpen && (
               <motion.div
                 initial={{ 
                   height: 0, 
-                  opacity: 0
+                  opacity: 0,
+                  scaleY: 0,
+                  transformOrigin: "top"
                 }}
                 animate={{ 
                   height: "auto", 
-                  opacity: 1
+                  opacity: 1,
+                  scaleY: 1,
+                  transformOrigin: "top"
                 }}
                 exit={{ 
                   height: 0, 
-                  opacity: 0
+                  opacity: 0,
+                  scaleY: 0,
+                  transformOrigin: "top"
                 }}
                 transition={{ 
-                  duration: 0.3,
-                  ease: "easeInOut"
+                  type: "spring",
+                  stiffness: 600,
+                  damping: 40,
+                  mass: 0.8,
+                  velocity: 2,
+                  duration: 0.4,
+                  opacity: { duration: 0.2 }
                 }}
-                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden"
+                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden will-change-transform"
                 style={{
                   backdropFilter: 'blur(40px) saturate(150%)',
-                  WebkitBackdropFilter: 'blur(40px) saturate(150%)'
+                  WebkitBackdropFilter: 'blur(40px) saturate(150%)',
+                  transform: 'translateZ(0)', // Force hardware acceleration
+                  willChange: 'transform, opacity, height'
                 }}
               >
                 <div className="p-3 sm:p-5">
@@ -407,7 +386,41 @@ export default function Navigation({}: NavigationProps = {}) {
                       const isActive = exact ? location === href : location.startsWith(href);
                       if (href === '/admin' && !user?.isAdmin) return null;
                       return (
-                        <div key={href}>
+                        <motion.div
+                          key={href}
+                          initial={{ 
+                            opacity: 0, 
+                            y: 24,
+                            scale: 0.9,
+                            rotateX: -15
+                          }}
+                          animate={{ 
+                            opacity: 1, 
+                            y: 0,
+                            scale: 1,
+                            rotateX: 0,
+                            transition: { 
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 25,
+                              mass: 0.6,
+                              delay: index * 0.08,
+                              duration: 0.5
+                            }
+                          }}
+                          exit={{ 
+                            opacity: 0, 
+                            y: -20,
+                            scale: 0.8,
+                            rotateX: 15,
+                            transition: { duration: 0.2 }
+                          }}
+                          className="will-change-transform"
+                          style={{
+                            transform: 'translateZ(0)',
+                            willChange: 'transform, opacity'
+                          }}
+                        >
                           <a
                             href={href}
                             onClick={() => {
@@ -424,10 +437,14 @@ export default function Navigation({}: NavigationProps = {}) {
                             <span className="text-xl sm:text-2xl">{icon}</span>
                             <span className="text-xs font-medium text-center leading-tight">{label}</span>
                             {isActive && (
-                              <div className="w-4 h-0.5 bg-romantic rounded-full" />
+                              <motion.div
+                                className="w-4 h-0.5 bg-romantic rounded-full"
+                                layoutId="mobileActiveTab"
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
                             )}
                           </a>
-                        </div>
+                        </motion.div>
                       );
                     })}
                   </div>
