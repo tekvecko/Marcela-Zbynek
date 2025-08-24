@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import likeGif from "../../../like.gif";
 
 interface NavigationProps {
@@ -13,19 +14,91 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [devicePerformance, setDevicePerformance] = useState<'high' | 'medium' | 'low'>('high');
+  const [userInteractionPattern, setUserInteractionPattern] = useState<'touch' | 'mouse' | 'hybrid'>('mouse');
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
+  const isMobile = useIsMobile();
   
-  // Navigation items with Czech labels
-  const navigationItems = [
-    { href: '/', label: 'Domů', icon: '🏠', exact: true },
-    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true },
-    { href: '/mini-games', label: 'Mini-hry', icon: '🎮', exact: false },
-    { href: '/leaderboards', label: 'Žebříčky', icon: '🏆', exact: true },
-    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true },
-    { href: '/details', label: 'Detaily', icon: '💒', exact: true },
-    { href: '/admin', label: 'Admin', icon: '⚙️', exact: true }
-  ];
+  // Enhanced adaptive viewport detection
+  const viewportBreakpoint = useMemo(() => {
+    if (viewportWidth < 475) return 'xs';
+    if (viewportWidth < 640) return 'sm';
+    if (viewportWidth < 768) return 'md';
+    if (viewportWidth < 1024) return 'lg';
+    if (viewportWidth < 1280) return 'xl';
+    return '2xl';
+  }, [viewportWidth]);
+
+  // Navigation items with priority and adaptive behavior
+  const navigationItems = useMemo(() => [
+    { href: '/', label: 'Domů', icon: '🏠', exact: true, priority: 1, essential: true },
+    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true, priority: 2, essential: true },
+    { href: '/mini-games', label: 'Mini-hry', icon: '🎮', exact: false, priority: 3, essential: false },
+    { href: '/leaderboards', label: 'Žebříčky', icon: '🏆', exact: true, priority: 4, essential: false },
+    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true, priority: 2, essential: true },
+    { href: '/details', label: 'Detaily', icon: '💒', exact: true, priority: 3, essential: false },
+    { href: '/admin', label: 'Admin', icon: '⚙️', exact: true, priority: 5, essential: false }
+  ], []);
+
+  // Smart navigation item filtering based on viewport and context
+  const visibleNavigationItems = useMemo(() => {
+    const maxItems = {
+      'xs': 2, 'sm': 3, 'md': 4, 'lg': 6, 'xl': 7, '2xl': 7
+    }[viewportBreakpoint];
+
+    let filteredItems = navigationItems
+      .filter(item => item.href !== '/admin' || user?.isAdmin)
+      .sort((a, b) => a.priority - b.priority);
+
+    // Always include essential items and current page
+    const essentialItems = filteredItems.filter(item => 
+      item.essential || location === item.href || 
+      (!item.exact && location.startsWith(item.href))
+    );
+
+    if (essentialItems.length >= maxItems) {
+      return essentialItems.slice(0, maxItems);
+    }
+
+    // Fill remaining slots with non-essential items
+    const remainingSlots = maxItems - essentialItems.length;
+    const nonEssentialItems = filteredItems
+      .filter(item => !essentialItems.includes(item))
+      .slice(0, remainingSlots);
+
+    return [...essentialItems, ...nonEssentialItems];
+  }, [navigationItems, viewportBreakpoint, user?.isAdmin, location]);
+
+  // Adaptive animation configurations based on device performance
+  const animationConfig = useMemo(() => {
+    const baseConfig = {
+      high: {
+        type: "spring" as const,
+        stiffness: 400,
+        damping: 28,
+        mass: 0.6,
+        bounce: 0.15,
+        duration: 0.3
+      },
+      medium: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 35,
+        mass: 0.8,
+        bounce: 0.1,
+        duration: 0.4
+      },
+      low: {
+        type: "tween" as const,
+        duration: 0.5,
+        ease: "easeInOut" as const
+      }
+    };
+    
+    return baseConfig[devicePerformance];
+  }, [devicePerformance]);
 
   // Check if tutorial is active
   useEffect(() => {
@@ -174,18 +247,31 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const LogoElement = ({ className = "w-8 h-8" }) => (
-    <img 
-      src={likeGif}
-      alt="M&Z Logo"
-      className={`${className} logo-slow-animation`}
+  const LogoElement = ({ className = "w-8 h-8", onClick }: { className?: string; onClick?: () => void }) => (
+    <motion.button
+      onClick={onClick}
+      className={`${className} logo-toggle-button focus:outline-none focus:ring-2 focus:ring-romantic/20 rounded-lg`}
+      data-testid="logo-menu-toggle"
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       style={{
         backgroundColor: 'transparent',
-        objectFit: 'contain',
-        animationDuration: '3s',
-        animationTimingFunction: 'ease-in-out'
+        border: 'none',
+        padding: '2px'
       }}
-    />
+    >
+      <img 
+        src={likeGif}
+        alt="M&Z Logo - Menu Toggle"
+        className={`w-full h-full transition-all duration-300 ${isMenuOpen ? 'logo-animate' : 'logo-static'}`}
+        style={{
+          backgroundColor: 'transparent',
+          objectFit: 'contain',
+          imageRendering: 'crisp-edges'
+        }}
+      />
+    </motion.button>
   );
 
   return (
@@ -214,20 +300,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         }}>
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-5 sm:px-7 py-4">
-            {/* Logo with single like.webm video */}
-            <a href="/" className="flex items-center space-x-2 group">
-              <motion.div
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="flex items-center space-x-3"
-              >
-                <LogoElement className="w-8 h-8" />
-                <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
-                  M&Z
-                </div>
-              </motion.div>
-            </a>
+            {/* Logo as Menu Toggle */}
+            <div className="flex items-center space-x-3">
+              <LogoElement 
+                className="w-8 h-8" 
+                onClick={toggleMenu}
+              />
+              <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
+                M&Z
+              </div>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
@@ -243,6 +325,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           ? 'bg-romantic/10 text-romantic' 
                           : 'hover:bg-romantic/5 text-gray-700'
                       }`}
+                      data-testid={`nav-link-${href.replace('/', '') || 'home'}`}
                     >
                       <span className="text-lg">{icon}</span>
                       <span className="font-medium text-sm">{label}</span>
@@ -259,53 +342,8 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
               })}
             </div>
 
-            {/* Mobile Menu Button & User Menu */}
+            {/* User Menu */}
             <div className="flex items-center space-x-2">
-              {/* Mobile Menu Toggle */}
-              <motion.button
-                className="lg:hidden p-3 rounded-2xl bg-white/60 backdrop-blur-xl shadow-lg border border-white/40"
-                onClick={toggleMenu}
-                whileTap={{ scale: 0.92, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
-                whileHover={{ scale: 1.08, backgroundColor: "rgba(255, 255, 255, 0.7)" }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                data-testid="mobile-menu-toggle"
-                style={{
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)'
-                }}
-              >
-                <motion.div
-                  animate={{ 
-                    rotate: isMenuOpen ? 180 : 0
-                  }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="w-6 h-6 flex flex-col justify-center items-center">
-                    <motion.div
-                      className="w-4 h-0.5 bg-romantic rounded-full mb-1"
-                      animate={{ 
-                        rotate: isMenuOpen ? 45 : 0,
-                        y: isMenuOpen ? 6 : 0
-                      }}
-                    />
-                    <motion.div
-                      className="w-4 h-0.5 bg-romantic rounded-full mb-1"
-                      animate={{ 
-                        opacity: isMenuOpen ? 0 : 1
-                      }}
-                    />
-                    <motion.div
-                      className="w-4 h-0.5 bg-romantic rounded-full"
-                      animate={{ 
-                        rotate: isMenuOpen ? -45 : 0,
-                        y: isMenuOpen ? -6 : 0
-                      }}
-                    />
-                  </div>
-                </motion.div>
-              </motion.button>
-
-              {/* User Menu */}
               <AnimatePresence mode="wait">
                 {!user ? (
                   <motion.div
