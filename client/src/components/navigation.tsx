@@ -151,17 +151,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       if (hideTimeout) clearTimeout(hideTimeout);
       
       // Show navigation on upward scroll
-      if (scrollDelta < -3) {
+      if (scrollDelta < -2) {
         setIsVisible(true);
       } 
-      // Hide when scrolling down
-      else if (scrollDelta > 10) {
+      // Hide when scrolling down (much lower threshold for immediate hiding)
+      else if (scrollDelta > 3) {
         hideTimeout = setTimeout(() => {
           if (!isScrolling && !isMenuOpen && !isTutorialActive) {
             setIsVisible(false);
             setIsMenuOpen(false);
           }
-        }, 300);
+        }, 100);
       }
       
       localLastScrollY = currentScrollY;
