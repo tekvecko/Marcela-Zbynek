@@ -1,15 +1,12 @@
 {
-  "name": "Svatební Web Marcela & Zbyněk",
-  "short_name": "Svatba M&Z",
-  "description": "Svatební web s foto výzvami pro Marcelu a Zbyňka",
+  "name": "Marcela ❤️ Zbyněk",
+  "short_name": "M❤️Z Svatba",
+  "description": "Svatební web s foto questy a galerií",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#dc2626",
-  "categories": ["lifestyle", "photo"],
-  "lang": "cs",
-  "scope": "/",
+  "background_color": "#fdf8f6",
+  "theme_color": "#e91e63",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/icon-192.svg",
@@ -18,10 +15,27 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.svg",
+      "src": "/icon-512.svg", 
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social"],
+  "shortcuts": [
+    {
+      "name": "Photo Quest",
+      "short_name": "Quest",
+      "description": "Plňte fotografické úkoly",
+      "url": "/photo-quest",
+      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Galerie",
+      "short_name": "Galerie", 
+      "description": "Prohlédněte si svatební fotky",
+      "url": "/gallery",
+      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
     }
   ]
 }
