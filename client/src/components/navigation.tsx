@@ -113,40 +113,22 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced iOS-like scroll handling
+  // Simplified and more reliable scroll handling
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
     let showTimeout: NodeJS.Timeout;
-    let scrollVelocity = 0;
-    let lastScrollTime = Date.now();
-    let scrollHistory: number[] = [];
     
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
-          const currentTime = Date.now();
-          const timeDelta = currentTime - lastScrollTime;
           const scrollDelta = currentScrollY - lastScrollY;
-          
-          // Calculate scroll velocity (pixels per ms)
-          scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
-          
-          // Track scroll history for better decision making
-          scrollHistory.push(scrollDelta);
-          if (scrollHistory.length > 5) scrollHistory.shift();
-          
-          // Calculate average scroll direction from history
-          const avgScrollDelta = scrollHistory.reduce((a, b) => a + b, 0) / scrollHistory.length;
-          const isScrollingDown = avgScrollDelta > 0;
-          const isScrollingUp = avgScrollDelta < 0;
           
           // Always show when tutorial is active or menu is open
           if (isTutorialActive || isMenuOpen) {
             setIsVisible(true);
             setLastScrollY(currentScrollY);
-            lastScrollTime = currentTime;
             ticking = false;
             return;
           }
@@ -155,37 +137,30 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           if (hideTimeout) clearTimeout(hideTimeout);
           if (showTimeout) clearTimeout(showTimeout);
           
-          // Enhanced iOS-like behavior with always show on scroll up
-          if (currentScrollY < 15) {
-            // Always show at very top with iOS smooth transition
+          // Simplified logic - show immediately on any upward scroll
+          if (currentScrollY < 10) {
+            // Always show at very top
             setIsVisible(true);
-          } else if (isScrollingDown && Math.abs(avgScrollDelta) > 1.5 && scrollVelocity > 0.08) {
-            // Hide when consistently scrolling down (iOS sensitivity)
-            if (currentScrollY > 60) {
-              hideTimeout = setTimeout(() => {
-                setIsVisible(false);
-                setIsMenuOpen(false);
-              }, scrollVelocity > 0.3 ? 80 : 150); // iOS-like responsive hiding
-            }
-          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.3) {
-            // Show immediately when scrolling up (iOS responsive) - improved threshold
+          } else if (scrollDelta < -1) {
+            // Show immediately when scrolling up (any upward movement)
             setIsVisible(true);
-          } else if (scrollVelocity < 0.04 && currentScrollY > 80) {
-            // Auto-show after scroll stops (iOS behavior)
-            showTimeout = setTimeout(() => setIsVisible(true), 1200);
+          } else if (scrollDelta > 2 && currentScrollY > 50) {
+            // Hide when scrolling down consistently
+            hideTimeout = setTimeout(() => {
+              setIsVisible(false);
+              setIsMenuOpen(false);
+            }, 100);
           }
           
           setLastScrollY(currentScrollY);
-          lastScrollTime = currentTime;
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    // Touch events for mobile (iOS-like)
+    // Touch events for mobile
     let touchStartY = 0;
-    let touchMoveY = 0;
     let isTouching = false;
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -195,21 +170,17 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isTouching) return;
-      touchMoveY = e.touches[0].clientY;
+      const touchMoveY = e.touches[0].clientY;
       const touchDelta = touchStartY - touchMoveY;
       
-      // iOS-like responsive touch gestures - improved for floating behavior
-      if (Math.abs(touchDelta) > 3) {
-        if (touchDelta > 0) {
-          // Swiping up - hide nav with iOS timing
-          if (!isTutorialActive && !isMenuOpen && window.scrollY > 60) {
-            setTimeout(() => {
-              setIsVisible(false);
-              setIsMenuOpen(false);
-            }, 50);
-          }
-        } else if (touchDelta < -3) {
-          // Swiping down - show nav immediately (iOS style) - always show regardless of position
+      // Simple touch detection
+      if (Math.abs(touchDelta) > 2) {
+        if (touchDelta > 0 && !isTutorialActive && !isMenuOpen && window.scrollY > 50) {
+          // Swiping up - hide nav
+          setIsVisible(false);
+          setIsMenuOpen(false);
+        } else if (touchDelta < 0) {
+          // Swiping down - show nav immediately
           setIsVisible(true);
         }
       }
@@ -217,12 +188,6 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
     const handleTouchEnd = () => {
       isTouching = false;
-      // iOS-like auto-show after touch interaction
-      setTimeout(() => {
-        if (!isTutorialActive && !isMenuOpen && window.scrollY > 80) {
-          setIsVisible(true);
-        }
-      }, 800);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
