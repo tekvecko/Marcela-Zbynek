@@ -4,6 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS-like logo animation slowdown */
+@keyframes slowGif {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.logo-slow-animation {
+  animation: slowGif 4s ease-in-out infinite;
+  filter: contrast(1.1) brightness(1.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(210 25% 7.8431%);

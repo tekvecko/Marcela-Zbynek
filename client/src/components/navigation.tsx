@@ -40,7 +40,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced Android-like scroll handling
+  // Enhanced iOS-like scroll handling
   useEffect(() => {
     let ticking = false;
     let hideTimeout: NodeJS.Timeout;
@@ -82,24 +82,24 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
           if (hideTimeout) clearTimeout(hideTimeout);
           if (showTimeout) clearTimeout(showTimeout);
           
-          // Enhanced Android-like behavior
-          if (currentScrollY < 20) {
-            // Always show at very top with smooth transition
-            showTimeout = setTimeout(() => setIsVisible(true), 50);
-          } else if (isScrollingDown && Math.abs(avgScrollDelta) > 2 && scrollVelocity > 0.1) {
-            // Hide when consistently scrolling down with sufficient velocity
-            if (currentScrollY > 80) {
+          // Enhanced iOS-like behavior
+          if (currentScrollY < 15) {
+            // Always show at very top with iOS smooth transition
+            setIsVisible(true);
+          } else if (isScrollingDown && Math.abs(avgScrollDelta) > 1.5 && scrollVelocity > 0.08) {
+            // Hide when consistently scrolling down (iOS sensitivity)
+            if (currentScrollY > 60) {
               hideTimeout = setTimeout(() => {
                 setIsVisible(false);
                 setIsMenuOpen(false);
-              }, scrollVelocity > 0.5 ? 100 : 200); // Faster hide for fast scrolling
+              }, scrollVelocity > 0.3 ? 80 : 150); // iOS-like responsive hiding
             }
-          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 1) {
-            // Show immediately when scrolling up (even small movements)
+          } else if (isScrollingUp && Math.abs(avgScrollDelta) > 0.8) {
+            // Show immediately when scrolling up (iOS responsive)
             setIsVisible(true);
-          } else if (scrollVelocity < 0.05 && currentScrollY > 100) {
-            // Auto-show after scroll stops (Android behavior)
-            showTimeout = setTimeout(() => setIsVisible(true), 1500);
+          } else if (scrollVelocity < 0.04 && currentScrollY > 80) {
+            // Auto-show after scroll stops (iOS behavior)
+            showTimeout = setTimeout(() => setIsVisible(true), 1200);
           }
           
           setLastScrollY(currentScrollY);
@@ -110,7 +110,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       }
     };
 
-    // Touch events for mobile (Android-like)
+    // Touch events for mobile (iOS-like)
     let touchStartY = 0;
     let touchMoveY = 0;
     let isTouching = false;
@@ -125,16 +125,18 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
       touchMoveY = e.touches[0].clientY;
       const touchDelta = touchStartY - touchMoveY;
       
-      // Immediate response to touch gestures
-      if (Math.abs(touchDelta) > 10) {
+      // iOS-like responsive touch gestures
+      if (Math.abs(touchDelta) > 8) {
         if (touchDelta > 0) {
-          // Swiping up - hide nav
+          // Swiping up - hide nav with iOS timing
           if (!isTutorialActive && !isMenuOpen) {
-            setIsVisible(false);
-            setIsMenuOpen(false);
+            setTimeout(() => {
+              setIsVisible(false);
+              setIsMenuOpen(false);
+            }, 50);
           }
         } else {
-          // Swiping down - show nav
+          // Swiping down - show nav immediately (iOS style)
           setIsVisible(true);
         }
       }
@@ -142,12 +144,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
 
     const handleTouchEnd = () => {
       isTouching = false;
-      // Auto-show after touch interaction ends
+      // iOS-like auto-show after touch interaction
       setTimeout(() => {
-        if (!isTutorialActive && !isMenuOpen && window.scrollY > 100) {
+        if (!isTutorialActive && !isMenuOpen && window.scrollY > 80) {
           setIsVisible(true);
         }
-      }, 1000);
+      }, 800);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -176,10 +178,12 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
     <img 
       src={likeGif}
       alt="M&Z Logo"
-      className={className}
+      className={`${className} logo-slow-animation`}
       style={{
         backgroundColor: 'transparent',
-        objectFit: 'contain'
+        objectFit: 'contain',
+        animationDuration: '3s',
+        animationTimingFunction: 'ease-in-out'
       }}
     />
   );
@@ -196,21 +200,27 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
         }}
         transition={{ 
           type: "spring", 
-          stiffness: isVisible ? 300 : 500, 
-          damping: isVisible ? 25 : 35,
-          mass: 0.8,
-          velocity: isVisible ? 0 : -50
+          stiffness: isVisible ? 400 : 600, 
+          damping: isVisible ? 28 : 40,
+          mass: 0.6,
+          velocity: isVisible ? 0 : -40,
+          bounce: 0.15
         }}
       >
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+        <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden" style={{
+          backdropFilter: 'blur(40px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+        }}>
           {/* Main Navigation Bar */}
-          <div className="flex items-center justify-between px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between px-5 sm:px-7 py-4">
             {/* Logo with single like.webm video */}
             <a href="/" className="flex items-center space-x-2 group">
               <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center space-x-2"
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="flex items-center space-x-3"
               >
                 <LogoElement className="w-8 h-8" />
                 <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
@@ -253,11 +263,16 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
             <div className="flex items-center space-x-2">
               {/* Mobile Menu Toggle */}
               <motion.button
-                className="lg:hidden p-2 rounded-xl bg-romantic/10"
+                className="lg:hidden p-3 rounded-2xl bg-white/60 backdrop-blur-xl shadow-lg border border-white/40"
                 onClick={toggleMenu}
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.92, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+                whileHover={{ scale: 1.08, backgroundColor: "rgba(255, 255, 255, 0.7)" }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 data-testid="mobile-menu-toggle"
+                style={{
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)'
+                }}
               >
                 <motion.div
                   animate={{ 
@@ -349,10 +364,14 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="lg:hidden border-t border-romantic/10 bg-white/50 backdrop-blur-xl overflow-hidden"
+                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden"
+                style={{
+                  backdropFilter: 'blur(40px) saturate(150%)',
+                  WebkitBackdropFilter: 'blur(40px) saturate(150%)'
+                }}
               >
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="p-5">
+                  <div className="grid grid-cols-2 gap-3">
                     {navigationItems.map(({ href, label, icon, exact }, index) => {
                       const isActive = exact ? location === href : location.startsWith(href);
                       if (href === '/admin' && !user?.isAdmin) return null;
@@ -370,7 +389,7 @@ export default function Navigation({ onStartTutorial }: NavigationProps = {}) {
                           <a
                             href={href}
                             onClick={() => setIsMenuOpen(false)}
-                            className={`flex flex-col items-center space-y-2 p-3 rounded-xl transition-all duration-200 ${
+                            className={`flex flex-col items-center space-y-2 p-4 rounded-2xl transition-all duration-300 ${
                               isActive 
                                 ? 'bg-romantic/10 shadow-sm text-romantic' 
                                 : 'hover:bg-romantic/5 text-gray-700'
