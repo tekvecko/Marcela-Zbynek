@@ -14,14 +14,14 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
     return res.redirect(`https://${req.header('host')}${req.url}`);
   }
-  
+
   // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  
+
   // Content Security Policy
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
@@ -31,7 +31,7 @@ app.use((req, res, next) => {
     "img-src 'self' data: https:",
     "connect-src 'self'"
   ].join('; '));
-  
+
   next();
 });
 
@@ -50,11 +50,11 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      
+
       // Only log response data in development and sanitize sensitive data
       if (capturedJsonResponse && process.env.NODE_ENV === 'development') {
         const sanitizedResponse = { ...capturedJsonResponse };
-        
+
         // Remove sensitive fields from logs
         if (sanitizedResponse.email) sanitizedResponse.email = '***@***.***';
         if (sanitizedResponse.access_token) sanitizedResponse.access_token = '[REDACTED]';
@@ -62,7 +62,7 @@ app.use((req, res, next) => {
         if (sanitizedResponse.id && sanitizedResponse.id.length > 10) {
           sanitizedResponse.id = sanitizedResponse.id.substring(0, 6) + '***';
         }
-        
+
         logLine += ` :: ${JSON.stringify(sanitizedResponse)}`;
       }
 
@@ -79,7 +79,7 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
-  
+
   // Inicializuj výchozí fotovýzvy a mini-hry po startu databáze
   await initializeDefaultChallenges();
   await initializeDefaultMiniGames();

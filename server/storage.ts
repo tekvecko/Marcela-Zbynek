@@ -562,7 +562,7 @@ export class MemStorage implements IStorage {
           break;
         }
       }
-      
+
       // Update photo likes count atomically
       const newLikeCount = Math.max(0, photo.likes - 1);
       photo.likes = newLikeCount;
@@ -706,7 +706,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
-    return Array.from(this.authSessions.values()).find(session => 
+    return Array.from(this.authSessions.values()).find(session =>
       session.sessionToken === token && session.expiresAt > new Date()
     );
   }
@@ -860,118 +860,12 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeDefaultChallenges(): Promise<void> {
     const defaultChallenges: InsertQuestChallenge[] = [
-      // Obřadní momenty - vysoké body
-      {
-        title: 'Okamžik "Ano" 💍',
-        description: 'Zachyťte moment výměny slibů nebo "ano"',
-        targetPhotos: 1,
-        points: 25,
-        isActive: true,
-      },
-      {
-        title: 'První manželský polibek 💋',
-        description: 'Ten magický první polibek jako manželé',
-        targetPhotos: 1,
-        points: 25,
-        isActive: true,
-      },
-      {
-        title: 'Výměna prstenů ✨',
-        description: 'Detail snubních prstenů na rukou',
-        targetPhotos: 1,
-        points: 20,
-        isActive: true,
-      },
-      {
-        title: 'Gratulace novomanželům 🎉',
-        description: 'Moment gratulací a objímání po obřadu',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-
-      // Rodinné a skupinové fotky
-      {
-        title: 'Rodinné foto nevěsty 👨‍👩‍👧‍👦',
-        description: 'Rodina nevěsty pohromadě',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-      {
-        title: 'Rodinné foto ženicha 👨‍👩‍👧‍👦',
-        description: 'Rodina ženicha pohromadě',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-      {
-        title: 'Skupinové foto všech hostů 📸',
-        description: 'Všichni svatební hosté na jedné fotce',
-        targetPhotos: 1,
-        points: 20,
-        isActive: true,
-      },
-      {
-        title: 'Svědci v akci 🤵‍♂️👰‍♀️',
-        description: 'Svědci během obřadu nebo při podpisu',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-
-      // Večerní zábava
+      // Klíčové momenty
       {
         title: 'První tanec 💃',
         description: 'Náš speciální první tanec jako manželé',
         targetPhotos: 1,
         points: 20,
-        isActive: true,
-      },
-      {
-        title: 'Tanec s rodiči 👫',
-        description: 'Nevěsta s tatínkem nebo ženich s maminkou',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-      {
-        title: 'Zábava na parketu 🕺',
-        description: 'Hosté si užívají na tanečním parketu',
-        targetPhotos: 1,
-        points: 12,
-        isActive: true,
-      },
-      {
-        title: 'Krájení dortu 🎂',
-        description: 'Společné krájení svatebního dortu',
-        targetPhotos: 1,
-        points: 18,
-        isActive: true,
-      },
-
-      // Emotivní momenty
-      {
-        title: 'Šťastné slzy 😭',
-        description: 'Emoce a dojetí během svatby',
-        targetPhotos: 1,
-        points: 20,
-        isActive: true,
-      },
-      {
-        title: 'Smích a radost 😊',
-        description: 'Upřímné momenty štěstí a smíchu',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-
-      // Detaily a přípravy
-      {
-        title: 'Svatební šaty detail 👗',
-        description: 'Krásný detail svatebních šatů',
-        targetPhotos: 1,
-        points: 15,
         isActive: true,
       },
       {
@@ -989,21 +883,33 @@ export class DatabaseStorage implements IStorage {
         isActive: true,
       },
       {
-        title: 'Dekorace a výzdoba 🎀',
-        description: 'Svatební dekorace a výzdoba prostoru',
+        title: 'Krájení dortu 🎂',
+        description: 'Společné krájení svatebního dortu',
         targetPhotos: 1,
-        points: 10,
+        points: 18,
         isActive: true,
       },
       {
-        title: 'Přípravy před obřadem 💄',
-        description: 'Nevěsta nebo ženich se připravují',
+        title: 'Výměna prstenů ✨',
+        description: 'Detail snubních prstenů na rukou',
         targetPhotos: 1,
-        points: 15,
+        points: 20,
         isActive: true,
       },
-
-      // Zábavné a kreativní
+      {
+        title: 'První manželský polibek 💋',
+        description: 'Ten magický první polibek jako manželé',
+        targetPhotos: 1,
+        points: 25,
+        isActive: true,
+      },
+      {
+        title: 'Okamžik "Ano" 💍',
+        description: 'Zachyťte moment výměny slibů nebo "ano"',
+        targetPhotos: 1,
+        points: 25,
+        isActive: true,
+      },
       {
         title: 'Házen kytice 🎯',
         description: 'Házení svatební kytice svobodným',
@@ -1012,10 +918,66 @@ export class DatabaseStorage implements IStorage {
         isActive: true,
       },
       {
-        title: 'Děti na svatbě 👶',
-        description: 'Roztomilé momenty s dětmi hostů',
+        title: 'Skupinové foto všech hostů 📸',
+        description: 'Všichni svatební hosté na jedné fotce',
         targetPhotos: 1,
-        points: 12,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Šťastné slzy 😭',
+        description: 'Emoce a dojetí během svatby',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Černobílá klasika ⚫⚪',
+        description: 'Artistic černobílá fotka z jakéhokoliv momentu',
+        targetPhotos: 1,
+        points: 20,
+        isActive: true,
+      },
+      {
+        title: 'Smích a radost 😊',
+        description: 'Upřímné momenty štěstí a smíchu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Rodinné foto nevěsty 👨‍👩‍👧‍👦',
+        description: 'Rodina nevěsty pohromadě',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Rodinné foto ženicha 👨‍👩‍👧‍👦',
+        description: 'Rodina ženicha pohromadě',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Svatební šaty detail 👗',
+        description: 'Krásný detail svatebních šatů',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Tanec s rodiči 👫',
+        description: 'Nevěsta s tatínkem nebo ženich s maminkou',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Detail rukou 🤝',
+        description: 'Krásný detail propojených rukou novomanželů',
+        targetPhotos: 1,
+        points: 15,
         isActive: true,
       },
       {
@@ -1026,31 +988,143 @@ export class DatabaseStorage implements IStorage {
         isActive: true,
       },
       {
+        title: 'Přípravy před obřadem 💄',
+        description: 'Nevěsta nebo ženich se připravují',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Svědci v akci 🤵‍♂️👰‍♀️',
+        description: 'Svědci během obřadu nebo při podpisu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Gratulace novomanželům 🎉',
+        description: 'Moment gratulací a objímání po obřadu',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Zábava na parketu 🕺',
+        description: 'Hosté si užívají na tanečním parketu',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
         title: 'Toast a přípitek 🥂',
         description: 'Projevy a přípitek na novomanžele',
         targetPhotos: 1,
         points: 12,
         isActive: true,
       },
-
-      // Kreativní úhly
       {
-        title: 'Černobílá klasika ⚫⚪',
-        description: 'Artistic černobílá fotka z jakéhokoliv momentu',
+        title: 'Děti na svatbě 👶',
+        description: 'Roztomilé momenty s dětmi hostů',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Dekorace a výzdoba 🎀',
+        description: 'Svatební dekorace a výzdoba prostoru',
+        targetPhotos: 1,
+        points: 10,
+        isActive: true,
+      },
+      {
+        title: 'Konfety a rýže 🎊',
+        description: 'Házení rýže, konfet nebo okvětních lístků',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      },
+      {
+        title: 'Generační foto 👴👵',
+        description: 'Tři generace na jedné fotce',
         targetPhotos: 1,
         points: 20,
         isActive: true,
       },
       {
-        title: 'Detail rukou 🤝',
-        description: 'Krásný detail propojených rukou novomanželů',
+        title: 'Podvazek tradice 🎀',
+        description: 'Tradice s podvazkem',
         targetPhotos: 1,
         points: 15,
         isActive: true,
       },
+      {
+        title: 'Družička v akci 👭',
+        description: 'Družičky pomáhají nebo se baví',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Místo obřadu 🏰',
+        description: 'Zachyťte místo kde se koná svatební obřad',
+        targetPhotos: 1,
+        points: 10,
+        isActive: true,
+      },
+      {
+        title: 'Hudba živá 🎵',
+        description: 'Hudebníci nebo DJ při práci',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Svatební auto 🚗',
+        description: 'Auto nevěsty nebo ženicha s výzdobou',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Svatební boty 👠',
+        description: 'Detail svatebních bot nevěsty nebo ženicha',
+        targetPhotos: 1,
+        points: 10,
+        isActive: true,
+      },
+      {
+        title: 'Detox slz 😢',
+        description: 'Někdo se dojme až do slz štěstím',
+        targetPhotos: 1,
+        points: 18,
+        isActive: true,
+      },
+      {
+        title: 'Svatební svíčky 🕯️',
+        description: 'Rituál se svatebními svíčkami',
+        targetPhotos: 1,
+        points: 18,
+        isActive: true,
+      },
+      {
+        title: 'Výzdoba stolu 🍽️',
+        description: 'Krásně prostřený svatební stůl',
+        targetPhotos: 1,
+        points: 12,
+        isActive: true,
+      },
+      {
+        title: 'Příprava ženicha 🤵',
+        description: 'Ženich se připravuje před obřadem',
+        targetPhotos: 1,
+        points: 15,
+        isActive: true,
+      }
     ];
 
-    await db.insert(questChallenges).values(defaultChallenges);
+    defaultChallenges.forEach(challenge => {
+      this.createQuestChallenge(challenge);
+    });
   }
 
   // Photo operations
