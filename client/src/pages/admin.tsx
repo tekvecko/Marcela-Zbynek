@@ -25,7 +25,7 @@ import { Link } from "wouter";
 import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared/schema";
 import Navigation from "@/components/navigation";
 import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
-import { BehaviorAnalytics, AiInsightsDisplay } from "@/components/behavior-analytics";
+import { BehaviorAnalytics, AiInsightsDisplay, DynamicAiRecommendations } from "@/components/behavior-analytics";
 
 // Form schemas
 const challengeSchema = z.object({
@@ -910,7 +910,23 @@ export default function AdminPage() {
 
           {/* AI Analytics Tab */}
           <TabsContent value="ai-analytics">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Dynamic AI Recommendations */}
+              <Card className="md:col-span-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Dynamická AI doporučení
+                  </CardTitle>
+                  <CardDescription>
+                    Automatická doporučení v reálném čase
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DynamicAiRecommendations />
+                </CardContent>
+              </Card>
+
               {/* Behavior Analytics */}
               <Card>
                 <CardHeader>
