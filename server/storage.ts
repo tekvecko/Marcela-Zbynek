@@ -829,8 +829,12 @@ export class DatabaseStorage implements IStorage {
       const [challenge] = await db.select().from(questChallenges).where(eq(questChallenges.id, id));
       return challenge;
     } catch (error) {
-      console.error(`Failed to get quest challenge ${id}:`, error);
-      return undefined;
+      console.error(`Database getQuestChallenge failed, falling back to memory storage:`, error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.getQuestChallenge(id);
     }
   }
 
@@ -1171,8 +1175,12 @@ export class DatabaseStorage implements IStorage {
       const [createdPhoto] = await db.insert(uploadedPhotos).values(photo).returning();
       return createdPhoto;
     } catch (error) {
-      console.error('Failed to create uploaded photo:', error);
-      throw error;
+      console.error('Database createUploadedPhoto failed, falling back to memory storage:', error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.createUploadedPhoto(photo);
     }
   }
 
@@ -1351,8 +1359,12 @@ export class DatabaseStorage implements IStorage {
     try {
       return await db.select().from(questProgress).where(eq(questProgress.participantName, participantName));
     } catch (error) {
-      console.error(`Failed to get quest progress for participant ${participantName}:`, error);
-      return [];
+      console.error(`Database getQuestProgressByParticipant failed, falling back to memory storage:`, error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.getQuestProgressByParticipant(participantName);
     }
   }
 
@@ -1383,8 +1395,12 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updatedProgress;
     } catch (error) {
-      console.error(`Failed to update quest progress ${id}:`, error);
-      return undefined;
+      console.error(`Database updateQuestProgress failed, falling back to memory storage:`, error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.updateQuestProgress(id, photosUploaded, isCompleted);
     }
   }
 
@@ -1411,8 +1427,12 @@ export class DatabaseStorage implements IStorage {
 
       return newProgress;
     } catch (error) {
-      console.error(`Failed to get or create quest progress for quest ${questId} and participant ${participantName}:`, error);
-      throw error;
+      console.error(`Database getOrCreateQuestProgress failed, falling back to memory storage:`, error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.getOrCreateQuestProgress(questId, participantName);
     }
   }
 
