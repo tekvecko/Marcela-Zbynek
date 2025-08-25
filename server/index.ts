@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDefaultChallenges } from "./init-challenges";
 import { initializeDefaultMiniGames } from "./init-mini-games";
 import { authenticateUser as authenticateToken } from "./middleware/auth";
+import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -81,9 +82,24 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Inicializuj výchozí fotovýzvy a mini-hry po startu databáze
-  await initializeDefaultChallenges();
-  await initializeDefaultMiniGames();
+  // Test databázového připojení
+  const dbConnected = await testDatabaseConnection();
+  if (dbConnected) {
+    console.log(`🗄️  Databáze (${dbName}) je připravena`);
+  } else {
+    console.log("🗄️  Databáze není dostupná, používám in-memory storage");
+  }
+
+  // Spustit monitoring databáze pro automatické přepínání
+  startDatabaseHealthMonitoring();
+
+  // Inicializuj výchozí fotovýzvy a mini-hry
+  try {
+    await initializeDefaultChallenges();
+    await initializeDefaultMiniGames();
+  } catch (error) {
+    console.log("⚠️  Inicializace se nezdařila, aplikace bude fungovat s omezenou funkcionalitou");
+  }
 
   // Added for handling quest challenges route with logging
   // Note: 'storage' and 'authenticateToken' are assumed to be defined elsewhere in routes.ts

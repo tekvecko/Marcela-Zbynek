@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { z } from "zod";
 import { insertQuestChallengeSchema, registerSchema, loginSchema } from "@shared/schema";
 import multer from "multer";
@@ -433,11 +434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         verificationScore = 85; // Good default score
       }
 
-      // Only create photo record if it's not for a quest OR if it's verified for a quest
-      const shouldCreatePhoto = !validatedData.questId || (validatedData.questId && isVerified);
-
+      // Always create photo record for gallery, whether it's a quest photo or general gallery photo
       let photo = null;
-      if (shouldCreatePhoto) {
+      try {
         photo = await storage.createUploadedPhoto({
           filename: req.file.filename,
           originalName: req.file.originalname,
@@ -449,6 +448,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           verificationScore,
           aiAnalysis,
         });
+        console.log(`Photo created in gallery: ${photo.id}, verified: ${isVerified}, questId: ${validatedData.questId || 'none'}`);
+      } catch (photoError) {
+        console.error('Failed to create photo record:', photoError);
+        // Continue with quest progress update even if photo creation fails
       }
 
       // Update quest progress if questId provided
@@ -475,13 +478,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Return appropriate response based on whether photo was added to gallery
+      // Return response with photo data if created successfully
       if (photo) {
-        res.json(photo);
-      } else {
-        // Photo was not added to gallery because it failed verification for a quest
         res.json({
-          message: "Fotka byla zpracována, ale nebyla přidána do galerie",
+          ...photo,
+          message: validatedData.questId 
+            ? (isVerified ? "Fotovýzva úspěšně splněna a fotka přidána do galerie!" : "Fotka nahrána, ale nesplnila požadavky fotovýzvy")
+            : "Fotka úspěšně přidána do galerie",
+          questCompleted: validatedData.questId && isVerified
+        });
+      } else {
+        // Fallback response if photo creation failed
+        res.json({
+          message: "Fotka byla zpracována, ale nebyla přidána do galerie z technických důvodů",
           isVerified,
           verificationScore,
           aiAnalysis,
