@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDefaultChallenges } from "./init-challenges";
 import { initializeDefaultMiniGames } from "./init-mini-games";
 import { authenticateUser as authenticateToken } from "./middleware/auth";
+import { testDatabaseConnection, dbName } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -80,6 +81,14 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // Test databázového připojení
+  const dbConnected = await testDatabaseConnection();
+  if (dbConnected) {
+    console.log(`🗄️  Databáze (${dbName}) je připravena`);
+  } else {
+    console.log("🗄️  Databáze není dostupná, používám in-memory storage");
+  }
 
   // Inicializuj výchozí fotovýzvy a mini-hry
   try {

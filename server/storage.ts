@@ -15,7 +15,7 @@ import {
   AuthSession
 } from "@shared/schema";
 import { users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions } from "@shared/schema";
-import { db } from "./db";
+import { db, dbName } from "./db";
 import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from 'bcryptjs';
@@ -725,10 +725,10 @@ export class DatabaseStorage implements IStorage {
     this.authSessions = new Map();
     // Pokud není databáze dostupná, použij memory storage
     if (!db) {
-      console.log("🔄 Používám in-memory storage místo databáze");
+      console.log(`🔄 Používám in-memory storage místo databáze (${dbName})`);
       this.memoryFallback = new MemStorage();
-      // Initialize default data for memory fallback
-      this.memoryFallback.initializeMemoryStorage();
+    } else {
+      console.log(`✅ Úspěšně připojen k databázi: ${dbName}`);
     }
   }
   // User operations

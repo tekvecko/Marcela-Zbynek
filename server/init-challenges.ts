@@ -296,15 +296,9 @@ export async function initializeDefaultChallenges() {
 
     // Kontrola, zda je problém s databází
     if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
-      console.log("🔄 Databáze není dostupná, vytvářím novou databázi s výzvami v in-memory storage");
-      console.log("💡 Aplikace bude používat lokální úložiště dokud nebude databáze opravena");
-
-      // Inicializuj memory storage s výzvami
-      const { storage } = await import('./storage');
-      if ('initializeMemoryStorage' in storage) {
-        await (storage as any).initializeMemoryStorage();
-        console.log("✅ In-memory databáze byla inicializována s výchozími výzvami");
-      }
+      console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
+      console.log("💡 Pro opravu: Vytvořte novou PostgreSQL databázi v Replit pomocí Database nástroje");
+      console.log("💡 Alternativně: Nastavte SUPABASE_DATABASE_URL pro záložní databázi");
       return;
     }
 
