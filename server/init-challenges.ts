@@ -273,8 +273,18 @@ export async function initializeDefaultChallenges() {
       return;
     }
 
-    // Zkontroluj, zda již existují nějaké výzvy
-    const existingChallenges = await db.select().from(questChallenges).limit(1);
+    // Zkontroluj, zda tabulka existuje a zda již existují nějaké výzvy
+    let existingChallenges;
+    try {
+      existingChallenges = await db.select().from(questChallenges).limit(1);
+    } catch (error: any) {
+      if (error.code === '42P01') { // tabulka neexistuje
+        console.log("⚠️  Tabulka quest_challenges neexistuje. Spusťte prosím: npx drizzle-kit push");
+        console.log("🔄 Přepínám na in-memory storage...");
+        return;
+      }
+      throw error;
+    }
 
     if (existingChallenges.length > 0) {
       console.log("✅ Fotovýzvy již existují, přeskakuji inicializaci");
