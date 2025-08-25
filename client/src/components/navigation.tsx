@@ -17,6 +17,8 @@ export default function Navigation({}: NavigationProps = {}) {
   const [userInteractionPattern, setUserInteractionPattern] = useState<'touch' | 'mouse' | 'hybrid'>('mouse');
   const [scrollVelocity, setScrollVelocity] = useState(0);
   const [animationDuration, setAnimationDuration] = useState(0.3);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{x: number, y: number} | null>(null);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
@@ -151,6 +153,92 @@ export default function Navigation({}: NavigationProps = {}) {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [isMenuOpen, isVisible]);
+
+  // Global gesture handling for navigation control
+  useEffect(() => {
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let touchStartTime = 0;
+    let longPressTimer: NodeJS.Timeout;
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      touchStartY = touch.clientY;
+      touchStartX = touch.clientX;
+      touchStartTime = Date.now();
+      
+      // Start long press timer for context menu
+      longPressTimer = setTimeout(() => {
+        setContextMenuPosition({ x: touch.clientX, y: touch.clientY });
+        setIsContextMenuOpen(true);
+        // Vibrate if available
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }, 500);
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      // Clear long press timer on move
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+      }
+      
+      const touch = e.touches[0];
+      const deltaY = touch.clientY - touchStartY;
+      const deltaX = touch.clientX - touchStartX;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      // Only trigger if significant vertical movement and not too much horizontal
+      if (distance > 30 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        const deltaTime = Date.now() - touchStartTime;
+        
+        // Fast swipe gesture (under 300ms)
+        if (deltaTime < 300) {
+          if (deltaY > 0) {
+            // Swipe down - show navigation
+            setIsVisible(true);
+            setIsMenuOpen(false);
+          } else {
+            // Swipe up - hide navigation
+            setIsVisible(false);
+            setIsMenuOpen(false);
+          }
+        }
+      }
+    };
+    
+    const handleTouchEnd = () => {
+      // Clear long press timer
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+      }
+    };
+    
+    const handleClick = (e: MouseEvent) => {
+      // Close context menu on click outside
+      if (isContextMenuOpen) {
+        setIsContextMenuOpen(false);
+        setContextMenuPosition(null);
+      }
+    };
+    
+    // Add global touch listeners
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    document.addEventListener('click', handleClick);
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('click', handleClick);
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+      }
+    };
+  }, [isContextMenuOpen]);
 
   // Cleanup body scroll lock on unmount or menu close
   useEffect(() => {
@@ -497,6 +585,76 @@ export default function Navigation({}: NavigationProps = {}) {
               document.documentElement.style.overflow = '';
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Context Menu - appears on long press anywhere on page */}
+      <AnimatePresence>
+        {isContextMenuOpen && contextMenuPosition && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed z-[10000] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden"
+            style={{
+              left: Math.min(contextMenuPosition.x, window.innerWidth - 200),
+              top: Math.min(contextMenuPosition.y, window.innerHeight - 300),
+              backdropFilter: 'blur(40px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+            }}
+            data-testid="context-menu"
+          >
+            <div className="p-3">
+              <div className="text-xs font-medium text-gray-500 mb-2 px-2">Rychlá navigace</div>
+              <div className="grid grid-cols-2 gap-2">
+                {visibleNavigationItems.slice(0, 6).map(({ href, label, icon, exact }) => {
+                  const isActive = exact ? location === href : location.startsWith(href);
+                  if (href === '/admin' && !user?.isAdmin) return null;
+                  return (
+                    <motion.a
+                      key={href}
+                      href={href}
+                      onClick={() => {
+                        setIsContextMenuOpen(false);
+                        setContextMenuPosition(null);
+                      }}
+                      className={`flex flex-col items-center space-y-1 p-3 rounded-xl transition-all ${
+                        isActive 
+                          ? 'bg-romantic/10 text-romantic' 
+                          : 'hover:bg-romantic/5 text-gray-700'
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      data-testid={`context-nav-${href.replace('/', '') || 'home'}`}
+                    >
+                      <span className="text-lg">{icon}</span>
+                      <span className="text-xs font-medium text-center">{label}</span>
+                    </motion.a>
+                  );
+                })}
+              </div>
+              
+              <div className="mt-3 pt-3 border-t border-romantic/10">
+                <motion.button
+                  onClick={() => {
+                    setIsVisible(!isVisible);
+                    setIsContextMenuOpen(false);
+                    setContextMenuPosition(null);
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 p-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  data-testid="context-toggle-nav"
+                >
+                  <span className="text-sm">{isVisible ? '🙈' : '👁️'}</span>
+                  <span className="text-sm font-medium">
+                    {isVisible ? 'Skrýt panel' : 'Zobrazit panel'}
+                  </span>
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
