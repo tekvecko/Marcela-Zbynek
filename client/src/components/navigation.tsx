@@ -108,45 +108,41 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsVisible(true); // Vždy zobrazit navigaci po načtení
   }, []);
 
-  // Android-like navigation scroll handling
+  // Ultra-smooth scroll handling
   useEffect(() => {
     let localLastScrollY = 0;
-    let ticking = false;
+    let scrollDirection = 0;
+    let isScrolling = false;
+    let scrollTimeout: NodeJS.Timeout;
     
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const scrollDelta = currentScrollY - localLastScrollY;
-          
-          // Always show when menu is open
-          if (isMenuOpen) {
-            if (!isVisible) setIsVisible(true);
-            localLastScrollY = currentScrollY;
-            ticking = false;
-            return;
-          }
-          
-          // Android-like behavior: immediate response to scroll direction
-          if (currentScrollY <= 10) {
-            // Always show at top of page
-            setIsVisible(true);
-          } else if (scrollDelta > 5) {
-            // Hide on downward scroll (small threshold like Android)
-            setIsVisible(false);
-          } else if (scrollDelta < -5) {
-            // Show on upward scroll (small threshold like Android)
-            setIsVisible(true);
-          }
-          
-          localLastScrollY = currentScrollY;
-          ticking = false;
-        });
-        ticking = true;
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - localLastScrollY;
+      
+      // Always show when menu is open
+      if (isMenuOpen) {
+        if (!isVisible) setIsVisible(true);
+        localLastScrollY = currentScrollY;
+        return;
       }
+      
+      // Immediate response with very low threshold
+      if (currentScrollY <= 5) {
+        setIsVisible(true);
+      } else if (Math.abs(scrollDelta) > 1) {
+        if (scrollDelta > 0) {
+          // Scrolling down - hide immediately
+          setIsVisible(false);
+        } else {
+          // Scrolling up - show immediately
+          setIsVisible(true);
+        }
+      }
+      
+      localLastScrollY = currentScrollY;
     };
 
-    // Use passive scroll listener for better performance
+    // High frequency scroll listening for maximum smoothness
     window.addEventListener('scroll', handleScroll, { passive: true });
     
     return () => {
@@ -154,47 +150,53 @@ export default function Navigation({}: NavigationProps = {}) {
     };
   }, [isMenuOpen, isVisible]);
 
-  // Global gesture handling for navigation control
+  // Ultra-responsive gesture handling
   useEffect(() => {
     let touchStartY = 0;
     let touchStartX = 0;
     let touchStartTime = 0;
     let longPressTimer: NodeJS.Timeout;
+    let isDragging = false;
     
     const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
       touchStartY = touch.clientY;
       touchStartX = touch.clientX;
       touchStartTime = Date.now();
+      isDragging = false;
       
-      // Start long press timer for context menu
+      // Shorter long press for faster response
       longPressTimer = setTimeout(() => {
-        setContextMenuPosition({ x: touch.clientX, y: touch.clientY });
-        setIsContextMenuOpen(true);
-        // Vibrate if available
-        if (navigator.vibrate) {
-          navigator.vibrate(50);
+        if (!isDragging) {
+          setContextMenuPosition({ x: touch.clientX, y: touch.clientY });
+          setIsContextMenuOpen(true);
+          if (navigator.vibrate) {
+            navigator.vibrate(30); // Shorter vibration
+          }
         }
-      }, 500);
+      }, 300); // Reduced from 500ms to 300ms
     };
     
     const handleTouchMove = (e: TouchEvent) => {
-      // Clear long press timer on move
-      if (longPressTimer) {
-        clearTimeout(longPressTimer);
-      }
-      
       const touch = e.touches[0];
       const deltaY = touch.clientY - touchStartY;
       const deltaX = touch.clientX - touchStartX;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
-      // Only trigger if significant vertical movement and not too much horizontal
-      if (distance > 30 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      if (distance > 5) {
+        isDragging = true;
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+        }
+      }
+      
+      // Much more sensitive gesture detection
+      if (distance > 15 && Math.abs(deltaY) > Math.abs(deltaX) * 0.7) {
         const deltaTime = Date.now() - touchStartTime;
         
-        // Fast swipe gesture (under 300ms)
-        if (deltaTime < 300) {
+        // Instant response for fast gestures
+        if (deltaTime < 500 && Math.abs(deltaY) > 20) {
+          e.preventDefault();
           if (deltaY > 0) {
             // Swipe down - show navigation
             setIsVisible(true);
@@ -204,36 +206,38 @@ export default function Navigation({}: NavigationProps = {}) {
             setIsVisible(false);
             setIsMenuOpen(false);
           }
+          // Reset touch tracking
+          touchStartY = touch.clientY;
+          touchStartTime = Date.now();
         }
       }
     };
     
     const handleTouchEnd = () => {
-      // Clear long press timer
+      isDragging = false;
       if (longPressTimer) {
         clearTimeout(longPressTimer);
       }
     };
     
     const handleClick = (e: MouseEvent) => {
-      // Close context menu on click outside
       if (isContextMenuOpen) {
         setIsContextMenuOpen(false);
         setContextMenuPosition(null);
       }
     };
     
-    // Add global touch listeners
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleTouchEnd, { passive: true });
-    document.addEventListener('click', handleClick);
+    // Use capture phase for faster response
+    document.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true, capture: true });
+    document.addEventListener('click', handleClick, { capture: true });
     
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener('touchstart', handleTouchStart, { capture: true } as any);
+      document.removeEventListener('touchmove', handleTouchMove, { capture: true } as any);
+      document.removeEventListener('touchend', handleTouchEnd, { capture: true } as any);
+      document.removeEventListener('click', handleClick, { capture: true } as any);
       if (longPressTimer) {
         clearTimeout(longPressTimer);
       }
@@ -321,9 +325,11 @@ export default function Navigation({}: NavigationProps = {}) {
           opacity: (isVisible || isMenuOpen) ? 1 : 0
         }}
         transition={{ 
-          type: "tween",
-          duration: 0.25,
-          ease: [0.25, 0.46, 0.45, 0.94], // Android-like easing curve
+          type: "spring",
+          stiffness: 700,
+          damping: 40,
+          mass: 0.4,
+          velocity: isVisible ? 0 : -50
         }}
         
       >
