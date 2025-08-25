@@ -23,7 +23,7 @@ const stages = [
 // Animated number counter
 const AnimatedNumber = ({ value, color }: { value: number; color?: string }) => {
   const [displayValue, setDisplayValue] = useState(0);
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setDisplayValue(prev => {
@@ -35,12 +35,12 @@ const AnimatedNumber = ({ value, color }: { value: number; color?: string }) => 
         return value;
       });
     }, 50);
-    
+
     return () => clearInterval(interval);
   }, [value]);
-  
+
   return (
-    <motion.span 
+    <motion.span
       className={`text-xs font-bold ${color || "text-charcoal"}`}
       key={Math.floor(displayValue / 10)}
       initial={{ scale: 1.1 }}
@@ -53,25 +53,25 @@ const AnimatedNumber = ({ value, color }: { value: number; color?: string }) => 
 };
 
 // Circular Progress Component with enhanced animations
-const CircularProgress = ({ 
-  progress, 
-  size = 40, 
-  strokeWidth = 3, 
+const CircularProgress = ({
+  progress,
+  size = 40,
+  strokeWidth = 3,
   color = "text-blue-500",
   bgColor = "bg-blue-500"
-}: { 
-  progress: number; 
-  size?: number; 
-  strokeWidth?: number; 
+}: {
+  progress: number;
+  size?: number;
+  strokeWidth?: number;
   color?: string;
   bgColor?: string;
 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (progress / 100) * circumference;
-  
+
   return (
-    <motion.div 
+    <motion.div
       className="relative"
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
@@ -102,6 +102,7 @@ const CircularProgress = ({
           fill="transparent"
           strokeDasharray={circumference}
           className={color}
+          initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
         />
@@ -110,7 +111,7 @@ const CircularProgress = ({
       <div className="absolute inset-0 flex items-center justify-center">
         <AnimatedNumber value={progress} color={color} />
       </div>
-      
+
       {/* Success celebration */}
       {progress === 100 && (
         <motion.div
@@ -126,21 +127,21 @@ const CircularProgress = ({
   );
 };
 
-export default function UploadProgress({ 
-  stage, 
-  progress, 
-  currentStep, 
-  error, 
+export default function UploadProgress({
+  stage,
+  progress,
+  currentStep,
+  error,
   uploadSpeed,
-  className 
+  className
 }: UploadProgressProps) {
   const currentStageIndex = stages.findIndex(s => s.key === stage);
-  
+
   // Calculate individual stage progress
   const getStageProgress = (stageIndex: number) => {
     if (stageIndex < currentStageIndex) return 100;
     if (stageIndex > currentStageIndex) return 0;
-    
+
     // For current stage, map overall progress to stage-specific progress
     const stageRanges = [
       { start: 0, end: 30 },    // uploading
@@ -148,15 +149,15 @@ export default function UploadProgress({
       { start: 60, end: 90 },   // verifying
       { start: 90, end: 100 }   // complete
     ];
-    
+
     const range = stageRanges[stageIndex];
     if (!range) return 0;
-    
+
     return Math.min(100, Math.max(0, ((progress - range.start) / (range.end - range.start)) * 100));
   };
-  
+
   return (
-    <motion.div 
+    <motion.div
       className={cn("space-y-6 p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20", className)}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -169,7 +170,7 @@ export default function UploadProgress({
           <div className="flex items-center gap-3">
             <AnimatePresence>
               {uploadSpeed && stage === 'uploading' && (
-                <motion.span 
+                <motion.span
                   className="text-blue-600 font-medium text-sm"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -189,8 +190,8 @@ export default function UploadProgress({
           transition={{ duration: 0.5 }}
           className="origin-left"
         >
-          <Progress 
-            value={progress} 
+          <Progress
+            value={progress}
             className="h-3 bg-gray-100"
           />
         </motion.div>
@@ -199,7 +200,7 @@ export default function UploadProgress({
       {/* Current Step */}
       <AnimatePresence>
         {currentStep && (
-          <motion.div 
+          <motion.div
             className="text-center"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -207,7 +208,7 @@ export default function UploadProgress({
             transition={{ duration: 0.3 }}
           >
             <p className="text-sm text-charcoal/60 mb-2">Aktuální krok:</p>
-            <motion.p 
+            <motion.p
               className="font-medium text-charcoal"
               key={currentStep}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -228,34 +229,34 @@ export default function UploadProgress({
           const isCompleted = index < currentStageIndex || stage === 'complete';
           const isError = stage === 'error' && index === currentStageIndex;
           const stageProgress = getStageProgress(index);
-          
+
           return (
-            <motion.div 
-              key={stageInfo.key} 
+            <motion.div
+              key={stageInfo.key}
               className="flex flex-col items-center space-y-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
               {/* Status Indicator with enhanced animation */}
-              <motion.div 
+              <motion.div
                 className="text-xl"
-                animate={{ 
+                animate={{
                   scale: isActive && !isError ? [1, 1.2, 1] : 1,
                   rotate: isCompleted ? [0, 360] : 0
                 }}
-                transition={{ 
+                transition={{
                   scale: { duration: 2, repeat: Infinity },
                   rotate: { duration: 0.5 }
                 }}
               >
                 {isError ? '🔴' : (isCompleted ? '🟢' : (isActive ? '🟡' : '⚪'))}
               </motion.div>
-              
+
               {/* Circular Progress or Icon */}
               <div className="relative">
                 {isActive && !isError ? (
-                  <CircularProgress 
+                  <CircularProgress
                     progress={stageProgress}
                     size={50}
                     strokeWidth={4}
@@ -263,17 +264,17 @@ export default function UploadProgress({
                     bgColor={stageInfo.bgColor}
                   />
                 ) : (
-                  <motion.div 
+                  <motion.div
                     className={cn(
                       "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300",
-                      isError 
+                      isError
                         ? "bg-red-500 text-white"
-                        : isCompleted 
-                        ? "bg-green-500 text-white" 
+                        : isCompleted
+                        ? "bg-green-500 text-white"
                         : "bg-gray-200 text-gray-400"
                     )}
-                    animate={{ 
-                      scale: isCompleted && stage === 'complete' && index < currentStageIndex ? [1, 1.1, 1] : 1 
+                    animate={{
+                      scale: isCompleted && stage === 'complete' && index < currentStageIndex ? [1, 1.1, 1] : 1
                     }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
@@ -292,12 +293,12 @@ export default function UploadProgress({
                     )}
                   </motion.div>
                 )}
-                
+
                 {/* Animated pulse for active stage */}
                 {isActive && !isError && (
-                  <motion.div 
+                  <motion.div
                     className={cn("absolute inset-0 rounded-full", stageInfo.bgColor)}
-                    animate={{ 
+                    animate={{
                       scale: [1, 1.4, 1],
                       opacity: [0.4, 0, 0.4]
                     }}
@@ -309,15 +310,15 @@ export default function UploadProgress({
                   />
                 )}
               </div>
-              
+
               {/* Stage Label with animation */}
-              <motion.span 
+              <motion.span
                 className={cn(
                   "text-xs text-center max-w-20 leading-tight transition-colors duration-200",
                   isActive ? stageInfo.color : isCompleted ? "text-green-600" : "text-gray-400"
                 )}
-                animate={{ 
-                  scale: isActive ? [1, 1.05, 1] : 1 
+                animate={{
+                  scale: isActive ? [1, 1.05, 1] : 1
                 }}
                 transition={{ duration: 1, repeat: isActive ? Infinity : 0 }}
               >
@@ -331,7 +332,7 @@ export default function UploadProgress({
       {/* Error Message with animation */}
       <AnimatePresence>
         {error && (
-          <motion.div 
+          <motion.div
             className="bg-red-50 border border-red-200 rounded-lg p-3"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -347,7 +348,7 @@ export default function UploadProgress({
               </motion.div>
               <span className="text-red-700 text-sm font-medium">Chyba při uploadu</span>
             </div>
-            <motion.p 
+            <motion.p
               className="text-red-600 text-sm mt-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
