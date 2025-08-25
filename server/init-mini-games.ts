@@ -122,8 +122,7 @@ export async function initializeDefaultMiniGames() {
     }
     
     // Pro ostatní chyby, vyhoď exception
-    throw error;og("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
-      console.log("💡 Pro opravu: Zkontrolujte nastavení Neon databáze a povolte endpoint");
-    }
+    throw error;
   }
+}
 }
