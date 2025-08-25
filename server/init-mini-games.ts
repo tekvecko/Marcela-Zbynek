@@ -113,5 +113,11 @@ export async function initializeDefaultMiniGames() {
     console.log("✅ Výchozí mini-hry byly úspěšně vytvořeny");
   } catch (error) {
     console.error("❌ Chyba při vytváření mini-her:", error);
+    
+    // Kontrola, zda je problém s databází
+    if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
+      console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
+      console.log("💡 Pro opravu: Zkontrolujte nastavení Neon databáze a povolte endpoint");
+    }
   }
 }

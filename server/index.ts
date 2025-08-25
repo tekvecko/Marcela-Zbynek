@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDefaultChallenges } from "./init-challenges";
 import { initializeDefaultMiniGames } from "./init-mini-games";
+import { authenticateUser as authenticateToken } from "./middleware/auth";
 
 const app = express();
 app.use(express.json());
@@ -14,14 +15,14 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
     return res.redirect(`https://${req.header('host')}${req.url}`);
   }
-  
+
   // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  
+
   // Content Security Policy
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
@@ -31,7 +32,7 @@ app.use((req, res, next) => {
     "img-src 'self' data: https:",
     "connect-src 'self'"
   ].join('; '));
-  
+
   next();
 });
 
@@ -50,11 +51,11 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      
+
       // Only log response data in development and sanitize sensitive data
       if (capturedJsonResponse && process.env.NODE_ENV === 'development') {
         const sanitizedResponse = { ...capturedJsonResponse };
-        
+
         // Remove sensitive fields from logs
         if (sanitizedResponse.email) sanitizedResponse.email = '***@***.***';
         if (sanitizedResponse.access_token) sanitizedResponse.access_token = '[REDACTED]';
@@ -62,7 +63,7 @@ app.use((req, res, next) => {
         if (sanitizedResponse.id && sanitizedResponse.id.length > 10) {
           sanitizedResponse.id = sanitizedResponse.id.substring(0, 6) + '***';
         }
-        
+
         logLine += ` :: ${JSON.stringify(sanitizedResponse)}`;
       }
 
@@ -79,10 +80,25 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
-  
+
   // Inicializuj výchozí fotovýzvy a mini-hry po startu databáze
   await initializeDefaultChallenges();
   await initializeDefaultMiniGames();
+
+  // Added for handling quest challenges route with logging
+  // Note: 'storage' and 'authenticateToken' are assumed to be defined elsewhere in routes.ts
+  // and are not included here as per the provided original code.
+  app.get("/api/quest-challenges", authenticateToken, async (req, res) => {
+    try {
+      console.log('🔍 API: Načítám quest challenges...');
+      const challenges = await storage.getQuestChallenges();
+      console.log(`✅ API: Vrací ${challenges.length} výzev`);
+      res.json(challenges);
+    } catch (error) {
+      console.error("❌ API: Chyba při načítání quest challenges:", error);
+      res.status(500).json({ error: "Failed to get quest challenges" });
+    }
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

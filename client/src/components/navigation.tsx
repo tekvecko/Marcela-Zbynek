@@ -108,45 +108,84 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsVisible(true); // Vždy zobrazit navigaci po načtení
   }, []);
 
-  // Ultra-smooth scroll handling
+  // Smooth scroll handling with debouncing to prevent flickering
   useEffect(() => {
     let localLastScrollY = 0;
-    let scrollDirection = 0;
-    let isScrolling = false;
     let scrollTimeout: NodeJS.Timeout;
+    let scrollVelocity = 0;
+    let lastScrollTime = 0;
     
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDelta = currentScrollY - localLastScrollY;
-      
-      // Always show when menu is open
+      // Skip scroll handling when menu is open to prevent conflicts
       if (isMenuOpen) {
-        if (!isVisible) setIsVisible(true);
-        localLastScrollY = currentScrollY;
         return;
       }
       
-      // Immediate response with very low threshold
-      if (currentScrollY <= 5) {
+      const currentScrollY = window.scrollY;
+      const currentTime = Date.now();
+      const scrollDelta = currentScrollY - localLastScrollY;
+      const timeDelta = currentTime - lastScrollTime;
+      
+      // Calculate scroll velocity
+      scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
+      
+      // Clear existing timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      // Always show at the top
+      if (currentScrollY <= 10) {
         setIsVisible(true);
-      } else if (Math.abs(scrollDelta) > 1) {
+        localLastScrollY = currentScrollY;
+        lastScrollTime = currentTime;
+        return;
+      }
+      
+      // Require more significant scroll movement to trigger changes
+      const threshold = scrollVelocity > 0.5 ? 15 : 25; // Dynamic threshold based on velocity
+      
+      if (Math.abs(scrollDelta) > threshold) {
         if (scrollDelta > 0) {
-          // Scrolling down - hide immediately
-          setIsVisible(false);
+          // Scrolling down - hide with delay to prevent flickering
+          scrollTimeout = setTimeout(() => {
+            if (window.scrollY > 10 && !isMenuOpen) {
+              setIsVisible(false);
+            }
+          }, 100);
         } else {
           // Scrolling up - show immediately
           setIsVisible(true);
         }
+        
+        localLastScrollY = currentScrollY;
       }
       
-      localLastScrollY = currentScrollY;
+      lastScrollTime = currentTime;
     };
 
-    // High frequency scroll listening for maximum smoothness
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Throttled scroll listening to reduce frequency
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Only add scroll listener when menu is closed
+    if (!isMenuOpen) {
+      window.addEventListener('scroll', throttledScroll, { passive: true });
+    }
     
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', throttledScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
     };
   }, [isMenuOpen, isVisible]);
 
@@ -256,20 +295,28 @@ export default function Navigation({}: NavigationProps = {}) {
   // Handle body scroll lock when menu state changes
   useEffect(() => {
     if (isMenuOpen) {
+      // Store current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
       document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
     setIsMenuOpen(false);
-    // Restore scrolling
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
   };
 
   const toggleMenu = () => {
@@ -279,11 +326,6 @@ export default function Navigation({}: NavigationProps = {}) {
     // When opening menu, ensure panel is visible and stable
     if (newState) {
       setIsVisible(true);
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
     }
   };
 
@@ -519,8 +561,6 @@ export default function Navigation({}: NavigationProps = {}) {
                             href={href}
                             onClick={() => {
                               setIsMenuOpen(false);
-                              document.body.style.overflow = '';
-                              document.documentElement.style.overflow = '';
                             }}
                             className={`flex flex-col items-center space-y-1 sm:space-y-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 ${
                               isActive 
@@ -584,11 +624,20 @@ export default function Navigation({}: NavigationProps = {}) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
-            onClick={() => {
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden pointer-events-auto"
+            style={{
+              touchAction: 'none', // Prevent touch scrolling on overlay
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setIsMenuOpen(false);
-              document.body.style.overflow = '';
-              document.documentElement.style.overflow = '';
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault(); // Prevent scrolling when touching overlay
             }}
           />
         )}

@@ -287,6 +287,13 @@ export async function initializeDefaultChallenges() {
     
   } catch (error) {
     console.error("❌ Chyba při vytváření výchozích výzev:", error);
+    
+    // Kontrola, zda je problém s databází
+    if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
+      console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
+      console.log("💡 Pro opravu: Zkontrolujte nastavení Neon databáze a povolte endpoint");
+    }
+    
     // Nespadneme kvůli chybě inicializace, aplikace by měla pokračovat
   }
 }

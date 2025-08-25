@@ -220,7 +220,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = registerSchema.parse(req.body);
 
       // Check if email already exists
-      const existingUser = await storage.getAuthUserByEmail(validatedData.email);
+      let existingUser;
+      try {
+        existingUser = await storage.getAuthUserByEmail(validatedData.email);
+      } catch (dbError) {
+        console.warn('Database check failed during registration, proceeding with memory storage');
+        existingUser = null;
+      }
+      
       if (existingUser) {
         return res.status(400).json({ message: "Tento e-mail je již registrován." });
       }
@@ -268,7 +275,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = loginSchema.parse(req.body);
 
       // Find user
-      const user = await storage.getAuthUserByEmail(validatedData.email);
+      let user;
+      try {
+        user = await storage.getAuthUserByEmail(validatedData.email);
+      } catch (dbError) {
+        console.warn('Database check failed during login');
+        return res.status(500).json({ message: "Dočasný problém se službou. Zkuste to prosím znovu." });
+      }
+      
       if (!user) {
         return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
       }
