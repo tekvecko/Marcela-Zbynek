@@ -102,7 +102,7 @@ const CircularProgress = ({
           fill="transparent"
           strokeDasharray={circumference}
           className={color}
-          style={{ strokeDashoffset: circumference }}
+          initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
         />
