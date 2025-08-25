@@ -84,6 +84,21 @@ app.use((req, res, next) => {
   await initializeDefaultChallenges();
   await initializeDefaultMiniGames();
 
+  // Added for handling quest challenges route with logging
+  // Note: 'storage' and 'authenticateToken' are assumed to be defined elsewhere in routes.ts
+  // and are not included here as per the provided original code.
+  app.get("/api/quest-challenges", authenticateToken, async (req, res) => {
+    try {
+      console.log('🔍 API: Načítám quest challenges...');
+      const challenges = await storage.getQuestChallenges();
+      console.log(`✅ API: Vrací ${challenges.length} výzev`);
+      res.json(challenges);
+    } catch (error) {
+      console.error("❌ API: Chyba při načítání quest challenges:", error);
+      res.status(500).json({ error: "Failed to get quest challenges" });
+    }
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

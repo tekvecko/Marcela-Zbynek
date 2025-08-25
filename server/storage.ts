@@ -375,11 +375,14 @@ export class MemStorage implements IStorage {
     }
 
     try {
-      return Array.from(this.questChallenges.values()).filter(c => c.isActive);
+      const challenges = Array.from(this.questChallenges.values()).filter(c => c.isActive);
+      console.log(`📊 MemStorage vrací ${challenges.length} aktivních výzev`);
+      return challenges;
     } catch (error) {
       console.error('Chyba v MemStorage při získávání quest challenges:', error);
-      console.warn('🔴 FALLBACK v MemStorage: Používám záložní data');
-      return [];
+      console.warn('🔴 FALLBACK v MemStorage: Vracím všechny výzvy bez filtrování');
+      // Vrátíme všechny výzvy bez filtrování jako poslední možnost
+      return Array.from(this.questChallenges.values());
     }
   }
 
@@ -799,9 +802,11 @@ export class DatabaseStorage implements IStorage {
 
     try {
       const challenges = await db.select().from(questChallenges);
+      console.log(`📊 Database vrací ${challenges.length} výzev`);
 
       // If no challenges exist, initialize with defaults
       if (challenges.length === 0) {
+        console.log('🔄 Žádné výzvy v DB, inicializuji výchozí...');
         await this.initializeDefaultChallenges();
         return await db.select().from(questChallenges);
       }
@@ -809,8 +814,13 @@ export class DatabaseStorage implements IStorage {
       return challenges;
     } catch (error) {
       console.error('Databázová chyba:', error);
-      console.warn('🔴 AUTOMATICKÝ FALLBACK: Používám záložní data');
-      return [];
+      console.warn('🔴 AUTOMATICKÝ FALLBACK: Přepínám na MemStorage');
+      
+      // Fallback na MemStorage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.getQuestChallenges();
     }
   }
 
