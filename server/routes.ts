@@ -346,6 +346,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get unlocked challenges for authenticated user
+  app.get("/api/quest-challenges/unlocked", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.email) {
+        return res.status(401).json({ message: "Přihlášení je vyžadováno" });
+      }
+      
+      const unlockedChallenges = await storage.getUnlockedChallenges(req.user.email);
+      res.json(unlockedChallenges);
+    } catch (error) {
+      console.error('Error fetching unlocked challenges:', error);
+      res.status(500).json({ message: "Chyba při načítání odemčených výzev" });
+    }
+  });
+
   // Get quest progress for a participant (protected)
   app.get("/api/quest-progress/:participantName", async (req, res) => {
     try {

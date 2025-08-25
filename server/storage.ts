@@ -1545,6 +1545,51 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUnlockedChallenges(participantName: string): Promise<QuestChallenge[]> {
+    try {
+      const allChallenges = await this.getQuestChallenges();
+      const userProgress = await this.getQuestProgressByParticipant(participantName);
+
+      // Seřaď výzvy podle bodů (obtížnosti)
+      const sortedChallenges = allChallenges.sort((a, b) => a.points - b.points);
+
+      // Spočítej počet splněných výzev
+      const completedChallenges = userProgress.filter(p => p.isCompleted).length;
+
+      const unlockedChallenges: QuestChallenge[] = [];
+
+      for (let i = 0; i < sortedChallenges.length; i++) {
+        const challenge = sortedChallenges[i];
+
+        // První 3 výzvy jsou vždy odemčené
+        if (i < 3) {
+          unlockedChallenges.push({ ...challenge, isUnlocked: true });
+        }
+        // Další výzvy se odemykají po splnění předchozích
+        else if (completedChallenges >= Math.floor(i / 2)) {
+          unlockedChallenges.push({ ...challenge, isUnlocked: true });
+        }
+        // Zamčené výzvy
+        else {
+          const requiredCompleted = Math.floor(i / 2);
+          unlockedChallenges.push({
+            ...challenge,
+            isUnlocked: false,
+            unlockRequirement: `Splňte ${requiredCompleted} výzev pro odemčení`
+          });
+        }
+      }
+
+      return unlockedChallenges;
+    } catch (error) {
+      console.error('Chyba při získávání odemčených výzev:', error);
+      // Fallback na všechny výzvy jako odemčené
+      const allChallenges = await this.getQuestChallenges();
+      return allChallenges.map(challenge => ({ ...challenge, isUnlocked: true }));
+    }
+  }
+
+
   // Auth operations
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
     try {
