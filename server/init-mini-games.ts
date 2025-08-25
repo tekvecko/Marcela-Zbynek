@@ -117,6 +117,12 @@ export async function initializeDefaultMiniGames() {
     // Kontrola, zda je problém s databází
     if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
       console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
+      console.log("💡 Pro opravu: Vytvořte novou PostgreSQL databázi v Replit pomocí Database nástroje");
+      return;
+    }
+    
+    // Pro ostatní chyby, vyhoď exception
+    throw error;og("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
       console.log("💡 Pro opravu: Zkontrolujte nastavení Neon databáze a povolte endpoint");
     }
   }
