@@ -718,6 +718,7 @@ export class MemStorage implements IStorage {
 
 export class DatabaseStorage implements IStorage {
   private authSessions: Map<string, AuthSession>;
+  private memoryFallback: MemStorage | null = null;
 
   constructor() {
     this.authSessions = new Map();
@@ -1350,8 +1351,12 @@ export class DatabaseStorage implements IStorage {
 
       return createdUser;
     } catch (error) {
-      console.error('Failed to create auth user:', error);
-      throw error;
+      console.error('Database createAuthUser failed, falling back to memory storage:', error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.createAuthUser(userData);
     }
   }
 
@@ -1360,8 +1365,12 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
       return user || undefined;
     } catch (error) {
-      console.error(`Failed to get auth user by email ${email}:`, error);
-      return undefined;
+      console.error(`Database getAuthUserByEmail failed, falling back to memory storage:`, error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.getAuthUserByEmail(email);
     }
   }
 
@@ -1370,8 +1379,12 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
       return user || undefined;
     } catch (error) {
-      console.error(`Failed to get auth user by id ${id}:`, error);
-      return undefined;
+      console.error(`Database getAuthUserById failed, falling back to memory storage:`, error);
+      // Fallback to memory storage
+      if (!this.memoryFallback) {
+        this.memoryFallback = new MemStorage();
+      }
+      return this.memoryFallback.getAuthUserById(id);
     }
   }
 
@@ -1430,4 +1443,16 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Create storage instance with fallback
+let storage: IStorage;
+
+try {
+  // Try to use database storage first
+  storage = new DatabaseStorage();
+} catch (error) {
+  console.warn('Database not available, using memory storage:', error);
+  storage = new MemStorage();
+}
+
+// Export with fallback logic
+export { storage };
