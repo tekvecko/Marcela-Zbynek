@@ -4,7 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDefaultChallenges } from "./init-challenges";
 import { initializeDefaultMiniGames } from "./init-mini-games";
 import { authenticateUser as authenticateToken } from "./middleware/auth";
-import { testDatabaseConnection, dbName } from "./db";
+import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -89,6 +89,9 @@ app.use((req, res, next) => {
   } else {
     console.log("🗄️  Databáze není dostupná, používám in-memory storage");
   }
+
+  // Spustit monitoring databáze pro automatické přepínání
+  startDatabaseHealthMonitoring();
 
   // Inicializuj výchozí fotovýzvy a mini-hry
   try {
