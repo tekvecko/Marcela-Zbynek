@@ -14,11 +14,24 @@ import {
   type InsertAuthUser,
   AuthSession
 } from "@shared/schema";
-import { users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions } from "@shared/schema";
 import { db, dbName } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from 'bcryptjs';
+import {
+  users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
+  type User, type QuestChallenge, type UploadedPhoto, type PhotoLike, type QuestProgress,
+  type InsertQuestChallenge, type InsertUploadedPhoto, type InsertPhotoLike, type InsertQuestProgress,
+  type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession
+} from "@shared/schema";
+import {
+  users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
+  userBehaviorLogs, aiLearningInsights,
+  type User, type QuestChallenge, type UploadedPhoto, type PhotoLike, type QuestProgress,
+  type InsertQuestChallenge, type InsertUploadedPhoto, type InsertPhotoLike, type InsertQuestProgress,
+  type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession,
+  type UserBehaviorLog, type InsertUserBehaviorLog, type AiLearningInsight, type InsertAiLearningInsight
+} from "@shared/schema";
 
 export interface IStorage {
   // User operations
@@ -69,6 +82,15 @@ export interface IStorage {
   createAuthSession(userId: string): Promise<AuthSession>;
   getAuthSessionByToken(token: string): Promise<AuthSession | undefined>;
   deleteAuthSession(sessionId: string): Promise<boolean>;
+
+  // User behavior tracking
+  logUserBehavior(behaviorData: InsertUserBehaviorLog): Promise<UserBehaviorLog>;
+  getUserBehaviorLogs(filters?: { userEmail?: string; actionType?: string; limit?: number }): Promise<UserBehaviorLog[]>;
+
+  // AI learning insights
+  createAiInsight(insightData: InsertAiLearningInsight): Promise<AiLearningInsight>;
+  getAiInsights(type?: string): Promise<AiLearningInsight[]>;
+  updateAiInsight(id: string, updateData: Partial<InsertAiLearningInsight>): Promise<AiLearningInsight | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -612,6 +634,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.questProgress.values());
   }
 
+  async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]>;
   async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]> {
     return Array.from(this.questProgress.values()).filter(
       progress => progress.participantName === participantName
@@ -724,6 +747,59 @@ export class MemStorage implements IStorage {
 
   async deleteAuthSession(sessionId: string): Promise<boolean> {
     return this.authSessions.delete(sessionId);
+  }
+
+  // User behavior tracking
+  async logUserBehavior(behaviorData: InsertUserBehaviorLog): Promise<UserBehaviorLog> {
+    const id = randomUUID();
+    const log: UserBehaviorLog = {
+      ...behaviorData,
+      id,
+      createdAt: new Date(),
+    };
+    // For MemStorage, we don't have a persistent log, but we can simulate it or just return the created log.
+    // In a real scenario, this would write to a log file or a dedicated logging service.
+    console.log("MemStorage: Logging user behavior:", log);
+    return log;
+  }
+
+  async getUserBehaviorLogs(filters?: { userEmail?: string; actionType?: string; limit?: number }): Promise<UserBehaviorLog[]> {
+    // In-memory storage doesn't persist logs, so this would return an empty array or simulated data.
+    // For demonstration, returning an empty array.
+    console.log("MemStorage: Fetching user behavior logs with filters:", filters);
+    return [];
+  }
+
+  // AI learning insights
+  async createAiInsight(insightData: InsertAiLearningInsight): Promise<AiLearningInsight> {
+    const id = randomUUID();
+    const insight: AiLearningInsight = {
+      ...insightData,
+      id,
+      lastUpdated: new Date(),
+    };
+    // In-memory storage, so we don't have a persistent store for insights.
+    console.log("MemStorage: Creating AI insight:", insight);
+    return insight;
+  }
+
+  async getAiInsights(type?: string): Promise<AiLearningInsight[]> {
+    // In-memory storage doesn't persist insights.
+    console.log("MemStorage: Fetching AI insights with type:", type);
+    return [];
+  }
+
+  async updateAiInsight(id: string, updateData: Partial<InsertAiLearningInsight>): Promise<AiLearningInsight | null> {
+    // In-memory storage doesn't persist insights.
+    console.log("MemStorage: Updating AI insight with id:", id, "and data:", updateData);
+    return null;
+  }
+
+  // Helper to initialize memory storage if needed (e.g., for fallback)
+  initializeMemoryStorage(): void {
+    if (this.users.size === 0 && this.questChallenges.size === 0) {
+      this.initializeDefaultData();
+    }
   }
 }
 
@@ -1386,7 +1462,8 @@ export class DatabaseStorage implements IStorage {
 
   async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]> {
     try {
-      return await db.select().from(questProgress).where(eq(questProgress.participantName, participantName));
+      const [progress] = await db.select().from(questProgress).where(eq(questProgress.participantName, participantName));
+      return progress ? [progress] : [];
     } catch (error) {
       console.error(`Database getQuestProgressByParticipant failed, falling back to memory storage:`, error);
       // Fallback to memory storage
@@ -1529,9 +1606,9 @@ export class DatabaseStorage implements IStorage {
 
   async verifyPassword(password: string, hash: string): Promise<boolean> {
     try {
-      return bcrypt.compare(password, hash);
+      return await bcrypt.compare(password, hash);
     } catch (error) {
-      console.error('Failed to verify password:', error);
+      console.error("Error verifying password:", error);
       return false;
     }
   }
@@ -1578,6 +1655,82 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Failed to delete auth session ${sessionId}:`, error);
       return false;
+    }
+  }
+
+  // User behavior tracking
+  async logUserBehavior(behaviorData: InsertUserBehaviorLog): Promise<UserBehaviorLog> {
+    try {
+      const [log] = await db.insert(userBehaviorLogs).values(behaviorData).returning();
+      return log;
+    } catch (error) {
+      console.error("Error logging user behavior:", error);
+      throw new Error("Failed to log user behavior");
+    }
+  }
+
+  async getUserBehaviorLogs(filters?: { userEmail?: string; actionType?: string; limit?: number }): Promise<UserBehaviorLog[]> {
+    try {
+      let query = db.select().from(userBehaviorLogs);
+
+      if (filters?.userEmail) {
+        query = query.where(eq(userBehaviorLogs.userEmail, filters.userEmail)) as any;
+      }
+      if (filters?.actionType) {
+        query = query.where(eq(userBehaviorLogs.actionType, filters.actionType)) as any;
+      }
+
+      query = query.orderBy(desc(userBehaviorLogs.createdAt)) as any;
+
+      if (filters?.limit) {
+        query = query.limit(filters.limit) as any;
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error fetching behavior logs:", error);
+      return [];
+    }
+  }
+
+  // AI learning insights
+  async createAiInsight(insightData: InsertAiLearningInsight): Promise<AiLearningInsight> {
+    try {
+      const [insight] = await db.insert(aiLearningInsights).values(insightData).returning();
+      return insight;
+    } catch (error) {
+      console.error("Error creating AI insight:", error);
+      throw new Error("Failed to create AI insight");
+    }
+  }
+
+  async getAiInsights(type?: string): Promise<AiLearningInsight[]> {
+    try {
+      let query = db.select().from(aiLearningInsights);
+
+      if (type) {
+        query = query.where(eq(aiLearningInsights.insightType, type)) as any;
+      }
+
+      return await query.orderBy(desc(aiLearningInsights.lastUpdated));
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+      return [];
+    }
+  }
+
+  async updateAiInsight(id: string, updateData: Partial<InsertAiLearningInsight>): Promise<AiLearningInsight | null> {
+    try {
+      const [insight] = await db
+        .update(aiLearningInsights)
+        .set({ ...updateData, lastUpdated: sql`now()` })
+        .where(eq(aiLearningInsights.id, id))
+        .returning();
+
+      return insight || null;
+    } catch (error) {
+      console.error("Error updating AI insight:", error);
+      return null;
     }
   }
 }

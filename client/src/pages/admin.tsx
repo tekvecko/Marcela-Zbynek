@@ -25,6 +25,7 @@ import { Link } from "wouter";
 import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared/schema";
 import Navigation from "@/components/navigation";
 import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
+import { BehaviorAnalytics, AiInsightsDisplay } from "@/components/behavior-analytics";
 
 // Form schemas
 const challengeSchema = z.object({
@@ -427,7 +428,7 @@ export default function AdminPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="challenges" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="challenges" data-testid="tab-challenges">
               <Trophy className="h-4 w-4 mr-2" />
               Výzvy
@@ -439,6 +440,10 @@ export default function AdminPage() {
             <TabsTrigger value="progress" data-testid="tab-progress">
               <Users className="h-4 w-4 mr-2" />
               Pokrok
+            </TabsTrigger>
+            <TabsTrigger value="ai-analytics" data-testid="tab-ai-analytics">
+              <Eye className="h-4 w-4 mr-2" />
+              AI Analytics
             </TabsTrigger>
             <TabsTrigger value="game-control" data-testid="tab-game-control">
               <Settings className="h-4 w-4 mr-2" />
@@ -901,6 +906,43 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* AI Analytics Tab */}
+          <TabsContent value="ai-analytics">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Behavior Analytics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="h-5 w-5" />
+                    Analýza chování uživatelů
+                  </CardTitle>
+                  <CardDescription>
+                    Sledování aktivit pro zlepšení AI algoritmů
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BehaviorAnalytics />
+                </CardContent>
+              </Card>
+
+              {/* AI Learning Insights */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    AI naučené poznatky
+                  </CardTitle>
+                  <CardDescription>
+                    Poznatky získané z analýzy uživatelských preferencí
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AiInsightsDisplay />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Game Control Tab */}
