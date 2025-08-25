@@ -80,7 +80,6 @@ export class MemStorage implements IStorage {
   private authUsers: Map<string, AuthUser>;
   private authSessions: Map<string, AuthSession>;
 
-
   constructor() {
     this.users = new Map();
     this.questChallenges = new Map();
@@ -89,7 +88,6 @@ export class MemStorage implements IStorage {
     this.questProgress = new Map();
     this.authUsers = new Map();
     this.authSessions = new Map();
-
 
     this.initializeDefaultData();
   }
@@ -729,6 +727,8 @@ export class DatabaseStorage implements IStorage {
     if (!db) {
       console.log("🔄 Používám in-memory storage místo databáze");
       this.memoryFallback = new MemStorage();
+      // Initialize default data for memory fallback
+      this.memoryFallback.initializeMemoryStorage();
     }
   }
   // User operations
@@ -738,7 +738,7 @@ export class DatabaseStorage implements IStorage {
     if (this.memoryFallback) {
       return this.memoryFallback.getUser(id);
     }
-    
+
     try {
       if (!db) throw new Error("Database not available");
       const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
@@ -769,7 +769,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (!db) throw new Error("Database not available");
-    
+
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -831,10 +831,11 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Databázová chyba:', error);
       console.warn('🔴 AUTOMATICKÝ FALLBACK: Přepínám na MemStorage');
-      
+
       // Fallback na MemStorage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.getQuestChallenges();
     }
@@ -849,6 +850,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.getQuestChallenge(id);
     }
@@ -1195,6 +1197,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.createUploadedPhoto(photo);
     }
@@ -1379,6 +1382,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.getQuestProgressByParticipant(participantName);
     }
@@ -1415,6 +1419,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.updateQuestProgress(id, photosUploaded, isCompleted);
     }
@@ -1447,6 +1452,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.getOrCreateQuestProgress(questId, participantName);
     }
@@ -1475,6 +1481,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.createAuthUser(userData);
     }
@@ -1489,6 +1496,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.getAuthUserByEmail(email);
     }
@@ -1503,6 +1511,7 @@ export class DatabaseStorage implements IStorage {
       // Fallback to memory storage
       if (!this.memoryFallback) {
         this.memoryFallback = new MemStorage();
+        this.memoryFallback.initializeMemoryStorage();
       }
       return this.memoryFallback.getAuthUserById(id);
     }
@@ -1572,6 +1581,10 @@ try {
 } catch (error) {
   console.warn('Database not available, using memory storage:', error);
   storage = new MemStorage();
+  // Ensure memory storage is initialized with default data if it's the primary choice from the start
+  if (storage instanceof MemStorage) {
+    storage.initializeMemoryStorage();
+  }
 }
 
 // Export with fallback logic

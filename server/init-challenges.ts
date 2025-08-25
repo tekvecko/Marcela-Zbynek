@@ -267,6 +267,12 @@ export async function initializeDefaultChallenges() {
   try {
     console.log("🔄 Kontroluji existující fotovýzvy...");
 
+    // Pokud není databáze dostupná, přeskoč inicializaci
+    if (!db) {
+      console.log("🔄 Databáze není dostupná, výzvy budou vytvořeny v in-memory storage");
+      return;
+    }
+
     // Zkontroluj, zda již existují nějaké výzvy
     const existingChallenges = await db.select().from(questChallenges).limit(1);
 
@@ -286,12 +292,19 @@ export async function initializeDefaultChallenges() {
     console.log(`🎉 Úspěšně vytvořeno ${defaultChallenges.length} fotovýzev!`);
 
   } catch (error) {
-    console.error("❌ Chyba při vytváření výchozích výzev:", error);
+    console.error("❌ Chyba při vytváření výzev:", error);
 
     // Kontrola, zda je problém s databází
     if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
-      console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
-      console.log("💡 Pro opravu: Zkontrolujte nastavení Neon databáze a povolte endpoint");
+      console.log("🔄 Databáze není dostupná, vytvářím novou databázi s výzvami v in-memory storage");
+      console.log("💡 Aplikace bude používat lokální úložiště dokud nebude databáze opravena");
+
+      // Inicializuj memory storage s výzvami
+      const { storage } = await import('./storage');
+      if ('initializeMemoryStorage' in storage) {
+        await (storage as any).initializeMemoryStorage();
+        console.log("✅ In-memory databáze byla inicializována s výchozími výzvami");
+      }
       return;
     }
 
