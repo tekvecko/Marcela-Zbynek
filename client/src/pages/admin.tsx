@@ -911,6 +911,53 @@ export default function AdminPage() {
           {/* AI Analytics Tab */}
           <TabsContent value="ai-analytics">
             <div className="grid gap-6 md:grid-cols-3">
+              {/* AI Automatizace */}
+              <Card className="md:col-span-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    AI Automatizace
+                  </CardTitle>
+                  <CardDescription>
+                    Automatické procesy a optimalizace
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button 
+                    onClick={() => fetch('/api/admin/ai-adjust-difficulty', { method: 'POST' })
+                      .then(() => toast({ title: "Obtížnost výzev automaticky upravena" }))}
+                    className="w-full"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Upravit obtížnost výzev
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => fetch('/api/admin/ai-generate-engagement', { method: 'POST' })
+                      .then(() => toast({ title: "Engagement akce vygenerovány" }))}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    Generovat engagement akce
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => fetch('/api/admin/ai-moderate-content', { method: 'POST' })
+                      .then(() => toast({ title: "Automatická moderace spuštěna" }))}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Moderovat obsah
+                  </Button>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    🤖 AI automaticky optimalizuje aplikaci na základě chování uživatelů
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Dynamic AI Recommendations */}
               <Card className="md:col-span-1">
                 <CardHeader>

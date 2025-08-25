@@ -1289,6 +1289,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Automaticky upravit obtížnost výzev
+  app.post("/api/admin/ai-adjust-difficulty", async (req, res) => {
+    try {
+      const { aiDifficultyManager } = await import("./ai-difficulty-manager");
+      const result = await aiDifficultyManager.applyAutomaticAdjustments();
+      
+      res.json({
+        message: `Automaticky upraveno ${result.applied} výzev, přeskočeno ${result.skipped}`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error adjusting difficulty:", error);
+      res.status(500).json({ message: "Failed to adjust difficulty" });
+    }
+  });
+
+  // Admin: Generovat engagement akce
+  app.post("/api/admin/ai-generate-engagement", async (req, res) => {
+    try {
+      const { aiEngagementSystem } = await import("./ai-engagement-system");
+      const actions = await aiEngagementSystem.generateEngagementActions();
+      const timeRecommendations = await aiEngagementSystem.scheduleOptimalUploadTimes();
+      
+      res.json({
+        message: `Vygenerováno ${actions.length} engagement akcí`,
+        actions: actions.slice(0, 10), // Zobraz prvních 10
+        optimalTimes: timeRecommendations.recommendations
+      });
+    } catch (error) {
+      console.error("Error generating engagement actions:", error);
+      res.status(500).json({ message: "Failed to generate engagement actions" });
+    }
+  });
+
+  // Admin: Automatická moderace obsahu
+  app.post("/api/admin/ai-moderate-content", async (req, res) => {
+    try {
+      const photos = await storage.getUploadedPhotos();
+      const { moderateContent } = await import("./gemini");
+      
+      let moderatedCount = 0;
+      let flaggedCount = 0;
+      
+      for (const photo of photos.slice(0, 20)) { // Moderuj posledních 20 fotek
+        try {
+          const moderation = await moderateContent(`uploads/${photo.filename}`);
+          
+          if (!moderation.isAppropriate && moderation.confidence > 0.8) {
+            await storage.updatePhotoVerification(photo.id, false);
+            flaggedCount++;
+          } else if (moderation.isAppropriate && moderation.confidence > 0.9) {
+            await storage.updatePhotoVerification(photo.id, true);
+            moderatedCount++;
+          }
+        } catch (error) {
+          console.warn(`Skipping moderation for photo ${photo.id}:`, error);
+        }
+      }
+      
+      res.json({
+        message: `Moderováno ${moderatedCount} fotek, označeno ${flaggedCount} problematických`,
+        moderated: moderatedCount,
+        flagged: flaggedCount
+      });
+    } catch (error) {
+      console.error("Error moderating content:", error);
+      res.status(500).json({ message: "Failed to moderate content" });
+    }
+  });
+
   // Admin: Generate AI insights from behavior data
   app.post("/api/admin/generate-ai-insights", async (req, res) => {
     try {

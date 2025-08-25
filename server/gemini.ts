@@ -277,3 +277,62 @@ export async function analyzePhotoContent(imagePath: string): Promise<string> {
     return "Krásná svatební vzpomínka.";
   }
 }
+
+export async function moderateContent(imagePath: string): Promise<{
+  isAppropriate: boolean;
+  confidence: number;
+  issues: string[];
+  autoAction: 'approve' | 'flag' | 'reject';
+}> {
+  try {
+    const imageBytes = fs.readFileSync(imagePath);
+    const mimeType = getMimeTypeFromPath(imagePath);
+
+    const contents = [
+      {
+        inlineData: {
+          data: imageBytes.toString("base64"),
+          mimeType: mimeType,
+        },
+      },
+      `Analyzujte tento obsah z hlediska vhodnosti pro svatební aplikaci. Kontrolujte:
+      - Nevhodný obsah (násilí, sexuální obsah)
+      - Spam nebo reklamní obsah
+      - Nepříbuzný obsah (ne-svatební fotky)
+      - Kvalita obrazu (rozmazané, poškozené)
+      
+      Odpovězte JSON formátem:
+      {
+        "isAppropriate": boolean,
+        "confidence": number (0-1),
+        "issues": ["seznam problémů"],
+        "autoAction": "approve" | "flag" | "reject"
+      }`,
+    ];
+
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const response = await model.generateContent(contents);
+    const result = JSON.parse(response.response.text());
+    
+    return {
+      isAppropriate: result.isAppropriate || false,
+      confidence: result.confidence || 0,
+      issues: result.issues || [],
+      autoAction: result.autoAction || 'flag'
+    };
+  } catch (error) {
+    console.error('Content moderation error:', error);
+    return {
+      isAppropriate: false,
+      confidence: 0,
+      issues: ['Chyba při moderaci obsahu'],
+      autoAction: 'flag'
+    };
+  }
+}
