@@ -455,6 +455,16 @@ export class MemStorage implements IStorage {
       isVerified: photo.isVerified ?? false,
       verificationScore: photo.verificationScore ?? null,
       aiAnalysis: photo.aiAnalysis ?? null,
+      technicalQuality: photo.technicalQuality ?? null,
+      detectedObjects: photo.detectedObjects ?? null,
+      weddingElements: photo.weddingElements ?? null,
+      atmosphere: photo.atmosphere ?? null,
+      peopleCount: photo.peopleCount ?? null,
+      location: photo.location ?? null,
+      emotions: photo.emotions ?? null,
+      category: photo.category ?? null,
+      tags: photo.tags ?? null,
+      creativeTips: photo.creativeTips ?? null,
       createdAt: new Date(),
     };
     this.uploadedPhotos.set(id, uploadedPhoto);

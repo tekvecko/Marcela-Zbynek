@@ -415,6 +415,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 70;
             aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
 
+            // Připrav rozšířená AI data pro uložení
+            const aiMetadata = {
+              technicalQuality: verification.technicalQuality,
+              detectedObjects: verification.detectedObjects,
+              weddingElements: verification.weddingElements,
+              atmosphere: verification.atmosphere,
+              peopleCount: verification.peopleCount,
+              location: verification.location,
+              emotions: verification.emotions,
+              category: verification.category,
+              tags: verification.tags,
+              creativeTips: verification.creativeTips
+            };
+
             console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
           } catch (verificationError) {
             console.error('AI verification failed:', verificationError);
@@ -447,6 +461,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isVerified,
           verificationScore,
           aiAnalysis,
+          technicalQuality: aiMetadata?.technicalQuality || null,
+          detectedObjects: aiMetadata?.detectedObjects || null,
+          weddingElements: aiMetadata?.weddingElements || null,
+          atmosphere: aiMetadata?.atmosphere || null,
+          peopleCount: aiMetadata?.peopleCount || null,
+          location: aiMetadata?.location || null,
+          emotions: aiMetadata?.emotions || null,
+          category: aiMetadata?.category || null,
+          tags: aiMetadata?.tags || null,
+          creativeTips: aiMetadata?.creativeTips || null,
         });
         console.log(`Photo created in gallery: ${photo.id}, verified: ${isVerified}, questId: ${validatedData.questId || 'none'}`);
       } catch (photoError) {

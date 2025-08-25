@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, index, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -53,6 +53,17 @@ export const uploadedPhotos = pgTable("uploaded_photos", {
   isVerified: boolean("is_verified").notNull().default(false),
   verificationScore: integer("verification_score").default(0), // 0-100
   aiAnalysis: text("ai_analysis"),
+  // Rozšířená AI metadata
+  technicalQuality: json("technical_quality"),
+  detectedObjects: json("detected_objects"),
+  weddingElements: json("wedding_elements"),
+  atmosphere: text("atmosphere"),
+  peopleCount: integer("people_count"),
+  location: text("location"),
+  emotions: json("emotions"),
+  category: text("category"),
+  tags: json("tags"),
+  creativeTips: text("creative_tips"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 }, (table) => [
   index("idx_photos_created_at").on(table.createdAt),
