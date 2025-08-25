@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDefaultChallenges } from "./init-challenges";
 import { initializeDefaultMiniGames } from "./init-mini-games";
+import { authenticateUser as authenticateToken } from "./middleware/auth";
 
 const app = express();
 app.use(express.json());

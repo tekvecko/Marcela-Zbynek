@@ -27,6 +27,15 @@ setInterval(() => {
   console.log(`Rate limit map cleaned up. Current size: ${rateLimitMap.size}`);
 }, 5 * 60 * 1000); // 5 minutes
 
+import express from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { authenticateUser } from "./middleware/auth";
+import { storage } from "./storage";
+
+const rateLimitMap = new Map();
+
 const createRateLimit = (maxRequests: number, windowMs: number) => {
   return (req: any, res: any, next: any) => {
     const identifier = req.user?.id || req.ip;
@@ -57,6 +66,22 @@ const likeRateLimit = createRateLimit(50, 60 * 1000); // 50 likes per minute
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  dest: uploadDir,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
+
+export async function registerRoutes(app: express.Application) {
+  // Apply rate limits
+  app.use('/api/upload', uploadRateLimit);
+  app.use('/api/like', likeRateLimit);
+  
+  // Add your existing routes here
+  
+  return require('http').createServer(app);
+}e });
 }
 
 const upload = multer({

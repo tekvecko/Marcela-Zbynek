@@ -4,6 +4,7 @@ import ws from "ws";
 import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
+neonConfig.ssl = false; // Disable SSL verification for development
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
