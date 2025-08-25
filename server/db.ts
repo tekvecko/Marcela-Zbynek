@@ -7,10 +7,10 @@ neonConfig.webSocketConstructor = ws;
 neonConfig.ssl = false; // Disable SSL verification for development
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL musí být nastavena. Zapomněli jste vytvořit databázi?",
-  );
+  console.log("⚠️  DATABASE_URL není nastavena - aplikace bude používat in-memory storage");
+  console.log("💡 Pro persistentní databázi si můžete vytvořit externí PostgreSQL databázi");
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Export pouze pokud je DATABASE_URL dostupná
+export const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
+export const db = process.env.DATABASE_URL ? drizzle({ client: pool, schema }) : null;

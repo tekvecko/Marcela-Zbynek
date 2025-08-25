@@ -266,44 +266,36 @@ const defaultChallenges = [
 export async function initializeDefaultChallenges() {
   try {
     console.log("🔄 Kontroluji existující fotovýzvy...");
-    
+
     // Zkontroluj, zda již existují nějaké výzvy
     const existingChallenges = await db.select().from(questChallenges).limit(1);
-    
+
     if (existingChallenges.length > 0) {
       console.log("✅ Fotovýzvy již existují, přeskakuji inicializaci");
       return;
     }
-    
+
     console.log("🆕 Vytvářím výchozí fotovýzvy...");
-    
+
     // Vytvoř všechny výchozí výzvy
     for (const challenge of defaultChallenges) {
       await db.insert(questChallenges).values(challenge);
       console.log(`   ✓ Vytvořena výzva: ${challenge.title}`);
     }
-    
+
     console.log(`🎉 Úspěšně vytvořeno ${defaultChallenges.length} fotovýzev!`);
-    
+
   } catch (error) {
     console.error("❌ Chyba při vytváření výchozích výzev:", error);
-    
-    // Kontrola, zda je problém s databází
-    if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
-      console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
-      console.log("💡 Pro opravu: Vytvořte novou PostgreSQL databázi v Replit pomocí Database nástroje");
-      return;
-    }
-    
-    // Pro ostatní chyby, vyhoď exception
-    throw error;ch výzev:", error);
-    
+
     // Kontrola, zda je problém s databází
     if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
       console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
       console.log("💡 Pro opravu: Zkontrolujte nastavení Neon databáze a povolte endpoint");
+      return;
     }
-    
-    // Nespadneme kvůli chybě inicializace, aplikace by měla pokračovat
+
+    // Pro ostatní chyby, vyhoď exception
+    throw error;
   }
 }

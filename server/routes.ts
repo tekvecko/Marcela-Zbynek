@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { z } from "zod";
 import { insertQuestChallengeSchema, registerSchema, loginSchema } from "@shared/schema";
 import multer from "multer";

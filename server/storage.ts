@@ -725,12 +725,22 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.authSessions = new Map();
+    // Pokud není databáze dostupná, použij memory storage
+    if (!db) {
+      console.log("🔄 Používám in-memory storage místo databáze");
+      this.memoryFallback = new MemStorage();
+    }
   }
   // User operations
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
 
   async getUser(id: string): Promise<User | undefined> {
+    if (this.memoryFallback) {
+      return this.memoryFallback.getUser(id);
+    }
+    
     try {
+      if (!db) throw new Error("Database not available");
       const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
       return user || undefined;
     } catch (error) {
@@ -754,6 +764,12 @@ export class DatabaseStorage implements IStorage {
       throw new Error("User ID is required for upsert");
     }
 
+    if (this.memoryFallback) {
+      return this.memoryFallback.upsertUser(userData);
+    }
+
+    if (!db) throw new Error("Database not available");
+    
     const [user] = await db
       .insert(users)
       .values(userData)
