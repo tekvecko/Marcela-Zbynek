@@ -108,45 +108,84 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsVisible(true); // Vždy zobrazit navigaci po načtení
   }, []);
 
-  // Ultra-smooth scroll handling
+  // Smooth scroll handling with debouncing to prevent flickering
   useEffect(() => {
     let localLastScrollY = 0;
-    let scrollDirection = 0;
-    let isScrolling = false;
     let scrollTimeout: NodeJS.Timeout;
+    let scrollVelocity = 0;
+    let lastScrollTime = 0;
     
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const currentTime = Date.now();
       const scrollDelta = currentScrollY - localLastScrollY;
+      const timeDelta = currentTime - lastScrollTime;
+      
+      // Calculate scroll velocity
+      scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
       
       // Always show when menu is open
       if (isMenuOpen) {
         if (!isVisible) setIsVisible(true);
         localLastScrollY = currentScrollY;
+        lastScrollTime = currentTime;
         return;
       }
       
-      // Immediate response with very low threshold
-      if (currentScrollY <= 5) {
+      // Clear existing timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      // Always show at the top
+      if (currentScrollY <= 10) {
         setIsVisible(true);
-      } else if (Math.abs(scrollDelta) > 1) {
+        localLastScrollY = currentScrollY;
+        lastScrollTime = currentTime;
+        return;
+      }
+      
+      // Require more significant scroll movement to trigger changes
+      const threshold = scrollVelocity > 0.5 ? 15 : 25; // Dynamic threshold based on velocity
+      
+      if (Math.abs(scrollDelta) > threshold) {
         if (scrollDelta > 0) {
-          // Scrolling down - hide immediately
-          setIsVisible(false);
+          // Scrolling down - hide with delay to prevent flickering
+          scrollTimeout = setTimeout(() => {
+            if (window.scrollY > 10 && !isMenuOpen) {
+              setIsVisible(false);
+            }
+          }, 100);
         } else {
           // Scrolling up - show immediately
           setIsVisible(true);
         }
+        
+        localLastScrollY = currentScrollY;
       }
       
-      localLastScrollY = currentScrollY;
+      lastScrollTime = currentTime;
     };
 
-    // High frequency scroll listening for maximum smoothness
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Throttled scroll listening to reduce frequency
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledScroll, { passive: true });
     
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', throttledScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
     };
   }, [isMenuOpen, isVisible]);
 
