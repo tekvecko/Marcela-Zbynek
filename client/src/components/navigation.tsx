@@ -116,6 +116,11 @@ export default function Navigation({}: NavigationProps = {}) {
     let lastScrollTime = 0;
     
     const handleScroll = () => {
+      // Skip scroll handling when menu is open to prevent conflicts
+      if (isMenuOpen) {
+        return;
+      }
+      
       const currentScrollY = window.scrollY;
       const currentTime = Date.now();
       const scrollDelta = currentScrollY - localLastScrollY;
@@ -123,14 +128,6 @@ export default function Navigation({}: NavigationProps = {}) {
       
       // Calculate scroll velocity
       scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
-      
-      // Always show when menu is open
-      if (isMenuOpen) {
-        if (!isVisible) setIsVisible(true);
-        localLastScrollY = currentScrollY;
-        lastScrollTime = currentTime;
-        return;
-      }
       
       // Clear existing timeout
       if (scrollTimeout) {
@@ -179,7 +176,10 @@ export default function Navigation({}: NavigationProps = {}) {
       }
     };
 
-    window.addEventListener('scroll', throttledScroll, { passive: true });
+    // Only add scroll listener when menu is closed
+    if (!isMenuOpen) {
+      window.addEventListener('scroll', throttledScroll, { passive: true });
+    }
     
     return () => {
       window.removeEventListener('scroll', throttledScroll);
@@ -295,20 +295,28 @@ export default function Navigation({}: NavigationProps = {}) {
   // Handle body scroll lock when menu state changes
   useEffect(() => {
     if (isMenuOpen) {
+      // Store current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
       document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
     setIsMenuOpen(false);
-    // Restore scrolling
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
   };
 
   const toggleMenu = () => {
@@ -318,11 +326,6 @@ export default function Navigation({}: NavigationProps = {}) {
     // When opening menu, ensure panel is visible and stable
     if (newState) {
       setIsVisible(true);
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
     }
   };
 
@@ -558,8 +561,6 @@ export default function Navigation({}: NavigationProps = {}) {
                             href={href}
                             onClick={() => {
                               setIsMenuOpen(false);
-                              document.body.style.overflow = '';
-                              document.documentElement.style.overflow = '';
                             }}
                             className={`flex flex-col items-center space-y-1 sm:space-y-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 ${
                               isActive 
@@ -623,11 +624,20 @@ export default function Navigation({}: NavigationProps = {}) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
-            onClick={() => {
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden pointer-events-auto"
+            style={{
+              touchAction: 'none', // Prevent touch scrolling on overlay
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setIsMenuOpen(false);
-              document.body.style.overflow = '';
-              document.documentElement.style.overflow = '';
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault(); // Prevent scrolling when touching overlay
             }}
           />
         )}
