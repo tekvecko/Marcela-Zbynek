@@ -61,14 +61,6 @@ if (!fs.existsSync(uploadDir)) {
 
 const upload = multer({
   dest: uploadDir,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-});
-
-
-}
-
-const upload = multer({
-  dest: uploadDir,
   limits: { 
     fileSize: 5 * 1024 * 1024, // Reduced to 5MB for better performance
     files: 1, // Only allow single file upload
