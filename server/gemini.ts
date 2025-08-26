@@ -57,38 +57,41 @@ async function attemptGeminiVerification(
     const imageBytes = fs.readFileSync(imagePath);
     const mimeType = getMimeTypeFromPath(imagePath);
 
-    const systemPrompt = `Jste expert na hodnocení svatebních fotografií. Analyzujte poskytnutou fotografii komplexně.
+    const systemPrompt = `Jste expert na hodnoceni svatebních fotografií. Analyzujte poskytnutou fotografii komplexne.
 
-Úkol: "${challengeTitle}"
+Ukol: "${challengeTitle}"
 Popis: "${challengeDescription}"
 
-Vyhodnoťte fotografii podle těchto kritérií:
-1. Relevance k úkolu (odpovídá fotka zadání?)
-2. Kvalita provedení (je fotka ostrá, dobře komponovaná?)
+Vyhodnotte fotografii podle techto kriterii:
+1. Relevance k ukolu (odpovida fotka zadani?)
+2. Kvalita provedeni (je fotka ostra, dobre komponovana?)
 3. Svatební kontext (je to opravdu ze svatby?)
-4. Technické parametry a kompozice
-5. Rozpoznání objektů a atmosféry
-6. Emoční obsah
+4. Technicke parametry a kompozice
+5. Rozpoznani objektu a atmosfery
+6. Emocni obsah
 
-Odpovězte ve formátu JSON s těmito poli:
-- isValid: boolean (true pokud fotka splňuje úkol)
-- confidence: number (0-1, jak si jste jistí hodnocením)
-- explanation: string (krátké vysvětlení v češtině)
-- suggestedImprovements: string (nepovinné, návrhy na zlepšení)
-- technicalQuality: object s poli:
-  - sharpness: number (0-1, ostrost)
-  - composition: number (0-1, kompozice)
-  - lighting: number (0-1, osvětlení)
-  - exposure: string ("správná" | "přesvětlená" | "podexponovaná")
-- detectedObjects: array stringů (co je na fotografii vidět)
-- weddingElements: array stringů (svatební prvky: "nevěsta", "ženich", "prsteny", "kytice", "dort", "hosté", "obřad", "recepce")
-- atmosphere: string (nálada: "radostná" | "romantická" | "formální" | "spontánní" | "slavnostní")
-- peopleCount: number (přibližný počet lidí na fotografii)
-- location: string (typ místa: "kostel" | "zahrada" | "sál" | "venku" | "doma" | "jiné")
-- emotions: array stringů (emoce: "štěstí", "láska", "radost", "překvapení", "dojetí")
-- category: string (kategorie: "ceremonie" | "přípravy" | "recepce" | "portrét" | "detail" | "skupina")
-- tags: array stringů (automatické hashtags)
-- creativeTips: string (kreativní návrhy pro podobné fotky)`;
+Odpovezte POUZE ve formatu JSON s temito poli (zadne dalsi text):
+{
+"isValid": boolean,
+"confidence": number,
+"explanation": "kratke vysvetleni v cestine",
+"suggestedImprovements": "navrhy na zlepseni",
+"technicalQuality": {
+  "sharpness": number,
+  "composition": number,
+  "lighting": number,
+  "exposure": "spravna"
+},
+"detectedObjects": ["seznam objektu"],
+"weddingElements": ["svatebni prvky"],
+"atmosphere": "nálada",
+"peopleCount": number,
+"location": "typ mista",
+"emotions": ["emoce"],
+"category": "kategorie",
+"tags": ["hashtags"],
+"creativeTips": "kreativni navrhy"
+}`;
 
     const contents = [
       {
@@ -164,47 +167,77 @@ Odpovězte ve formátu JSON s těmito poli:
 
     if (rawJson) {
       try {
-        // Clean the JSON response more aggressively
+        // More aggressive JSON cleaning
         let cleanedJson = rawJson
-          .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
-          .replace(/\t+/g, ' ') // Replace tabs with spaces
-          .replace(/\n+/g, ' ') // Replace newlines with spaces
-          .replace(/\r+/g, ' ') // Replace carriage returns with spaces
-          .replace(/\s+/g, ' ') // Collapse multiple spaces
-          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove additional control characters
-          .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '') // Keep only printable characters
+          // Remove all control characters and weird encoding
+          .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+          .replace(/\r\n/g, ' ')
+          .replace(/\r/g, ' ')
+          .replace(/\n/g, ' ')
+          .replace(/\t/g, ' ')
+          .replace(/\s+/g, ' ')
+          // Remove any non-printable characters
+          .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F]/g, '')
           .trim();
         
-        // Try to find the JSON object boundaries
+        console.log('Raw response length:', rawJson.length);
+        console.log('Cleaned response preview:', cleanedJson.substring(0, 300));
+        
+        // Find JSON boundaries more reliably
         const jsonStart = cleanedJson.indexOf('{');
         const jsonEnd = cleanedJson.lastIndexOf('}') + 1;
         
-        if (jsonStart !== -1 && jsonEnd > jsonStart) {
-          let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
-          
-          // Additional cleanup for common issues
-          jsonString = jsonString
-            .replace(/,\s*}/g, '}') // Remove trailing commas
-            .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
-            .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove any remaining control chars
-            .replace(/\\\\/g, '\\'); // Fix double backslashes
-          
-          console.log('Cleaned JSON string:', jsonString.substring(0, 200) + '...');
-          
-          const result: PhotoVerificationResult = JSON.parse(jsonString);
-          
-          // Validate the result structure and types
-          if (typeof result.isValid === 'boolean' && 
-              typeof result.confidence === 'number' && 
-              typeof result.explanation === 'string' &&
-              result.confidence >= 0 && result.confidence <= 1) {
-            return result;
-          }
+        if (jsonStart === -1 || jsonEnd <= jsonStart) {
+          throw new Error("JSON object not found in response");
         }
         
-        throw new Error("Neplatná struktura JSON nebo chybí požadovaná pole");
+        let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
+        
+        // Fix common JSON issues
+        jsonString = jsonString
+          .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+          .replace(/([{,]\s*)"(\w+)":\s*"([^"]*)"([^,}\]]*)/g, (match, prefix, key, value, suffix) => {
+            // Clean up string values
+            const cleanValue = value.replace(/"/g, '\\"');
+            return `${prefix}"${key}":"${cleanValue}"${suffix}`;
+          });
+        
+        console.log('Final JSON string:', jsonString.substring(0, 500));
+        
+        const result: PhotoVerificationResult = JSON.parse(jsonString);
+        
+        // Strict validation with defaults
+        const validatedResult: PhotoVerificationResult = {
+          isValid: typeof result.isValid === 'boolean' ? result.isValid : false,
+          confidence: (typeof result.confidence === 'number' && result.confidence >= 0 && result.confidence <= 1) 
+            ? result.confidence : 0.5,
+          explanation: typeof result.explanation === 'string' && result.explanation.length > 0 
+            ? result.explanation : "AI analýza byla dokončena",
+          suggestedImprovements: typeof result.suggestedImprovements === 'string' 
+            ? result.suggestedImprovements : undefined,
+          technicalQuality: result.technicalQuality || undefined,
+          detectedObjects: Array.isArray(result.detectedObjects) ? result.detectedObjects : undefined,
+          weddingElements: Array.isArray(result.weddingElements) ? result.weddingElements : undefined,
+          atmosphere: typeof result.atmosphere === 'string' ? result.atmosphere : undefined,
+          peopleCount: typeof result.peopleCount === 'number' ? result.peopleCount : undefined,
+          location: typeof result.location === 'string' ? result.location : undefined,
+          emotions: Array.isArray(result.emotions) ? result.emotions : undefined,
+          category: typeof result.category === 'string' ? result.category : undefined,
+          tags: Array.isArray(result.tags) ? result.tags : undefined,
+          creativeTips: typeof result.creativeTips === 'string' ? result.creativeTips : undefined
+        };
+        
+        console.log('Validated result:', { 
+          isValid: validatedResult.isValid, 
+          confidence: validatedResult.confidence,
+          explanation: validatedResult.explanation?.substring(0, 100)
+        });
+        
+        return validatedResult;
+        
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
+        console.error('Raw JSON that failed:', rawJson.substring(0, 1000));
         const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
         throw new Error(`Chyba při parsování odpovědi Gemini: ${errorMessage}`);
       }

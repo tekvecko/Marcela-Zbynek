@@ -408,6 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let isVerified = false;
       let verificationScore = 0;
       let aiAnalysis = "";
+      let aiMetadata: any = null;
 
       // If this is for a quest challenge, verify with Gemini AI
       if (validatedData.questId) {
@@ -431,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
 
             // Připrav rozšířená AI data pro uložení
-            const aiMetadata = {
+            aiMetadata = {
               technicalQuality: verification.technicalQuality,
               detectedObjects: verification.detectedObjects,
               weddingElements: verification.weddingElements,
