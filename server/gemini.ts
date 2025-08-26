@@ -9,6 +9,21 @@ export interface PhotoVerificationResult {
   confidence: number;
   explanation: string;
   suggestedImprovements?: string;
+  technicalQuality?: {
+    sharpness: number;
+    composition: number;
+    lighting: number;
+    exposure: string;
+  };
+  detectedObjects?: string[];
+  weddingElements?: string[];
+  atmosphere?: string;
+  peopleCount?: number;
+  location?: string;
+  emotions?: string[];
+  category?: string;
+  tags?: string[];
+  creativeTips?: string;
 }
 
 function getMimeTypeFromPath(imagePath: string): string {
@@ -42,7 +57,7 @@ async function attemptGeminiVerification(
     const imageBytes = fs.readFileSync(imagePath);
     const mimeType = getMimeTypeFromPath(imagePath);
 
-    const systemPrompt = `Jste expert na hodnocení svatebních fotografií. Analyzujte poskytnutou fotografii a určete, zda splňuje požadavky zadaného úkolu.
+    const systemPrompt = `Jste expert na hodnocení svatebních fotografií. Analyzujte poskytnutou fotografii komplexně.
 
 Úkol: "${challengeTitle}"
 Popis: "${challengeDescription}"
@@ -51,12 +66,29 @@ Vyhodnoťte fotografii podle těchto kritérií:
 1. Relevance k úkolu (odpovídá fotka zadání?)
 2. Kvalita provedení (je fotka ostrá, dobře komponovaná?)
 3. Svatební kontext (je to opravdu ze svatby?)
+4. Technické parametry a kompozice
+5. Rozpoznání objektů a atmosféry
+6. Emoční obsah
 
 Odpovězte ve formátu JSON s těmito poli:
 - isValid: boolean (true pokud fotka splňuje úkol)
 - confidence: number (0-1, jak si jste jistí hodnocením)
 - explanation: string (krátké vysvětlení v češtině)
-- suggestedImprovements: string (nepovinné, návrhy na zlepšení)`;
+- suggestedImprovements: string (nepovinné, návrhy na zlepšení)
+- technicalQuality: object s poli:
+  - sharpness: number (0-1, ostrost)
+  - composition: number (0-1, kompozice)
+  - lighting: number (0-1, osvětlení)
+  - exposure: string ("správná" | "přesvětlená" | "podexponovaná")
+- detectedObjects: array stringů (co je na fotografii vidět)
+- weddingElements: array stringů (svatební prvky: "nevěsta", "ženich", "prsteny", "kytice", "dort", "hosté", "obřad", "recepce")
+- atmosphere: string (nálada: "radostná" | "romantická" | "formální" | "spontánní" | "slavnostní")
+- peopleCount: number (přibližný počet lidí na fotografii)
+- location: string (typ místa: "kostel" | "zahrada" | "sál" | "venku" | "doma" | "jiné")
+- emotions: array stringů (emoce: "štěstí", "láska", "radost", "překvapení", "dojetí")
+- category: string (kategorie: "ceremonie" | "přípravy" | "recepce" | "portrét" | "detail" | "skupina")
+- tags: array stringů (automatické hashtags)
+- creativeTips: string (kreativní návrhy pro podobné fotky)`;
 
     const contents = [
       {
@@ -80,6 +112,36 @@ Odpovězte ve formátu JSON s těmito poli:
             confidence: { type: SchemaType.NUMBER },
             explanation: { type: SchemaType.STRING },
             suggestedImprovements: { type: SchemaType.STRING },
+            technicalQuality: {
+              type: SchemaType.OBJECT,
+              properties: {
+                sharpness: { type: SchemaType.NUMBER },
+                composition: { type: SchemaType.NUMBER },
+                lighting: { type: SchemaType.NUMBER },
+                exposure: { type: SchemaType.STRING }
+              }
+            },
+            detectedObjects: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
+            },
+            weddingElements: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
+            },
+            atmosphere: { type: SchemaType.STRING },
+            peopleCount: { type: SchemaType.NUMBER },
+            location: { type: SchemaType.STRING },
+            emotions: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
+            },
+            category: { type: SchemaType.STRING },
+            tags: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
+            },
+            creativeTips: { type: SchemaType.STRING }
           },
           required: ["isValid", "confidence", "explanation"],
         },
@@ -213,5 +275,64 @@ export async function analyzePhotoContent(imagePath: string): Promise<string> {
   } catch (error) {
     console.error('Photo analysis error:', error);
     return "Krásná svatební vzpomínka.";
+  }
+}
+
+export async function moderateContent(imagePath: string): Promise<{
+  isAppropriate: boolean;
+  confidence: number;
+  issues: string[];
+  autoAction: 'approve' | 'flag' | 'reject';
+}> {
+  try {
+    const imageBytes = fs.readFileSync(imagePath);
+    const mimeType = getMimeTypeFromPath(imagePath);
+
+    const contents = [
+      {
+        inlineData: {
+          data: imageBytes.toString("base64"),
+          mimeType: mimeType,
+        },
+      },
+      `Analyzujte tento obsah z hlediska vhodnosti pro svatební aplikaci. Kontrolujte:
+      - Nevhodný obsah (násilí, sexuální obsah)
+      - Spam nebo reklamní obsah
+      - Nepříbuzný obsah (ne-svatební fotky)
+      - Kvalita obrazu (rozmazané, poškozené)
+      
+      Odpovězte JSON formátem:
+      {
+        "isAppropriate": boolean,
+        "confidence": number (0-1),
+        "issues": ["seznam problémů"],
+        "autoAction": "approve" | "flag" | "reject"
+      }`,
+    ];
+
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const response = await model.generateContent(contents);
+    const result = JSON.parse(response.response.text());
+    
+    return {
+      isAppropriate: result.isAppropriate || false,
+      confidence: result.confidence || 0,
+      issues: result.issues || [],
+      autoAction: result.autoAction || 'flag'
+    };
+  } catch (error) {
+    console.error('Content moderation error:', error);
+    return {
+      isAppropriate: false,
+      confidence: 0,
+      issues: ['Chyba při moderaci obsahu'],
+      autoAction: 'flag'
+    };
   }
 }

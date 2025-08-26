@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, index, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -53,6 +53,17 @@ export const uploadedPhotos = pgTable("uploaded_photos", {
   isVerified: boolean("is_verified").notNull().default(false),
   verificationScore: integer("verification_score").default(0), // 0-100
   aiAnalysis: text("ai_analysis"),
+  // Rozšířená AI metadata
+  technicalQuality: json("technical_quality"),
+  detectedObjects: json("detected_objects"),
+  weddingElements: json("wedding_elements"),
+  atmosphere: text("atmosphere"),
+  peopleCount: integer("people_count"),
+  location: text("location"),
+  emotions: json("emotions"),
+  category: text("category"),
+  tags: json("tags"),
+  creativeTips: text("creative_tips"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 }, (table) => [
   index("idx_photos_created_at").on(table.createdAt),
@@ -178,6 +189,52 @@ export const insertMiniGameScoreSchema = createInsertSchema(miniGameScores).omit
   createdAt: true,
 });
 
+// User behavior tracking for AI learning
+export const userBehaviorLogs = pgTable("user_behavior_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  userEmail: text("user_email").notNull(),
+  actionType: varchar("action_type").notNull(), // 'photo_like', 'photo_view', 'photo_reupload', 'challenge_complete', 'time_spent'
+  targetId: varchar("target_id"), // photoId, challengeId, etc.
+  actionData: jsonb("action_data"), // Additional context data
+  sessionDuration: integer("session_duration"), // Time spent on action in seconds
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_behavior_user").on(table.userEmail),
+  index("idx_behavior_action").on(table.actionType),
+  index("idx_behavior_target").on(table.targetId),
+  index("idx_behavior_created").on(table.createdAt),
+]);
+
+// AI learning insights generated from user behavior
+export const aiLearningInsights = pgTable("ai_learning_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  insightType: varchar("insight_type").notNull(), // 'photo_preference', 'challenge_difficulty', 'user_pattern'
+  category: varchar("category").notNull(), // 'technical_quality', 'emotional_content', 'composition'
+  insightData: jsonb("insight_data").notNull(), // Learned patterns and preferences
+  confidence: integer("confidence").notNull().default(0), // 0-100
+  sampleSize: integer("sample_size").notNull().default(0), // Number of data points used
+  lastUpdated: timestamp("last_updated").notNull().default(sql`now()`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_insights_type").on(table.insightType),
+  index("idx_insights_category").on(table.category),
+  index("idx_insights_updated").on(table.lastUpdated),
+]);
+
+export const insertUserBehaviorLogSchema = createInsertSchema(userBehaviorLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAiLearningInsightSchema = createInsertSchema(aiLearningInsights).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true,
+});
+
 // Auth session table for custom authentication
 export const authSessions = pgTable("auth_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -211,3 +268,7 @@ export type MiniGame = typeof miniGames.$inferSelect;
 export type InsertMiniGame = z.infer<typeof insertMiniGameSchema>;
 export type MiniGameScore = typeof miniGameScores.$inferSelect;
 export type InsertMiniGameScore = z.infer<typeof insertMiniGameScoreSchema>;
+export type UserBehaviorLog = typeof userBehaviorLogs.$inferSelect;
+export type InsertUserBehaviorLog = z.infer<typeof insertUserBehaviorLogSchema>;
+export type AiLearningInsight = typeof aiLearningInsights.$inferSelect;
+export type InsertAiLearningInsight = z.infer<typeof insertAiLearningInsightSchema>;

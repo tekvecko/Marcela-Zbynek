@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Camera, Trophy, Users, Crown, CheckCircle } from "lucide-react";
+import { Camera, Trophy, Users, Crown, CheckCircle, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
@@ -71,6 +71,9 @@ export default function PhotoQuest() {
   const [progressLoading, setProgressLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
+  // Mock user state for conditional fetching - replace with actual auth context
+  const user = localStorage.getItem('auth_token'); // Simplified check
+
   // Direct fetch to bypass TanStack Query issues
   useEffect(() => {
     const fetchChallenges = async () => {
@@ -80,12 +83,12 @@ export default function PhotoQuest() {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
-        
+
         if (token) {
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const response = await fetch('/api/quest-challenges', {
+        const response = await fetch(user ? '/api/quest-challenges/unlocked' : '/api/quest-challenges', {
           headers,
           credentials: 'include',
         });
@@ -106,7 +109,7 @@ export default function PhotoQuest() {
     };
 
     fetchChallenges();
-  }, []);
+  }, [user]); // Re-fetch if user status changes
 
   // Fetch user progress
   useEffect(() => {
@@ -117,7 +120,7 @@ export default function PhotoQuest() {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
-        
+
         if (token) {
           headers.Authorization = `Bearer ${token}`;
         }
@@ -267,23 +270,30 @@ export default function PhotoQuest() {
           {challenges.map((challenge) => {
             const Icon = getQuestIcon(challenge.title);
             const completed = isQuestCompleted(challenge.id);
+            const unlocked = user || !challenge.unlockRequirement; // Assume unlocked if user is logged in or no requirement
 
             return (
               <Card
                 key={challenge.id}
-                className={`group relative overflow-hidden backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
+                className={`group relative overflow-hidden backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
                   completed 
                     ? 'bg-gradient-to-br from-green-100/40 to-emerald-200/40 border-green-300/50' 
-                    : 'bg-white/20'
+                    : unlocked ? 'bg-white/20 cursor-pointer' : 'bg-gray-50/10 border-gray-300/10 text-gray-400 cursor-not-allowed'
                 }`}
-                onClick={() => handleQuestClick(challenge.id)}
+                onClick={() => unlocked && handleQuestClick(challenge.id)}
                 data-testid={`card-challenge-${challenge.id}`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-romantic to-love rounded-xl flex items-center justify-center shadow-lg">
-                        <Icon className="text-white" size={20} />
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                        unlocked ? 'bg-gradient-to-br from-romantic to-love' : 'bg-gray-300'
+                      }`}>
+                        {unlocked ? (
+                          <Icon className="text-white" size={20} />
+                        ) : (
+                          <Lock className="text-white" size={20} />
+                        )}
                       </div>
                       {completed && (
                         <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
@@ -292,17 +302,22 @@ export default function PhotoQuest() {
                         </div>
                       )}
                     </div>
-                    <div className="bg-gradient-to-r from-gold to-yellow-400 text-white px-3 py-1 rounded-full text-sm font-medium shadow-md">
+                    <div className={`text-white px-3 py-1 rounded-full text-sm font-medium shadow-md ${
+                      unlocked ? 'bg-gradient-to-r from-gold to-yellow-400' : 'bg-gray-400'
+                    }`}>
                       {challenge.points} bodů
                     </div>
                   </div>
 
-                  <h3 className="font-display text-xl font-bold text-charcoal mb-2 group-hover:text-romantic transition-colors">
+                  <h3 className={`font-display text-xl font-bold mb-2 group-hover:text-romantic transition-colors ${unlocked ? 'text-charcoal' : 'text-gray-400'}`}>
                     {challenge.title}
                   </h3>
 
-                  <p className="text-charcoal/60 text-sm leading-relaxed mb-4 line-clamp-3">
+                  <p className={`text-sm leading-relaxed mb-4 line-clamp-3 ${unlocked ? 'text-charcoal/60' : 'text-gray-400/80'}`}>
                     {challenge.description}
+                    {!unlocked && challenge.unlockRequirement && (
+                      <span className="text-xs italic block mt-1">Odemknout: {challenge.unlockRequirement}</span>
+                    )}
                   </p>
 
                   <div className="flex items-center justify-between">
@@ -314,19 +329,25 @@ export default function PhotoQuest() {
                       {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
                     </span>
 
-                    <GlassButton variant="primary" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      {completed ? (
-                        <>
-                          <CheckCircle size={14} />
-                          Zobrazit
-                        </>
-                      ) : (
-                        <>
-                          <Camera size={14} />
-                          Start
-                        </>
-                      )}
-                    </GlassButton>
+                    {unlocked ? (
+                      <GlassButton variant="primary" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {completed ? (
+                          <>
+                            <CheckCircle size={14} />
+                            Zobrazit
+                          </>
+                        ) : (
+                          <>
+                            <Camera size={14} />
+                            Start
+                          </>
+                        )}
+                      </GlassButton>
+                    ) : (
+                      <button className="text-xs text-gray-400 px-3 py-1 rounded-full border border-gray-300 cursor-not-allowed">
+                        Zamčeno
+                      </button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

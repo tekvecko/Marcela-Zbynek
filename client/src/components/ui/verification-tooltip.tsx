@@ -25,6 +25,13 @@ interface VerificationTooltipProps {
   challengeTitle?: string;
   showDetailed?: boolean;
   size?: "sm" | "md" | "lg";
+  technicalQuality?: any;
+  detectedObjects?: string[];
+  weddingElements?: string[];
+  atmosphere?: string;
+  emotions?: string[];
+  category?: string;
+  tags?: string[];
 }
 
 export default function VerificationTooltip({
@@ -34,7 +41,14 @@ export default function VerificationTooltip({
   suggestedImprovements,
   challengeTitle,
   showDetailed = true,
-  size = "md"
+  size = "md",
+  technicalQuality,
+  detectedObjects,
+  weddingElements,
+  atmosphere,
+  emotions,
+  category,
+  tags
 }: VerificationTooltipProps) {
   const [showDialog, setShowDialog] = useState(false);
 
@@ -48,7 +62,7 @@ export default function VerificationTooltip({
   const getStatusIcon = () => {
     const iconSize = size === "sm" ? 14 : size === "md" ? 16 : 20;
     const className = `${getStatusColor()}`;
-    
+
     if (isVerified) return <CheckCircle size={iconSize} className={className} />;
     if (verificationScore > 0.7) return <AlertCircle size={iconSize} className={className} />;
     return <XCircle size={iconSize} className={className} />;
@@ -89,7 +103,7 @@ export default function VerificationTooltip({
               <Sparkles size={14} className="text-blue-500" />
               <span className="font-medium">AI Analýza</span>
             </div>
-            
+
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Shoda s výzvou:</span>
@@ -103,8 +117,8 @@ export default function VerificationTooltip({
                 {aiAnalysis.length > 120 ? `${aiAnalysis.substring(0, 120)}...` : aiAnalysis}
               </p>
             )}
-            
-            {showDetailed && ((aiAnalysis && aiAnalysis.length > 120) || suggestedImprovements) && (
+
+            {showDetailed && ((aiAnalysis && aiAnalysis.length > 120) || suggestedImprovements || technicalQuality || detectedObjects || weddingElements || atmosphere || emotions || category || tags) && (
               <Button
                 variant="ghost" 
                 size="sm"
@@ -132,7 +146,7 @@ export default function VerificationTooltip({
             AI Analýza fotografie
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {challengeTitle && (
             <div className="p-3 bg-blush/20 rounded-lg">
@@ -191,6 +205,112 @@ export default function VerificationTooltip({
                 <p className="text-sm text-blue-800 leading-relaxed">
                   {suggestedImprovements}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {technicalQuality && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Technická kvalita
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-charcoal/80 leading-relaxed">
+                  {JSON.stringify(technicalQuality)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {detectedObjects && detectedObjects.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Detekované objekty
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <ul className="text-sm text-charcoal/80 list-disc list-inside leading-relaxed">
+                  {detectedObjects.map((obj, index) => (
+                    <li key={index}>{obj}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {weddingElements && weddingElements.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Svatební prvky
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <ul className="text-sm text-charcoal/80 list-disc list-inside leading-relaxed">
+                  {weddingElements.map((element, index) => (
+                    <li key={index}>{element}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {atmosphere && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Atmosféra
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-charcoal/80 leading-relaxed">
+                  {atmosphere}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {emotions && emotions.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Emoce
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <ul className="text-sm text-charcoal/80 list-disc list-inside leading-relaxed">
+                  {emotions.map((emotion, index) => (
+                    <li key={index}>{emotion}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {category && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Kategorie
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-charcoal/80 leading-relaxed">
+                  {category}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {tags && tags.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-charcoal flex items-center gap-1">
+                <Info size={14} />
+                Tagy
+              </h4>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <ul className="text-sm text-charcoal/80 list-disc list-inside leading-relaxed">
+                  {tags.map((tag, index) => (
+                    <li key={index}>{tag}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}

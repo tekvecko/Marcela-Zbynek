@@ -346,6 +346,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get unlocked challenges for authenticated user
+  app.get("/api/quest-challenges/unlocked", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.email) {
+        return res.status(401).json({ message: "Přihlášení je vyžadováno" });
+      }
+      
+      const unlockedChallenges = await storage.getUnlockedChallenges(req.user.email);
+      res.json(unlockedChallenges);
+    } catch (error) {
+      console.error('Error fetching unlocked challenges:', error);
+      res.status(500).json({ message: "Chyba při načítání odemčených výzev" });
+    }
+  });
+
   // Get quest progress for a participant (protected)
   app.get("/api/quest-progress/:participantName", async (req, res) => {
     try {
@@ -415,6 +430,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 70;
             aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
 
+            // Připrav rozšířená AI data pro uložení
+            const aiMetadata = {
+              technicalQuality: verification.technicalQuality,
+              detectedObjects: verification.detectedObjects,
+              weddingElements: verification.weddingElements,
+              atmosphere: verification.atmosphere,
+              peopleCount: verification.peopleCount,
+              location: verification.location,
+              emotions: verification.emotions,
+              category: verification.category,
+              tags: verification.tags,
+              creativeTips: verification.creativeTips
+            };
+
             console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
           } catch (verificationError) {
             console.error('AI verification failed:', verificationError);
@@ -447,6 +476,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isVerified,
           verificationScore,
           aiAnalysis,
+          technicalQuality: aiMetadata?.technicalQuality || null,
+          detectedObjects: aiMetadata?.detectedObjects || null,
+          weddingElements: aiMetadata?.weddingElements || null,
+          atmosphere: aiMetadata?.atmosphere || null,
+          peopleCount: aiMetadata?.peopleCount || null,
+          location: aiMetadata?.location || null,
+          emotions: aiMetadata?.emotions || null,
+          category: aiMetadata?.category || null,
+          tags: aiMetadata?.tags || null,
+          creativeTips: aiMetadata?.creativeTips || null,
         });
         console.log(`Photo created in gallery: ${photo.id}, verified: ${isVerified}, questId: ${validatedData.questId || 'none'}`);
       } catch (photoError) {
@@ -476,6 +515,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateQuestProgress(progress.id, newPhotosCount, false);
           console.log(`Photo uploaded but not verified - quest still in progress (${newPhotosCount} photos uploaded)`);
         }
+      }
+
+      // Log user behavior for AI learning
+      try {
+        await storage.logUserBehavior({
+          userEmail: req.user.email || 'anonymous',
+          actionType: validatedData.questId ? 'photo_quest_upload' : 'photo_gallery_upload',
+          targetId: validatedData.questId || photo?.id,
+          actionData: {
+            isVerified,
+            verificationScore,
+            questCompleted: validatedData.questId && isVerified,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype,
+            aiMetadata: aiMetadata || null
+          },
+          userAgent: req.get('User-Agent') || null,
+          ipAddress: req.ip
+        });
+      } catch (behaviorError) {
+        console.warn('Failed to log upload behavior:', behaviorError);
       }
 
       // Return response with photo data if created successfully
@@ -626,6 +686,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use atomic toggle operation to prevent race conditions
       const result = await storage.togglePhotoLike(sanitizedPhotoId, voterName);
+      
+      // Log user behavior for AI learning
+      try {
+        await storage.logUserBehavior({
+          userEmail: voterName,
+          actionType: 'photo_like',
+          targetId: sanitizedPhotoId,
+          actionData: {
+            action: result.action,
+            previousLikes: result.likes - (result.action === 'liked' ? 1 : -1),
+            newLikes: result.likes
+          },
+          userAgent: req.get('User-Agent') || null,
+          ipAddress: req.ip
+        });
+      } catch (behaviorError) {
+        console.warn('Failed to log user behavior:', behaviorError);
+        // Don't fail the request if behavior logging fails
+      }
       
       // Get updated photo data
       const updatedPhoto = await storage.getUploadedPhoto(sanitizedPhotoId);
@@ -1152,6 +1231,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: `Resetován pokrok ${resetCount} hráčů`, resetCount });
     } catch (error) {
       res.status(500).json({ message: "Failed to reset progress" });
+    }
+  });
+
+  // Admin: Get user behavior analytics
+  app.get("/api/admin/behavior-analytics", async (req, res) => {
+    try {
+      const { actionType, limit } = req.query;
+      const behaviorLogs = await storage.getUserBehaviorLogs({
+        actionType: actionType as string,
+        limit: limit ? parseInt(limit as string) : 100
+      });
+
+      // Generate analytics from behavior data
+      const analytics = {
+        totalActions: behaviorLogs.length,
+        actionBreakdown: {},
+        userEngagement: {},
+        popularContent: {},
+        timePatterns: {}
+      } as any;
+
+      // Action type breakdown
+      behaviorLogs.forEach(log => {
+        analytics.actionBreakdown[log.actionType] = (analytics.actionBreakdown[log.actionType] || 0) + 1;
+      });
+
+      // User engagement patterns
+      const userActions = behaviorLogs.reduce((acc, log) => {
+        acc[log.userEmail] = (acc[log.userEmail] || 0) + 1;
+        return acc;
+      }, {} as any);
+
+      analytics.userEngagement = {
+        totalUsers: Object.keys(userActions).length,
+        averageActionsPerUser: Object.values(userActions).reduce((sum: number, count: any) => sum + count, 0) / Object.keys(userActions).length,
+        mostActiveUsers: Object.entries(userActions)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .slice(0, 10)
+          .map(([email, count]) => ({ email, actionCount: count }))
+      };
+
+      // Popular content (most liked photos, most completed challenges)
+      const photoLikes = behaviorLogs
+        .filter(log => log.actionType === 'photo_like')
+        .reduce((acc, log) => {
+          acc[log.targetId!] = (acc[log.targetId!] || 0) + 1;
+          return acc;
+        }, {} as any);
+
+      analytics.popularContent.mostLikedPhotos = Object.entries(photoLikes)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 10)
+        .map(([photoId, likes]) => ({ photoId, likes }));
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching behavior analytics:", error);
+      res.status(500).json({ message: "Failed to fetch behavior analytics" });
+    }
+  });
+
+  // Admin: Get AI learning insights
+  app.get("/api/admin/ai-insights", async (req, res) => {
+    try {
+      const { type } = req.query;
+      const insights = await storage.getAiInsights(type as string);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+      res.status(500).json({ message: "Failed to fetch AI insights" });
+    }
+  });
+
+  // Admin: Automaticky upravit obtížnost výzev
+  app.post("/api/admin/ai-adjust-difficulty", async (req, res) => {
+    try {
+      const { aiDifficultyManager } = await import("./ai-difficulty-manager");
+      const result = await aiDifficultyManager.applyAutomaticAdjustments();
+      
+      res.json({
+        message: `Automaticky upraveno ${result.applied} výzev, přeskočeno ${result.skipped}`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error adjusting difficulty:", error);
+      res.status(500).json({ message: "Failed to adjust difficulty" });
+    }
+  });
+
+  // Admin: Generovat engagement akce
+  app.post("/api/admin/ai-generate-engagement", async (req, res) => {
+    try {
+      const { aiEngagementSystem } = await import("./ai-engagement-system");
+      const actions = await aiEngagementSystem.generateEngagementActions();
+      const timeRecommendations = await aiEngagementSystem.scheduleOptimalUploadTimes();
+      
+      res.json({
+        message: `Vygenerováno ${actions.length} engagement akcí`,
+        actions: actions.slice(0, 10), // Zobraz prvních 10
+        optimalTimes: timeRecommendations.recommendations
+      });
+    } catch (error) {
+      console.error("Error generating engagement actions:", error);
+      res.status(500).json({ message: "Failed to generate engagement actions" });
+    }
+  });
+
+  // Admin: Automatická moderace obsahu
+  app.post("/api/admin/ai-moderate-content", async (req, res) => {
+    try {
+      const photos = await storage.getUploadedPhotos();
+      const { moderateContent } = await import("./gemini");
+      
+      let moderatedCount = 0;
+      let flaggedCount = 0;
+      
+      for (const photo of photos.slice(0, 20)) { // Moderuj posledních 20 fotek
+        try {
+          const moderation = await moderateContent(`uploads/${photo.filename}`);
+          
+          if (!moderation.isAppropriate && moderation.confidence > 0.8) {
+            await storage.updatePhotoVerification(photo.id, false);
+            flaggedCount++;
+          } else if (moderation.isAppropriate && moderation.confidence > 0.9) {
+            await storage.updatePhotoVerification(photo.id, true);
+            moderatedCount++;
+          }
+        } catch (error) {
+          console.warn(`Skipping moderation for photo ${photo.id}:`, error);
+        }
+      }
+      
+      res.json({
+        message: `Moderováno ${moderatedCount} fotek, označeno ${flaggedCount} problematických`,
+        moderated: moderatedCount,
+        flagged: flaggedCount
+      });
+    } catch (error) {
+      console.error("Error moderating content:", error);
+      res.status(500).json({ message: "Failed to moderate content" });
+    }
+  });
+
+  // Admin: Generate AI insights from behavior data
+  app.post("/api/admin/generate-ai-insights", async (req, res) => {
+    try {
+      const behaviorLogs = await storage.getUserBehaviorLogs({ limit: 1000 });
+      const photos = await storage.getUploadedPhotos();
+      
+      // Analyze photo preferences based on likes
+      const photoLikeData = behaviorLogs
+        .filter(log => log.actionType === 'photo_like')
+        .map(log => {
+          const photo = photos.find(p => p.id === log.targetId);
+          return { log, photo };
+        })
+        .filter(item => item.photo);
+
+      if (photoLikeData.length > 0) {
+        // Analyze technical quality preferences
+        const qualityPreferences = photoLikeData.reduce((acc, { photo }) => {
+          if (photo?.technicalQuality) {
+            const tq = photo.technicalQuality as any;
+            acc.sharpness += tq.sharpness || 0;
+            acc.composition += tq.composition || 0;
+            acc.lighting += tq.lighting || 0;
+            acc.count += 1;
+          }
+          return acc;
+        }, { sharpness: 0, composition: 0, lighting: 0, count: 0 });
+
+        if (qualityPreferences.count > 0) {
+          const avgPreferences = {
+            sharpness: qualityPreferences.sharpness / qualityPreferences.count,
+            composition: qualityPreferences.composition / qualityPreferences.count,
+            lighting: qualityPreferences.lighting / qualityPreferences.count
+          };
+
+          await storage.createAiInsight({
+            insightType: 'photo_preference',
+            category: 'technical_quality',
+            insightData: {
+              preferences: avgPreferences,
+              analysis: `Uživatelé preferují fotky s průměrnou ostrostí ${(avgPreferences.sharpness * 100).toFixed(1)}%, kompozicí ${(avgPreferences.composition * 100).toFixed(1)}% a osvětlením ${(avgPreferences.lighting * 100).toFixed(1)}%`,
+              recommendations: [
+                avgPreferences.sharpness > 0.7 ? "Pokračujte v požadování ostrých fotek" : "Zlepšete algoritmy pro detekci ostrosti",
+                avgPreferences.composition > 0.6 ? "Dobré kompoziční preference" : "Pomozte uživatelům s kompozicí",
+                avgPreferences.lighting > 0.6 ? "Osvětlení je dobře hodnoceno" : "Věnujte pozornost kvalitě osvětlení"
+              ]
+            },
+            confidence: Math.min(95, Math.floor((qualityPreferences.count / 20) * 100)),
+            sampleSize: qualityPreferences.count
+          });
+        }
+
+        // Analyze emotional content preferences
+        const emotionData = photoLikeData
+          .filter(({ photo }) => photo?.emotions)
+          .reduce((acc, { photo }) => {
+            const emotions = photo!.emotions as string[];
+            emotions.forEach(emotion => {
+              acc[emotion] = (acc[emotion] || 0) + 1;
+            });
+            return acc;
+          }, {} as any);
+
+        if (Object.keys(emotionData).length > 0) {
+          const topEmotions = Object.entries(emotionData)
+            .sort(([,a], [,b]) => (b as number) - (a as number))
+            .slice(0, 5);
+
+          await storage.createAiInsight({
+            insightType: 'photo_preference',
+            category: 'emotional_content',
+            insightData: {
+              topEmotions: topEmotions.map(([emotion, count]) => ({ emotion, count })),
+              analysis: `Nejoblíbenější emoce na fotkách: ${topEmotions.map(([emotion]) => emotion).join(', ')}`,
+              recommendations: [
+                "Zvyšte body za fotky obsahující tyto emoce",
+                "Vytvořte speciální výzvy zaměřené na oblíbené emoce",
+                "Upravte AI algoritmy aby preferovaly tyto emoční stavy"
+              ]
+            },
+            confidence: Math.min(90, Math.floor((Object.values(emotionData).reduce((sum: number, count: any) => sum + count, 0) / 15) * 100)),
+            sampleSize: Object.values(emotionData).reduce((sum: number, count: any) => sum + count, 0)
+          });
+        }
+      }
+
+      res.json({ 
+        message: "AI insights byly úspěšně vygenerovány",
+        insightsGenerated: photoLikeData.length > 0 ? 2 : 0,
+        sampleSize: photoLikeData.length
+      });
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      res.status(500).json({ message: "Failed to generate AI insights" });
     }
   });
 

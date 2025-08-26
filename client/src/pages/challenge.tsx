@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
-import { Camera, Upload, ArrowLeft, HelpCircle } from "lucide-react";
+import { Camera, Upload, ArrowLeft, HelpCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,7 @@ export default function ChallengePage() {
   const queryClient = useQueryClient();
 
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
-    queryKey: ["/api/quest-challenges"],
+    queryKey: user ? ["/api/quest-challenges/unlocked"] : ["/api/quest-challenges"],
   });
 
   const challenge = challenges.find(c => c.id === challengeId);
@@ -264,6 +264,25 @@ export default function ChallengePage() {
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-charcoal mb-4">Úkol nebyl nalezen</h2>
+          <GlassButton onClick={() => setLocation("/photo-quest")}>
+            Zpět na úkoly
+          </GlassButton>
+        </div>
+      </div>
+    );
+  }
+
+  if (challenge.isUnlocked === false) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="text-white text-3xl" size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-charcoal mb-4">Výzva je zamčena</h2>
+          <p className="text-charcoal/60 mb-6 max-w-md mx-auto">
+            {challenge.unlockRequirement}
+          </p>
           <GlassButton onClick={() => setLocation("/photo-quest")}>
             Zpět na úkoly
           </GlassButton>
