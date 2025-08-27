@@ -12,7 +12,7 @@ import { verifyPhotoForChallenge, analyzePhotoContent, moderateContent } from ".
 import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "./middleware/auth";
 import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
-import { users } from "./db/schema";
+import { users } from "@shared/schema";
 
 // Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
