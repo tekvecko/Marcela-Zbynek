@@ -695,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userEmail: req.user?.email || 'anonymous',
           actionType: isQuestPhoto ? 'photo_quest_upload' : 'photo_gallery_upload',
           details: JSON.stringify(analysisStats),
-          pointsEarned: experienceGained || 0
+          pointsEarned: 0
         });
 
         // Award experience and check achievements

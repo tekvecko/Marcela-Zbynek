@@ -191,7 +191,7 @@ export const insertMiniGameScoreSchema = createInsertSchema(miniGameScores).omit
 
 // User behavior tracking for AI learning
 export const userBehaviorLogs = pgTable("user_behavior_logs", {
-  id: text("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userEmail: text("user_email").notNull(),
   actionType: text("action_type").notNull(),
   details: text("details"),
