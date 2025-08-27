@@ -227,7 +227,14 @@ export default function PhotoQuest() {
 
   // Helper function to handle quest click
   const handleQuestClick = (questId: string) => {
-    setLocation(`/challenge/${questId}`);
+    const completed = isQuestCompleted(questId);
+    if (completed) {
+      // If completed, navigate to view user's photo
+      setLocation(`/challenge/${questId}`);
+    } else {
+      // If not completed, navigate to take photo
+      setLocation(`/challenge/${questId}`);
+    }
   };
 
   if (challengesLoading || progressLoading || photosLoading) {
@@ -237,10 +244,6 @@ export default function PhotoQuest() {
       </div>
     );
   }
-
-  // Separate completed and available challenges
-  const completedChallenges = challenges.filter(challenge => isQuestCompleted(challenge.id));
-  const availableChallenges = challenges.filter(challenge => !isQuestCompleted(challenge.id));
 
   return (
     <section className="space-y-12">
@@ -311,92 +314,263 @@ export default function PhotoQuest() {
       </div>
 
       {/* Quest Challenges */}
-      <div className="space-y-12">
+      <div className="space-y-8">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-bold text-charcoal mb-4">
+            Fotografické výzvy
+          </h2>
+          <p className="text-lg text-charcoal/60 max-w-2xl mx-auto">
+            Klikněte na kteroukoliv výzvu a začněte fotografovat!
+          </p>
+        </div>
+
         {/* Completed Challenges Section */}
-        {completedChallenges.length > 0 && (
-          <div className="space-y-8">
+        {challenges.some(challenge => isQuestCompleted(challenge.id)) && (
+          <div className="space-y-6">
             <div className="text-center">
-              <h3 className="font-display text-3xl font-bold text-green-700 mb-4">
+              <h3 className="font-display text-2xl font-bold text-green-700 mb-2">
                 ✅ Splněné výzvy
               </h3>
-              <p className="text-lg text-green-600/80 max-w-2xl mx-auto">
+              <p className="text-green-600/80">
                 Gratuluji! Tyto úkoly jste už úspěšně dokončili.
               </p>
             </div>
             
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {completedChallenges.map((challenge) => {
-                const Icon = getQuestIcon(challenge.title);
-                const completedPhoto = completedChallengePhotos.get(challenge.id);
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {challenges
+                .filter(challenge => isQuestCompleted(challenge.id))
+                .map((challenge) => {
+                  const Icon = getQuestIcon(challenge.title);
+                  const completed = true;
+                  const unlocked = user;
+                  const completedPhoto = completedChallengePhotos.get(challenge.id);
 
-                return (
-                  <Card
-                    key={challenge.id}
-                    className="group relative overflow-hidden backdrop-blur-sm border-green-300/60 hover:border-green-400/80 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-50/90 to-emerald-100/90 cursor-pointer"
-                    onClick={() => handleQuestClick(challenge.id)}
-                    data-testid={`card-challenge-${challenge.id}`}
-                  >
-                    {completedPhoto && (
-                      <div className="relative h-48 overflow-hidden">
-                        <img 
-                          src={`/api/photos/${completedPhoto.filename}`}
-                          alt={challenge.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                        <div className="absolute top-3 right-3">
-                          <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium shadow-lg">
-                            <CheckCircle size={14} />
-                            Splněno
-                          </div>
-                        </div>
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <div className="text-white text-sm font-medium mb-1">
-                            AI skóre: {completedPhoto.analysisResult ? Math.round(completedPhoto.analysisResult.confidence * 100) : 'N/A'}%
-                          </div>
-                          {completedPhoto.analysisResult && (
-                            <div className="text-white/90 text-xs line-clamp-2">
-                              {completedPhoto.analysisResult.explanation}
+                  return (
+                    <Card
+                      key={challenge.id}
+                      className="group relative overflow-hidden backdrop-blur-sm border-green-300/60 hover:border-green-400/80 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-50/90 to-emerald-100/90 cursor-pointer"
+                      onClick={() => unlocked && handleQuestClick(challenge.id)}
+                      data-testid={`card-challenge-${challenge.id}`}
+                    >
+                      {completedPhoto && (
+                        <div className="relative h-48 overflow-hidden">
+                          <img 
+                            src={`/api/photos/${completedPhoto.filename}`}
+                            alt={challenge.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                          <div className="absolute top-3 right-3">
+                            <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                              <CheckCircle size={14} />
+                              Splněno
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
-                            <CheckCircle className="text-white" size={18} />
                           </div>
-                          <div className="text-sm">
-                            <div className="font-medium text-charcoal">Úkol splněn!</div>
-                            {completedPhoto && (
-                              <div className="text-charcoal/60 text-xs">
-                                {new Date(completedPhoto.createdAt).toLocaleDateString('cs-CZ')}
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <div className="text-white text-sm font-medium mb-1">
+                              AI skóre: {completedPhoto.analysisResult ? Math.round(completedPhoto.analysisResult.confidence * 100) : 'N/A'}%
+                            </div>
+                            {completedPhoto.analysisResult && (
+                              <div className="text-white/90 text-xs line-clamp-2">
+                                {completedPhoto.analysisResult.explanation}
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                          +{challenge.points} bodů
+                      )}
+
+                      <CardContent className="p-6">
+                        {completedPhoto && (
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
+                                <CheckCircle className="text-white" size={16} />
+                              </div>
+                              <div className="text-sm">
+                                <div className="font-medium text-charcoal">Úkol splněn!</div>
+                                <div className="text-charcoal/60 text-xs">
+                                  {new Date(completedPhoto.createdAt).toLocaleDateString('cs-CZ')}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                              +{challenge.points} bodů
+                            </div>
+                          </div>
+                        )}
+
+                        <h3 className="font-display text-xl font-bold mb-2 group-hover:text-romantic transition-colors text-charcoal">
+                          {challenge.title}
+                        </h3>
+
+                        <p className="text-sm leading-relaxed mb-4 line-clamp-2 text-charcoal/60">
+                          {challenge.description}
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm px-3 py-1 rounded-full bg-green-100 text-green-700">
+                            Aktivní
+                          </span>
+
+                          <div className="flex gap-2">
+                            <GlassButton 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLocation('/gallery');
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              Galerie
+                            </GlassButton>
+                            <GlassButton 
+                              variant="primary" 
+                              size="sm" 
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <CheckCircle size={14} />
+                              Zobrazit
+                            </GlassButton>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              }
+            </div>
+          </div>
+        )}
+
+        {/* Available Challenges Section */}
+        {challenges.some(challenge => !isQuestCompleted(challenge.id)) && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="font-display text-2xl font-bold text-charcoal mb-2">
+                📸 Dostupné výzvy
+              </h3>
+              <p className="text-charcoal/60">
+                Vyberte si úkol a začněte fotografovat!
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {challenges.length === 0 && !challengesLoading && (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-charcoal/60">Žádné výzvy nenalezeny. Zkuste obnovit stránku.</p>
+                </div>
+              )}
+              {challenges
+                .filter(challenge => !isQuestCompleted(challenge.id))
+                .map((challenge) => {
+                  const Icon = getQuestIcon(challenge.title);
+                  const completed = false;
+                  const unlocked = user; // Assume unlocked if user is logged in
+                  const completedPhoto = completedChallengePhotos.get(challenge.id);
+
+                  return (
+              <Card
+                key={challenge.id}
+                className={`group relative overflow-hidden backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+                  completed 
+                    ? 'bg-gradient-to-br from-green-50/90 to-emerald-100/90 border-green-300/60' 
+                    : unlocked ? 'bg-white/20 cursor-pointer' : 'bg-gray-50/10 border-gray-300/10 text-gray-400 cursor-not-allowed'
+                }`}
+                onClick={() => unlocked && handleQuestClick(challenge.id)}
+                data-testid={`card-challenge-${challenge.id}`}
+              >
+                {completed && completedPhoto && (
+                  <div className="relative h-48 overflow-hidden">
+                    <img 
+                      src={`/api/photos/${completedPhoto.filename}`}
+                      alt={challenge.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <div className="absolute top-3 right-3">
+                      <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                        <CheckCircle size={14} />
+                        Splněno
+                      </div>
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <div className="text-white text-sm font-medium mb-1">
+                        AI skóre: {completedPhoto.analysisResult ? Math.round(completedPhoto.analysisResult.confidence * 100) : 'N/A'}%
+                      </div>
+                      {completedPhoto.analysisResult && (
+                        <div className="text-white/90 text-xs line-clamp-2">
+                          {completedPhoto.analysisResult.explanation}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <CardContent className="p-6">
+                  {!completed && (
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                          unlocked ? 'bg-gradient-to-br from-romantic to-love' : 'bg-gray-300'
+                        }`}>
+                          {unlocked ? (
+                            <Icon className="text-white" size={20} />
+                          ) : (
+                            <Lock className="text-white" size={20} />
+                          )}
                         </div>
                       </div>
+                      <div className={`text-white px-3 py-1 rounded-full text-sm font-medium shadow-md ${
+                        unlocked ? 'bg-gradient-to-r from-gold to-yellow-400' : 'bg-gray-400'
+                      }`}>
+                        {challenge.points} bodů
+                      </div>
+                    </div>
+                  )}
 
-                      <h3 className="font-display text-xl font-bold mb-2 group-hover:text-romantic transition-colors text-charcoal">
-                        {challenge.title}
-                      </h3>
+                  {completed && completedPhoto && (
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
+                          <CheckCircle className="text-white" size={16} />
+                        </div>
+                        <div className="text-sm">
+                          <div className="font-medium text-charcoal">Úkol splněn!</div>
+                          <div className="text-charcoal/60 text-xs">
+                            {new Date(completedPhoto.createdAt).toLocaleDateString('cs-CZ')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                        +{challenge.points} bodů
+                      </div>
+                    </div>
+                  )}
 
-                      <p className="text-sm leading-relaxed mb-4 line-clamp-2 text-charcoal/60">
-                        {challenge.description}
-                      </p>
+                  <h3 className={`font-display text-xl font-bold mb-2 group-hover:text-romantic transition-colors ${unlocked ? 'text-charcoal' : 'text-gray-400'}`}>
+                    {challenge.title}
+                  </h3>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm px-3 py-1 rounded-full bg-green-100 text-green-700">
-                          Aktivní
-                        </span>
+                  <p className={`text-sm leading-relaxed mb-4 ${completed ? 'line-clamp-2' : 'line-clamp-3'} ${unlocked ? 'text-charcoal/60' : 'text-gray-400/80'}`}>
+                    {challenge.description}
+                    {!unlocked && challenge.unlockRequirement && (
+                      <span className="text-xs italic block mt-1">Odemknout: {challenge.unlockRequirement}</span>
+                    )}
+                  </p>
 
-                        <div className="flex gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm px-3 py-1 rounded-full ${
+                      challenge.isActive 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
+                    </span>
+
+                    {unlocked ? (
+                      <div className="flex gap-2">
+                        {completed && (
                           <GlassButton 
                             variant="outline" 
                             size="sm" 
@@ -408,94 +582,36 @@ export default function PhotoQuest() {
                           >
                             Galerie
                           </GlassButton>
-                          <GlassButton 
-                            variant="primary" 
-                            size="sm" 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <CheckCircle size={14} />
-                            Zobrazit
-                          </GlassButton>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Available Challenges Section */}
-        {availableChallenges.length > 0 && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h3 className="font-display text-3xl font-bold text-charcoal mb-4">
-                📸 Dostupné výzvy
-              </h3>
-              <p className="text-lg text-charcoal/60 max-w-2xl mx-auto">
-                Vyberte si úkol a začněte fotografovat!
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {availableChallenges.map((challenge) => {
-                const Icon = getQuestIcon(challenge.title);
-
-                return (
-                  <Card
-                    key={challenge.id}
-                    className="group relative overflow-hidden backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white/20 cursor-pointer"
-                    onClick={() => handleQuestClick(challenge.id)}
-                    data-testid={`card-challenge-${challenge.id}`}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-romantic to-love">
-                            <Icon className="text-white" size={20} />
-                          </div>
-                        </div>
-                        <div className="text-white px-3 py-1 rounded-full text-sm font-medium shadow-md bg-gradient-to-r from-gold to-yellow-400">
-                          {challenge.points} bodů
-                        </div>
-                      </div>
-
-                      <h3 className="font-display text-xl font-bold mb-2 group-hover:text-romantic transition-colors text-charcoal">
-                        {challenge.title}
-                      </h3>
-
-                      <p className="text-sm leading-relaxed mb-4 line-clamp-3 text-charcoal/60">
-                        {challenge.description}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm px-3 py-1 rounded-full ${
-                          challenge.isActive 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
-                        </span>
-
-                        <GlassButton variant="primary" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera size={14} />
-                          Start
+                        )}
+                        <GlassButton 
+                          variant="primary" 
+                          size="sm" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          {completed ? (
+                            <>
+                              <CheckCircle size={14} />
+                              Zobrazit
+                            </>
+                          ) : (
+                            <>
+                              <Camera size={14} />
+                              Start
+                            </>
+                          )}
                         </GlassButton>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {challenges.length === 0 && !challengesLoading && (
-          <div className="text-center py-12">
-            <p className="text-charcoal/60 text-lg">Žádné výzvy nenalezeny. Zkuste obnovit stránku.</p>
-          </div>
-        )}
+                    ) : (
+                      <button className="text-xs text-gray-400 px-3 py-1 rounded-full border border-gray-300 cursor-not-allowed">
+                        Zamčeno
+                      </button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
       {/* Leaderboard */}
