@@ -14,6 +14,7 @@ import GalleryPage from "@/pages/gallery";
 import DetailsPage from "@/pages/details";
 import AdminPage from "@/pages/admin";
 import VerificationDemoPage from "@/pages/verification-demo";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 import MiniGames from "@/pages/mini-games";
 import MiniGamePlay from "@/pages/mini-game-play";
@@ -31,6 +32,7 @@ function Router() {
         <Route path="/details" component={DetailsPage} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/verification-demo" component={VerificationDemoPage} />
+        <Route path="/profile" component={Profile} />
         <Route path="/mini-games" component={MiniGames} />
         <Route path="/mini-games/:gameId" component={MiniGamePlay} />
         <Route path="/leaderboards" component={LeaderboardsPage} />

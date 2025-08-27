@@ -4,6 +4,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
+import { Trophy, Star } from "lucide-react"; // Importuji Star icon for Profile link
+// Placeholder for GlassButton, assuming it's imported from a UI library
+// import { GlassButton } from "@/components/ui/glass-button"; 
+// Mock GlassButton for demonstration purposes
+const GlassButton = ({ children, variant, size, className, ...props }) => (
+  <button className={`glass-button ${className}`} {...props}>
+    {children}
+  </button>
+);
+// Placeholder for Link, assuming it's imported from a routing library
+// import Link from 'next/link'; // Or your preferred routing library
+// Mock Link for demonstration purposes
+const Link = ({ href, children, ...props }) => (
+  <a href={href} {...props}>
+    {children}
+  </a>
+);
+
 
 interface NavigationProps {}
 
@@ -22,7 +40,7 @@ export default function Navigation({}: NavigationProps = {}) {
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
-  
+
   // Enhanced adaptive viewport detection
   const viewportBreakpoint = useMemo(() => {
     if (viewportWidth < 475) return 'xs';
@@ -39,6 +57,7 @@ export default function Navigation({}: NavigationProps = {}) {
     { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true, priority: 2, essential: true },
     { href: '/mini-games', label: 'Mini-hry', icon: '🎮', exact: false, priority: 3, essential: false },
     { href: '/leaderboards', label: 'Žebříčky', icon: '🏆', exact: true, priority: 4, essential: false },
+    { href: '/profile', label: 'Profil', icon: '⭐', exact: true, priority: 4, essential: true }, // Added Profile Link
     { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true, priority: 2, essential: true },
     { href: '/details', label: 'Detaily', icon: '💒', exact: true, priority: 3, essential: false },
     { href: '/admin', label: 'Admin', icon: '⚙️', exact: true, priority: 5, essential: false }
@@ -98,7 +117,7 @@ export default function Navigation({}: NavigationProps = {}) {
         ease: "easeInOut" as const
       }
     };
-    
+
     return baseConfig[devicePerformance];
   }, [devicePerformance]);
 
@@ -114,26 +133,26 @@ export default function Navigation({}: NavigationProps = {}) {
     let scrollTimeout: NodeJS.Timeout;
     let scrollVelocity = 0;
     let lastScrollTime = 0;
-    
+
     const handleScroll = () => {
       // Skip scroll handling when menu is open to prevent conflicts
       if (isMenuOpen) {
         return;
       }
-      
+
       const currentScrollY = window.scrollY;
       const currentTime = Date.now();
       const scrollDelta = currentScrollY - localLastScrollY;
       const timeDelta = currentTime - lastScrollTime;
-      
+
       // Calculate scroll velocity
       scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
-      
+
       // Clear existing timeout
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
-      
+
       // Always show at the top
       if (currentScrollY <= 10) {
         setIsVisible(true);
@@ -141,10 +160,10 @@ export default function Navigation({}: NavigationProps = {}) {
         lastScrollTime = currentTime;
         return;
       }
-      
+
       // Require more significant scroll movement to trigger changes
       const threshold = scrollVelocity > 0.5 ? 15 : 25; // Dynamic threshold based on velocity
-      
+
       if (Math.abs(scrollDelta) > threshold) {
         if (scrollDelta > 0) {
           // Scrolling down - hide with delay to prevent flickering
@@ -157,10 +176,10 @@ export default function Navigation({}: NavigationProps = {}) {
           // Scrolling up - show immediately
           setIsVisible(true);
         }
-        
+
         localLastScrollY = currentScrollY;
       }
-      
+
       lastScrollTime = currentTime;
     };
 
@@ -180,7 +199,7 @@ export default function Navigation({}: NavigationProps = {}) {
     if (!isMenuOpen) {
       window.addEventListener('scroll', throttledScroll, { passive: true });
     }
-    
+
     return () => {
       window.removeEventListener('scroll', throttledScroll);
       if (scrollTimeout) {
@@ -196,14 +215,14 @@ export default function Navigation({}: NavigationProps = {}) {
     let touchStartTime = 0;
     let longPressTimer: NodeJS.Timeout;
     let isDragging = false;
-    
+
     const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
       touchStartY = touch.clientY;
       touchStartX = touch.clientX;
       touchStartTime = Date.now();
       isDragging = false;
-      
+
       // Shorter long press for faster response
       longPressTimer = setTimeout(() => {
         if (!isDragging) {
@@ -215,24 +234,24 @@ export default function Navigation({}: NavigationProps = {}) {
         }
       }, 300); // Reduced from 500ms to 300ms
     };
-    
+
     const handleTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0];
       const deltaY = touch.clientY - touchStartY;
       const deltaX = touch.clientX - touchStartX;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      
+
       if (distance > 5) {
         isDragging = true;
         if (longPressTimer) {
           clearTimeout(longPressTimer);
         }
       }
-      
+
       // Much more sensitive gesture detection
       if (distance > 15 && Math.abs(deltaY) > Math.abs(deltaX) * 0.7) {
         const deltaTime = Date.now() - touchStartTime;
-        
+
         // Instant response for fast gestures
         if (deltaTime < 500 && Math.abs(deltaY) > 20) {
           e.preventDefault();
@@ -251,27 +270,27 @@ export default function Navigation({}: NavigationProps = {}) {
         }
       }
     };
-    
+
     const handleTouchEnd = () => {
       isDragging = false;
       if (longPressTimer) {
         clearTimeout(longPressTimer);
       }
     };
-    
+
     const handleClick = (e: MouseEvent) => {
       if (isContextMenuOpen) {
         setIsContextMenuOpen(false);
         setContextMenuPosition(null);
       }
     };
-    
+
     // Use capture phase for faster response
     document.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
     document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
     document.addEventListener('touchend', handleTouchEnd, { passive: true, capture: true });
     document.addEventListener('click', handleClick, { capture: true });
-    
+
     return () => {
       document.removeEventListener('touchstart', handleTouchStart, { capture: true } as any);
       document.removeEventListener('touchmove', handleTouchMove, { capture: true } as any);
@@ -322,7 +341,7 @@ export default function Navigation({}: NavigationProps = {}) {
   const toggleMenu = () => {
     const newState = !isMenuOpen;
     setIsMenuOpen(newState);
-    
+
     // When opening menu, ensure panel is visible and stable
     if (newState) {
       setIsVisible(true);
@@ -373,7 +392,7 @@ export default function Navigation({}: NavigationProps = {}) {
           mass: 0.4,
           velocity: isVisible ? 0 : -50
         }}
-        
+
       >
         <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden pointer-events-auto" style={{
           backdropFilter: 'blur(40px) saturate(180%)',
@@ -689,7 +708,7 @@ export default function Navigation({}: NavigationProps = {}) {
                   );
                 })}
               </div>
-              
+
               <div className="mt-3 pt-3 border-t border-romantic/10">
                 <motion.button
                   onClick={() => {
