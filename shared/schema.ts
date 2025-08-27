@@ -191,22 +191,39 @@ export const insertMiniGameScoreSchema = createInsertSchema(miniGameScores).omit
 
 // User behavior tracking for AI learning
 export const userBehaviorLogs = pgTable("user_behavior_logs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
+  id: text("id").primaryKey(),
   userEmail: text("user_email").notNull(),
-  actionType: varchar("action_type").notNull(), // 'photo_like', 'photo_view', 'photo_reupload', 'challenge_complete', 'time_spent'
-  targetId: varchar("target_id"), // photoId, challengeId, etc.
-  actionData: jsonb("action_data"), // Additional context data
-  sessionDuration: integer("session_duration"), // Time spent on action in seconds
-  userAgent: text("user_agent"),
-  ipAddress: varchar("ip_address"),
-  createdAt: timestamp("created_at").notNull().default(sql`now()`),
-}, (table) => [
-  index("idx_behavior_user").on(table.userEmail),
-  index("idx_behavior_action").on(table.actionType),
-  index("idx_behavior_target").on(table.targetId),
-  index("idx_behavior_created").on(table.createdAt),
-]);
+  actionType: text("action_type").notNull(),
+  details: text("details"),
+  pointsEarned: integer("points_earned").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  achievementId: text("achievement_id").notNull(),
+  unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+  progress: integer("progress").default(0),
+});
+
+export const userStreaks = pgTable("user_streaks", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastActivityDate: timestamp("last_activity_date").defaultNow().notNull(),
+  streakType: text("streak_type").notNull(), // 'photo', 'login', 'challenge'
+});
+
+export const userLevels = pgTable("user_levels", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  level: integer("level").default(1),
+  experience: integer("experience").default(0),
+  title: text("title").default("Začátečník"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // AI learning insights generated from user behavior
 export const aiLearningInsights = pgTable("ai_learning_insights", {
