@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
-import { Camera, Upload, ArrowLeft, HelpCircle, Lock } from "lucide-react";
+import { Camera, Upload, ArrowLeft, HelpCircle, Lock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import GlassButton from "@/components/ui/glass-button";
 import UploadProgress from "@/components/ui/upload-progress";
 import PhotoAnalysisResult from "@/components/photo-analysis-result";
+import { Card, CardContent } from "@/components/ui/card";
 import type { QuestChallenge } from "@shared/schema";
 
 // Define a simple HelpTooltip component
@@ -52,15 +53,29 @@ export default function ChallengePage() {
 
   const challenge = challenges.find(c => c.id === challengeId);
 
+  // Fetch completed photo for the current challenge
+  const { data: completedPhoto, isLoading: photoLoading } = useQuery({
+    queryKey: challengeId && user ? ["/api/quest-progress", challengeId, user.email] : null,
+    queryFn: async () => {
+      if (!challengeId || !user) return null;
+      const response = await apiRequest(`/api/quest-progress/${challengeId}`);
+      return response.data;
+    },
+    enabled: !!challengeId && !!user, // Only run query if challengeId and user are available
+  });
+
+
   // Quest progress disabled without authentication
   const questProgress: any[] = [];
 
   const isQuestCompleted = (questId: string) => {
-    return false; // Always allow photo uploads without authentication
+    // Check if there's a completed photo for this quest
+    return completedPhoto !== null && completedPhoto !== undefined && completedPhoto.questId === questId;
   };
 
   const getProgressForQuest = (questId: string): number => {
-    return 0; // No progress tracking without authentication
+    // Placeholder, actual progress might be fetched elsewhere or calculated differently
+    return isQuestCompleted(questId) ? 100 : 0;
   };
 
   const uploadPhotoMutation = useMutation({
@@ -98,7 +113,7 @@ export default function ChallengePage() {
       // Call the API with auth token
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = {};
-      
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -148,6 +163,7 @@ export default function ChallengePage() {
     onSuccess: (data) => {
       setAnalysisResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-progress", challengeId, user?.email] }); // Invalidate specific query for completed photo
 
       if (data.isVerified) {
         toast({
@@ -418,146 +434,170 @@ export default function ChallengePage() {
             </div>
           </div>
 
-          {/* Upload Section */}
-          {!isCompleted && (
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-8 border border-white/20 shadow-xl">
-              <h3 className="text-xl font-semibold text-charcoal mb-6 text-center">
-                Nahrajte svou fotku
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Label htmlFor="photo" className="text-base font-medium text-charcoal/80">
-                      Vyberte fotku nebo vyfotografujte
-                    </Label>
-                    <HelpTooltip
-                      content="Můžete vybrat existující fotku z galerie nebo použít fotoaparát pro pořízení nové fotky na místě."
-                      side="top"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <GlassButton
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        onClick={handleCameraCapture}
-                        disabled={uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
-                      >
-                        <Camera size={20} />
-                        <span>Vyfotit</span>
-                      </GlassButton>
-                      <GlassButton
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        onClick={handleFilePickerOpen}
-                        disabled={uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
-                      >
-                        <Upload size={20} />
-                        <span>Vybrat</span>
-                      </GlassButton>
+          {/* Upload Section nebo zobrazení splněné fotky */}
+          <Card className="bg-white/90 backdrop-blur-sm border border-white/20 shadow-lg">
+            <CardContent className="p-8">
+              {isCompleted ? (
+                // Zobrazení splněné fotky a AI analýzy
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="text-white" size={24} />
                     </div>
-                    <Input
-                      id="photo"
-                      type="file"
-                      accept="image/*"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
+                    <h3 className="text-2xl font-bold text-green-700 mb-2">
+                      ✓ Výzva splněna!
+                    </h3>
+                    <p className="text-charcoal/60">
+                      Zde je vaše fotka, která úspěšně splnila tuto výzvu
+                    </p>
                   </div>
-                </div>
 
-                {/* File Preview */}
-                {selectedFile && (
-                  <div className="bg-gradient-to-r from-sage/10 to-emerald-50 p-6 rounded-2xl border border-sage/20">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-lg">📎</span>
-                      <div>
-                        <p className="font-medium text-charcoal">{selectedFile.name}</p>
-                        <p className="text-sm text-charcoal/60">
-                          {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
-                        </p>
+                  {photoLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-romantic/20 border-t-romantic rounded-full animate-spin"></div>
+                    </div>
+                  ) : completedPhoto ? (
+                    <div className="space-y-6">
+                      {/* Zobrazení fotky */}
+                      <div className="relative group">
+                        <img
+                          src={`/api/photos/${completedPhoto.filename}`}
+                          alt="Splněná výzva"
+                          className="w-full max-w-md mx-auto rounded-2xl shadow-lg object-cover"
+                          style={{ maxHeight: '400px' }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
+
+                      {/* AI analýza */}
+                      {completedPhoto.aiAnalysis && (
+                        <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm">🤖</span>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-blue-700">AI Hodnocení</h4>
+                                {completedPhoto.verificationScore && (
+                                  <p className="text-sm text-blue-600">
+                                    Spolehlivost: {Math.round(completedPhoto.verificationScore)}%
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-charcoal/80 leading-relaxed">
+                              {completedPhoto.aiAnalysis}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Technické detaily */}
+                      {completedPhoto.weddingElements && completedPhoto.weddingElements.length > 0 && (
+                        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
+                          <CardContent className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm">📋</span>
+                              </div>
+                              <h4 className="font-semibold text-green-700">Detekované svatební prvky</h4>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {completedPhoto.weddingElements.map((element: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
+                                >
+                                  {element}
+                                </span>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Akční tlačítka */}
+                      <div className="flex gap-3 justify-center">
+                        <GlassButton
+                          onClick={() => setLocation("/photo-quest")}
+                          variant="outline"
+                        >
+                          <ArrowLeft size={16} />
+                          Zpět na úkoly
+                        </GlassButton>
+                        <GlassButton
+                          onClick={() => setLocation("/gallery")}
+                          variant="primary"
+                        >
+                          <Camera size={16} />
+                          Zobrazit v galerii
+                        </GlassButton>
                       </div>
                     </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-charcoal/60">Fotka nebyla nalezena</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Původní upload formulář
+                <div className="text-center space-y-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto">
+                    <Camera className="text-white" size={24} />
                   </div>
-                )}
 
-                {/* Upload Button */}
-                <GlassButton
-                  ref={uploadButtonRef}
-                  onClick={handleUpload}
-                  disabled={!selectedFile || uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
-                  variant="primary"
-                  size="lg"
-                  className={`w-full transition-all duration-300 ${
-                    selectedFile && uploadStage === 'idle'
-                      ? 'animate-pulse ring-4 ring-romantic/30 shadow-lg shadow-romantic/30'
-                      : ''
-                  }`}
-                >
-                  {uploadStage === 'idle' && (
-                    <>
-                      <Upload className="w-5 h-5" />
-                      <span>Potvrdit a vyhodnotit</span>
-                    </>
-                  )}
-                  {(uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying') && (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Vyhodnocování...</span>
-                    </>
-                  )}
-                  {uploadStage === 'complete' && (
-                    <>
-                      <span className="text-lg">✅</span>
-                      <span>Hotovo!</span>
-                    </>
-                  )}
-                  {uploadStage === 'error' && (
-                    <>
-                      <span className="text-lg">❌</span>
-                      <span>Zkusit znovu</span>
-                    </>
-                  )}
-                </GlassButton>
-
-                {/* Upload Progress */}
-                {(uploadStage !== 'idle' && uploadStage !== 'error') && (
-                  <div ref={uploadProgressRef}>
-                    <UploadProgress
-                      stage={uploadStage}
-                      progress={uploadProgress}
-                      currentStep={currentStep}
-                      uploadSpeed={uploadSpeed}
-                    />
+                  <div>
+                    <h3 className="text-2xl font-bold text-charcoal mb-2">
+                      Nahrajte svou fotku
+                    </h3>
+                    <p className="text-charcoal/60">
+                      Vyberte fotku z vašeho zařízení a my ji pomocí AI ověříme
+                    </p>
                   </div>
-                )}
 
-                {/* Analysis Result */}
-                {analysisResult && (
-                  <PhotoAnalysisResult
-                    isValid={analysisResult.isVerified}
-                    confidence={(analysisResult.verificationScore || 0) / 100}
-                    explanation={analysisResult.aiAnalysis || ""}
-                    questTitle={challenge.title}
-                    onViewInGallery={() => setLocation("/gallery")}
-                    onTryAgain={() => {
-                      setAnalysisResult(null);
-                      setSelectedFile(null);
-                      // Assuming previewUrl is managed elsewhere or not directly needed here, if it was, it would need resetting too.
-                      // setPreviewUrl(null);
-                    }}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
                   />
-                )}
-              </div>
-            </div>
-          )}
+
+                  <div className="space-y-4">
+                    <GlassButton
+                      ref={uploadButtonRef}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadStage !== 'idle'}
+                      size="lg"
+                      variant="primary"
+                      className="w-full max-w-xs mx-auto"
+                    >
+                      <Camera size={20} />
+                      {selectedFile ? `Vybráno: ${selectedFile.name}` : "Vybrat fotku"}
+                    </GlassButton>
+
+                    {selectedFile && (
+                      <GlassButton
+                        onClick={handleUpload}
+                        disabled={uploadStage !== 'idle'}
+                        size="lg"
+                        variant="secondary"
+                        className="w-full max-w-xs mx-auto"
+                      >
+                        <Upload size={20} />
+                        Nahrát a ověřit
+                      </GlassButton>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {isCompleted && (
-            <div className="bg-gradient-to-r from-emerald-50/80 to-green-50/80 border border-emerald-200 p-8 rounded-2xl text-center">
+            <div className="bg-gradient-to-r from-emerald-50/80 to-green-50/80 border border-emerald-200 p-8 rounded-2xl text-center mt-8">
               <div className="text-4xl mb-4">🎉</div>
               <h3 className="text-xl font-semibold text-emerald-700 mb-2">
                 Úkol splněn!

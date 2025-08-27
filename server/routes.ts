@@ -41,8 +41,8 @@ const createRateLimit = (maxRequests: number, windowMs: number) => {
     }
 
     if (userLimit.count >= maxRequests) {
-      return res.status(429).json({ 
-        message: "Příliš mnoho požadavků. Zkuste to prosím později." 
+      return res.status(429).json({
+        message: "Příliš mnoho požadavků. Zkuste to prosím později."
       });
     }
 
@@ -62,31 +62,31 @@ if (!fs.existsSync(uploadDir)) {
 
 const upload = multer({
   dest: uploadDir,
-  limits: { 
+  limits: {
     fileSize: 5 * 1024 * 1024, // Reduced to 5MB for better performance
     files: 1, // Only allow single file upload
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
-      'image/jpeg', 
-      'image/jpg', 
-      'image/png', 
-      'image/heic', 
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/heic',
       'image/heif',
       'image/webp'
     ];
-    
+
     // Check file type
     console.log('File mime type:', file.mimetype);
     if (!allowedTypes.includes(file.mimetype)) {
       return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
     }
-    
+
     // Additional filename validation
     if (!file.originalname || file.originalname.length > 255) {
       return cb(new Error('Neplatný název souboru'));
     }
-    
+
     // Check for suspicious file extensions
     const suspiciousExtensions = ['.exe', '.bat', '.sh', '.php', '.js', '.html'];
     const fileName = file.originalname.toLowerCase();
@@ -95,7 +95,7 @@ const upload = multer({
         return cb(new Error('Podezřelý typ souboru'));
       }
     }
-    
+
     cb(null, true);
   }
 });
@@ -118,7 +118,7 @@ const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
   };
 
   req.serviceStatus = serviceStatus;
-  
+
   // Přidej warning headers při výpadku
   if (!serviceStatus.database) {
     res.setHeader('X-Service-Warning', 'Database-Unavailable');
@@ -134,16 +134,16 @@ const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
   // Použij monitoring middleware globálně
   app.use('/api', serviceMonitoringMiddleware);
 
   // Health check endpoint for Render
   app.get('/api/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'ok', 
+    res.status(200).json({
+      status: 'ok',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV 
+      environment: process.env.NODE_ENV
     });
   });
 
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Simulace výpadku pro testování záložního systému
   app.post('/api/admin/simulate-outage', async (req, res) => {
     const { outageType, duration } = req.body;
-    
+
     try {
       switch (outageType) {
         case 'database':
@@ -184,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             delete process.env.SIMULATE_DB_OUTAGE;
           }, duration || 30000);
           break;
-          
+
         case 'ai':
           // Simuluje nedostupnost AI služby
           process.env.SIMULATE_AI_OUTAGE = 'true';
@@ -192,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             delete process.env.SIMULATE_AI_OUTAGE;
           }, duration || 30000);
           break;
-          
+
         case 'storage':
           // Simuluje nedostupnost file storage
           process.env.SIMULATE_STORAGE_OUTAGE = 'true';
@@ -201,8 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }, duration || 30000);
           break;
       }
-      
-      res.json({ 
+
+      res.json({
         message: `Simulován výpadek typu: ${outageType} na ${duration || 30000}ms`,
         fallbackInstructions: {
           database: "Použijte záložní Render PostgreSQL databázi",
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Database check failed during registration, proceeding with memory storage');
         existingUser = null;
       }
-      
+
       if (existingUser) {
         return res.status(400).json({ message: "Tento e-mail je již registrován." });
       }
@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Database check failed during login');
         return res.status(500).json({ message: "Dočasný problém se službou. Zkuste to prosím znovu." });
       }
-      
+
       if (!user) {
         return res.status(400).json({ message: "Neplatný e-mail nebo heslo." });
       }
@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user?.email) {
         return res.status(401).json({ message: "Přihlášení je vyžadováno" });
       }
-      
+
       const unlockedChallenges = await storage.getUnlockedChallenges(req.user.email);
       res.json(unlockedChallenges);
     } catch (error) {
@@ -395,14 +395,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file.size > 5 * 1024 * 1024) {
         return res.status(400).json({ message: "Soubor je příliš velký. Maximum je 5MB." });
       }
-      
+
       if (!req.file.originalname || req.file.originalname.trim() === '') {
         return res.status(400).json({ message: "Neplatný název souboru" });
       }
 
       const validatedData = photoUploadSchema.parse(req.body);
-      const uploaderName = req.user 
-        ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email 
+      const uploaderName = req.user
+        ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
         : "anonymous";
 
       let isVerified = false;
@@ -419,15 +419,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           try {
             const verification = await verifyPhotoForChallenge(
-              filePath, 
-              challenge.title, 
+              filePath,
+              challenge.title,
               challenge.description
             );
 
             isVerified = verification.isValid;
             // Ensure verificationScore is a valid number
-            verificationScore = typeof verification.confidence === 'number' && !isNaN(verification.confidence) 
-              ? Math.round(verification.confidence * 100) 
+            verificationScore = typeof verification.confidence === 'number' && !isNaN(verification.confidence)
+              ? Math.round(verification.confidence * 100)
               : 70;
             aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
 
@@ -502,8 +502,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isVerified) {
           // Check if quest is already completed
           if (progress.isCompleted) {
-            return res.status(400).json({ 
-              message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou." 
+            return res.status(400).json({
+              message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou."
             });
           }
 
@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (photo) {
         res.json({
           ...photo,
-          message: validatedData.questId 
+          message: validatedData.questId
             ? (isVerified ? "Fotovýzva úspěšně splněna a fotka přidána do galerie!" : "Fotka nahrána, ale nesplnila požadavky fotovýzvy")
             : "Fotka úspěšně přidána do galerie",
           questCompleted: validatedData.questId && isVerified
@@ -574,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Přidej userHasLiked informaci pro každou fotku
       const photosWithUserInfo = await Promise.all(
         photos.map(async (photo) => {
-          const userHasLiked = req.user 
+          const userHasLiked = req.user
             ? await storage.hasUserLikedPhoto(photo.id, req.user.email)
             : false;
 
@@ -687,7 +687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use atomic toggle operation to prevent race conditions
       const result = await storage.togglePhotoLike(sanitizedPhotoId, voterName);
-      
+
       // Log user behavior for AI learning
       try {
         await storage.logUserBehavior({
@@ -706,15 +706,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Failed to log user behavior:', behaviorError);
         // Don't fail the request if behavior logging fails
       }
-      
+
       // Get updated photo data
       const updatedPhoto = await storage.getUploadedPhoto(sanitizedPhotoId);
-      
-      res.json({ 
-        ...updatedPhoto, 
-        userHasLiked: result.userHasLiked, 
-        action: result.action, 
-        likes: result.likes 
+
+      res.json({
+        ...updatedPhoto,
+        userHasLiked: result.userHasLiked,
+        action: result.action,
+        likes: result.likes
       });
     } catch (error) {
       console.error("Like/unlike photo error:", error);
@@ -740,11 +740,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { gameId } = req.params;
       const game = await miniGamesStorage.getMiniGame(gameId);
-      
+
       if (!game) {
         return res.status(404).json({ message: "Mini-game not found" });
       }
-      
+
       res.json(game);
     } catch (error) {
       console.error("Error fetching mini-game:", error);
@@ -756,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { gameId } = req.params;
       const { score, maxScore, timeSpent, gameData } = req.body;
-      
+
       if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
       }
@@ -796,7 +796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { gameId } = req.params;
       const limit = parseInt(req.query.limit as string) || 10;
-      
+
       const scores = await miniGamesStorage.getTopScores(gameId, limit);
       res.json(scores);
     } catch (error) {
@@ -808,11 +808,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mini-games/:gameId/my-score", authenticateUser, async (req: AuthRequest, res) => {
     try {
       const { gameId } = req.params;
-      
+
       if (!req.user?.email) {
         return res.status(401).json({ message: "Authentication required" });
       }
-      
+
       const score = await miniGamesStorage.getPlayerScore(gameId, req.user.email);
       res.json(score || null);
     } catch (error) {
@@ -826,12 +826,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const games = await miniGamesStorage.getMiniGames();
       const allScores: any[] = [];
-      
+
       for (const game of games) {
         const scores = await miniGamesStorage.getMiniGameScores(game.id);
         allScores.push(...scores.map(score => ({ ...score, gameTitle: game.title, gamePoints: game.points })));
       }
-      
+
       res.json(allScores);
     } catch (error) {
       console.error("Error fetching all mini-game scores:", error);
@@ -877,7 +877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check admin status - requires authentication
   app.get("/api/admin/status", authenticateUser, async (req: AuthRequest, res) => {
     try {
-      res.json({ 
+      res.json({
         isAdmin: req.user?.isAdmin || false,
         user: {
           id: req.user?.id,
@@ -1068,10 +1068,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json({ 
+      res.json({
         message: `Úspěšně smazáno ${deletedCount} z ${photoIds.length} fotek`,
         deletedCount,
-        errors 
+        errors
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to bulk delete photos" });
@@ -1101,10 +1101,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json({ 
+      res.json({
         message: `Úspěšně smazáno ${deletedCount} z ${challengeIds.length} výzev`,
         deletedCount,
-        errors 
+        errors
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to bulk delete challenges" });
@@ -1126,9 +1126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (photo) verifiedCount++;
       }
 
-      res.json({ 
+      res.json({
         message: `Úspěšně schváleno ${verifiedCount} fotek`,
-        verifiedCount 
+        verifiedCount
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to bulk verify photos" });
@@ -1178,7 +1178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const challenges = await storage.getQuestChallenges();
       let updatedCount = 0;
 
-      const targetChallenges = challenges.filter(c => 
+      const targetChallenges = challenges.filter(c =>
         points === 15 ? c.points <= 15 : c.points === points
       );
 
@@ -1201,7 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const challenges = await storage.getQuestChallenges();
       let updatedCount = 0;
 
-      const targetChallenges = challenges.filter(c => 
+      const targetChallenges = challenges.filter(c =>
         points === 15 ? c.points <= 15 : c.points === points
       );
 
@@ -1310,7 +1310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { aiDifficultyManager } = await import("./ai-difficulty-manager");
       const result = await aiDifficultyManager.applyAutomaticAdjustments();
-      
+
       res.json({
         message: `Automaticky upraveno ${result.applied} výzev, přeskočeno ${result.skipped}`,
         ...result
@@ -1327,7 +1327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { aiEngagementSystem } = await import("./ai-engagement-system");
       const actions = await aiEngagementSystem.generateEngagementActions();
       const timeRecommendations = await aiEngagementSystem.scheduleOptimalUploadTimes();
-      
+
       res.json({
         message: `Vygenerováno ${actions.length} engagement akcí`,
         actions: actions.slice(0, 10), // Zobraz prvních 10
@@ -1344,14 +1344,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const photos = await storage.getUploadedPhotos();
       const { moderateContent } = await import("./gemini");
-      
+
       let moderatedCount = 0;
       let flaggedCount = 0;
-      
+
       for (const photo of photos.slice(0, 20)) { // Moderuj posledních 20 fotek
         try {
           const moderation = await moderateContent(`uploads/${photo.filename}`);
-          
+
           if (!moderation.isAppropriate && moderation.confidence > 0.8) {
             await storage.updatePhotoVerification(photo.id, false);
             flaggedCount++;
@@ -1363,7 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.warn(`Skipping moderation for photo ${photo.id}:`, error);
         }
       }
-      
+
       res.json({
         message: `Moderováno ${moderatedCount} fotek, označeno ${flaggedCount} problematických`,
         moderated: moderatedCount,
@@ -1380,7 +1380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const behaviorLogs = await storage.getUserBehaviorLogs({ limit: 1000 });
       const photos = await storage.getUploadedPhotos();
-      
+
       // Analyze photo preferences based on likes
       const photoLikeData = behaviorLogs
         .filter(log => log.actionType === 'photo_like')
@@ -1461,7 +1461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json({ 
+      res.json({
         message: "AI insights byly úspěšně vygenerovány",
         insightsGenerated: photoLikeData.length > 0 ? 2 : 0,
         sampleSize: photoLikeData.length
