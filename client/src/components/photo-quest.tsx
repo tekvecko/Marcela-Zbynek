@@ -164,14 +164,8 @@ export default function PhotoQuest() {
 
   // Helper function to handle quest click
   const handleQuestClick = (questId: string) => {
-    const completed = isQuestCompleted(questId);
-    if (completed) {
-      // If completed, navigate to view user's photo
-      setLocation(`/challenge/${questId}`);
-    } else {
-      // If not completed, navigate to take photo
-      setLocation(`/challenge/${questId}`);
-    }
+    // Vždy navigujeme na challenge page - tam se rozhodne co zobrazit
+    setLocation(`/challenge/${questId}`);
   };
 
   if (challengesLoading || progressLoading) {

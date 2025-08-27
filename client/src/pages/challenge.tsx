@@ -55,13 +55,31 @@ export default function ChallengePage() {
 
   // Fetch completed photo for the current challenge
   const { data: completedPhoto, isLoading: photoLoading } = useQuery({
-    queryKey: challengeId && user ? ["/api/quest-progress", challengeId, user.email] : null,
+    queryKey: challengeId && user ? ["/api/user/quest", challengeId, "photos"] : null,
     queryFn: async () => {
       if (!challengeId || !user) return null;
-      const response = await apiRequest(`/api/quest-progress/${challengeId}`);
-      return response.data;
+      try {
+        const response = await fetch(`/api/user/quest/${challengeId}/photos`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const photos = await response.json();
+        // Vrátíme první ověřenou fotku pro tuto výzvu
+        return photos.find((photo: any) => photo.isVerified) || null;
+      } catch (error) {
+        console.error('Failed to fetch completed photo:', error);
+        return null;
+      }
     },
-    enabled: !!challengeId && !!user, // Only run query if challengeId and user are available
+    enabled: !!challengeId && !!user,
   });
 
 
@@ -70,7 +88,7 @@ export default function ChallengePage() {
 
   const isQuestCompleted = (questId: string) => {
     // Check if there's a completed photo for this quest
-    return completedPhoto !== null && completedPhoto !== undefined && completedPhoto.questId === questId;
+    return completedPhoto && completedPhoto.questId === questId && completedPhoto.isVerified;
   };
 
   const getProgressForQuest = (questId: string): number => {
