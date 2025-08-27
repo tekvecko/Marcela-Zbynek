@@ -197,7 +197,7 @@ Maximálně 5 prvků v každém poli typu array.
         let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
         
         // Fix problematic very long numbers that cause JSON parsing issues
-        jsonString = jsonString.replace(/:\s*(\d+\.\d{10,}[e\-\+\d]*)/g, (match, number) => {
+        jsonString = jsonString.replace(/:\s*(\d+\.\d{10,}[e\-\+\d]*)/g, (match: string, number: string) => {
           const num = parseFloat(number);
           if (isNaN(num)) return ': 0';
           // Round to reasonable precision and clamp to 0-1 range for scores
@@ -206,10 +206,10 @@ Maximálně 5 prvků v každém poli typu array.
         });
         
         // Fix arrays with too many repeated elements
-        jsonString = jsonString.replace(/"weddingElements":\s*\[([^\]]*)\]/g, (match, content) => {
+        jsonString = jsonString.replace(/"weddingElements":\s*\[([^\]]*)\]/g, (match: string, content: string) => {
           try {
-            const items = content.split(',').map(item => item.trim().replace(/"/g, ''));
-            const uniqueItems = [...new Set(items)].slice(0, 10); // Limit to 10 unique items
+            const items = content.split(',').map((item: string) => item.trim().replace(/"/g, ''));
+            const uniqueItems = Array.from(new Set(items)).slice(0, 10); // Limit to 10 unique items
             const cleanItems = uniqueItems.map(item => `"${item.replace(/"/g, '\\"')}"`);
             return `"weddingElements": [${cleanItems.join(', ')}]`;
           } catch {
@@ -220,7 +220,7 @@ Maximálně 5 prvků v každém poli typu array.
         // Fix common JSON issues
         jsonString = jsonString
           .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-          .replace(/([{,]\s*)"(\w+)":\s*"([^"]*)"([^,}\]]*)/g, (match, prefix, key, value, suffix) => {
+          .replace(/([{,]\s*)"(\w+)":\s*"([^"]*)"([^,}\]]*)/g, (match: string, prefix: string, key: string, value: string, suffix: string) => {
             // Clean up string values and handle escaped quotes
             const cleanValue = value.replace(/"/g, '\\"').replace(/\t+/g, ' ');
             return `${prefix}"${key}": "${cleanValue}"${suffix}`;
@@ -319,24 +319,44 @@ Maximálně 5 prvků v každém poli typu array.
     
     // Retry for certain types of errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    if (retryCount < maxRetries && 
-        (errorMessage.includes('Failed to parse') || 
-         errorMessage.includes('Invalid JSON') ||
-         errorMessage.includes('parsování odpovědi') ||
-         errorMessage.includes('503') ||
-         errorMessage.includes('429') ||
-         errorMessage.includes('RATE_LIMIT_EXCEEDED'))) {
+    const isRetryableError = errorMessage.includes('Failed to parse') || 
+                            errorMessage.includes('Invalid JSON') ||
+                            errorMessage.includes('parsování odpovědi') ||
+                            errorMessage.includes('503') ||
+                            errorMessage.includes('429') ||
+                            errorMessage.includes('RATE_LIMIT_EXCEEDED') ||
+                            errorMessage.includes('timeout');
+                            
+    if (retryCount < maxRetries && isRetryableError) {
       console.log(`Retrying Gemini verification (attempt ${retryCount + 2}/${maxRetries + 1})...`);
       await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1))); // Exponential backoff
       return attemptGeminiVerification(imagePath, challengeTitle, challengeDescription, retryCount + 1);
+    }
+    
+    // Provide more specific error messages based on error type
+    let userMessage = "Automatické ověření se nezdařilo z technických důvodů.";
+    let suggestionMessage = "Zkuste nahrát fotku znovu.";
+    
+    if (errorMessage.includes('403')) {
+      userMessage = "Problém s API klíčem pro ověřování fotografií.";
+      suggestionMessage = "Kontaktujte správce aplikace pro opravu konfigurace.";
+    } else if (errorMessage.includes('timeout')) {
+      userMessage = "Ověřování fotografií trvalo příliš dlouho.";
+      suggestionMessage = "Zkuste nahrát menší fotografii nebo to zkuste znovu později.";
+    } else if (errorMessage.includes('429') || errorMessage.includes('RATE_LIMIT')) {
+      userMessage = "Příliš mnoho požadavků na ověřování fotografií.";
+      suggestionMessage = "Počkejte chvilku a zkuste to znovu.";
+    } else if (errorMessage.includes('Invalid JSON') || errorMessage.includes('Failed to parse')) {
+      userMessage = "Chyba při zpracování výsledků ověření fotografií.";
+      suggestionMessage = "Zkuste nahrát jinou fotografii.";
     }
     
     // Fallback response in case of error - REJECT photos when AI fails
     return {
       isValid: false, // Be strict on errors to prevent random photo approval
       confidence: 0,
-      explanation: "Automatické ověření se nezdařilo z technických důvodů. Zkuste nahrát fotku znovu.",
-      suggestedImprovements: "Zkuste nahrát fotku znovu. Pokud problém přetrvává, obraťte se na podporu."
+      explanation: userMessage,
+      suggestedImprovements: suggestionMessage + " Pokud problém přetrvává, obraťte se na podporu."
     };
   }
 }
