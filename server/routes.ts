@@ -377,6 +377,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await handlePhotoUpload(req, res);
   });
 
+  // Robust photo analysis with multiple fallback levels
+  async function performRobustPhotoAnalysis(filePath: string, challenge: any, fileInfo: any) {
+    const maxAttempts = 3;
+    let lastError: Error | null = null;
+    
+    console.log(`🔄 Starting robust analysis (max ${maxAttempts} attempts)`);
+    
+    // Level 1: Try AI verification multiple times
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        console.log(`🤖 AI analysis attempt ${attempt}/${maxAttempts}`);
+        const verification = await verifyPhotoForChallenge(
+          filePath, 
+          challenge.title, 
+          challenge.description
+        );
+
+        // Successful AI analysis
+        const result = {
+          isVerified: verification.isValid,
+          verificationScore: typeof verification.confidence === 'number' && !isNaN(verification.confidence) 
+            ? Math.round(verification.confidence * 100) 
+            : 70,
+          aiAnalysis: verification.explanation || "AI analýza byla úspešná.",
+          aiMetadata: {
+            technicalQuality: verification.technicalQuality,
+            detectedObjects: verification.detectedObjects,
+            weddingElements: verification.weddingElements,
+            atmosphere: verification.atmosphere,
+            peopleCount: verification.peopleCount,
+            location: verification.location,
+            emotions: verification.emotions,
+            category: verification.category,
+            tags: verification.tags,
+            creativeTips: verification.creativeTips
+          },
+          analysisMethod: `AI_SUCCESS_ATTEMPT_${attempt}`
+        };
+
+        // Apply low confidence fallback logic
+        if (!verification.isValid && verification.confidence < 0.3) {
+          console.log('🔍 Low confidence rejection - flagging for manual review');
+          result.isVerified = false;
+          result.verificationScore = 30;
+          result.aiAnalysis = verification.explanation + " Fotka bude předána k manuálnímu posouzení.";
+          result.analysisMethod = `AI_LOW_CONFIDENCE_ATTEMPT_${attempt}`;
+        }
+
+        return result;
+        
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`❌ AI analysis attempt ${attempt} failed:`, error);
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxAttempts) {
+          const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    // Level 2: Smart fallback analysis based on file properties and basic image analysis
+    console.log(`🔧 AI failed after ${maxAttempts} attempts, using smart fallback analysis`);
+    return await performSmartFallbackAnalysis(filePath, challenge, fileInfo, lastError);
+  }
+
+  // Smart fallback analysis when AI completely fails
+  async function performSmartFallbackAnalysis(filePath: string, challenge: any, fileInfo: any, originalError: Error | null) {
+    try {
+      const fs = require('fs');
+      const stats = fs.statSync(filePath);
+      const fileSize = stats.size;
+      
+      // File size analysis
+      const isReasonableSize = fileSize >= 10000 && fileSize <= 50000000; // 10KB to 50MB
+      const isHighQuality = fileSize >= 500000; // Files over 500KB likely higher quality
+      
+      // File type analysis
+      const isJPEG = fileInfo.mimetype === 'image/jpeg';
+      const isPNG = fileInfo.mimetype === 'image/png';
+      const isModernFormat = ['image/webp', 'image/heic', 'image/heif'].includes(fileInfo.mimetype);
+      
+      // Basic scoring algorithm
+      let score = 50; // Base score
+      
+      if (isReasonableSize) score += 15;
+      if (isHighQuality) score += 10;
+      if (isJPEG || isPNG) score += 10;
+      if (isModernFormat) score += 5;
+      
+      // Try basic content analysis as last resort
+      let basicDescription = "Fotka byla přijata k analýze.";
+      try {
+        console.log(`📝 Attempting basic content analysis...`);
+        basicDescription = await analyzePhotoContent(filePath);
+        score += 10; // Bonus if we can analyze content
+        console.log(`✅ Basic content analysis succeeded`);
+      } catch (contentError) {
+        console.log(`⚠️ Basic content analysis also failed:`, contentError);
+        basicDescription = "Základní analýza obsahu se nezdařila, ale fotka byla přijata.";
+      }
+      
+      // Determine verification status and message
+      let analysisMessage: string;
+      let isVerified = false;
+      
+      if (score >= 70) {
+        analysisMessage = `Automatické ověření selhalo, ale fotka splňuje základní kritéria kvality. ${basicDescription} Fotka byla přijata k manuálnímu posouzení.`;
+        isVerified = false; // Still needs manual review
+      } else if (score >= 50) {
+        analysisMessage = `Automatické ověření selhalo. Fotka byla přijata s omezenou funkčností. ${basicDescription}`;
+        isVerified = false;
+      } else {
+        analysisMessage = `Automatické ověření selhalo a fotka nesplňuje základní kritéria kvality. Zkuste nahrát jinou fotografii.`;
+        score = Math.max(score, 25); // Minimum score for uploaded photos
+      }
+      
+      return {
+        isVerified,
+        verificationScore: Math.min(score, 80), // Cap at 80 for fallback analysis
+        aiAnalysis: analysisMessage,
+        aiMetadata: {
+          technicalQuality: {
+            sharpness: isHighQuality ? 0.7 : 0.5,
+            composition: 0.6,
+            lighting: 0.6,
+            exposure: "neznámá"
+          },
+          detectedObjects: [],
+          weddingElements: [],
+          atmosphere: "neanalyzováno",
+          peopleCount: null,
+          location: "neznámo",
+          emotions: [],
+          category: "obecná",
+          tags: [fileInfo.mimetype.replace('image/', '')],
+          creativeTips: null
+        },
+        analysisMethod: `SMART_FALLBACK_SCORE_${score}`
+      };
+      
+    } catch (fallbackError) {
+      console.error(`💥 Even smart fallback analysis failed:`, fallbackError);
+      
+      // Level 3: Absolute minimum fallback
+      return {
+        isVerified: false,
+        verificationScore: 25,
+        aiAnalysis: "Veškerá automatická analýza selhala z technických důvodů. Fotka byla přijata s minimálním skóre k manuálnímu posouzení.",
+        aiMetadata: null,
+        analysisMethod: "MINIMAL_FALLBACK"
+      };
+    }
+  }
+
+  // Basic photo analysis for non-quest photos
+  async function performBasicPhotoAnalysis(filePath: string, fileInfo: any) {
+    try {
+      const description = await analyzePhotoContent(filePath);
+      return {
+        score: 85,
+        description,
+        method: "BASIC_AI_SUCCESS"
+      };
+    } catch (error) {
+      console.warn(`Basic photo analysis failed:`, error);
+      return {
+        score: 70,
+        description: "Krásná svatební vzpomínka přidána do galerie.",
+        method: "BASIC_FALLBACK"
+      };
+    }
+  }
+
   async function handlePhotoUpload(req: AuthRequest, res: any) {
     try {
       console.log('Upload request received:', {
@@ -414,77 +590,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.questId) {
         const challenge = await storage.getQuestChallenge(validatedData.questId);
         if (challenge) {
-          console.log(`Verifying photo for challenge: ${challenge.title}`);
+          console.log(`🔍 Starting analysis for challenge: ${challenge.title}`);
           const filePath = path.join(uploadDir, req.file.filename);
 
-          try {
-            const verification = await verifyPhotoForChallenge(
-              filePath, 
-              challenge.title, 
-              challenge.description
-            );
-
-            isVerified = verification.isValid;
-            // Ensure verificationScore is a valid number
-            verificationScore = typeof verification.confidence === 'number' && !isNaN(verification.confidence) 
-              ? Math.round(verification.confidence * 100) 
-              : 70;
-            aiAnalysis = verification.explanation || "AI analýza byla úspešná.";
-
-            // Připrav rozšířená AI data pro uložení
-            aiMetadata = {
-              technicalQuality: verification.technicalQuality,
-              detectedObjects: verification.detectedObjects,
-              weddingElements: verification.weddingElements,
-              atmosphere: verification.atmosphere,
-              peopleCount: verification.peopleCount,
-              location: verification.location,
-              emotions: verification.emotions,
-              category: verification.category,
-              tags: verification.tags,
-              creativeTips: verification.creativeTips
-            };
-
-            console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
-            
-            // Fallback logic: If AI says photo is invalid but we have low confidence, 
-            // allow manual review by marking as pending instead of completely rejecting
-            if (!verification.isValid && verification.confidence < 0.3) {
-              console.log('Low confidence rejection - allowing manual review');
-              isVerified = false; // Still not auto-approved
-              verificationScore = 30; // Low but not zero score
-              aiAnalysis = verification.explanation + " Fotka bude předána k manuálnímu posouzení.";
-            }
-            
-          } catch (verificationError) {
-            console.error('AI verification failed completely:', verificationError);
-            // Implement basic fallback verification based on file properties
-            const fs = require('fs');
-            const stats = fs.statSync(filePath);
-            const fileSize = stats.size;
-            const isReasonableSize = fileSize > 10000 && fileSize < 50000000; // 10KB to 50MB
-            
-            if (isReasonableSize) {
-              // Allow the photo but mark it for manual review
-              isVerified = false; // Not auto-approved, but not completely rejected
-              verificationScore = 40; // Moderate score for manual review
-              aiAnalysis = "Automatické ověření se nezdařilo. Fotka byla přijata k manuálnímu posouzení. Výsledky budou dostupné později.";
-            } else {
-              // Reject photos that are clearly problematic (too small/large)
-              isVerified = false;
-              verificationScore = 0;
-              aiAnalysis = "Automatické ověření se nezdařilo a soubor má nesprávnou velikost. Zkuste nahrát jinou fotografii.";
-            }
-          }
+          // Robust analysis system with multiple fallback levels
+          const analysisResult = await performRobustPhotoAnalysis(filePath, challenge, req.file);
+          
+          isVerified = analysisResult.isVerified;
+          verificationScore = analysisResult.verificationScore;
+          aiAnalysis = analysisResult.aiAnalysis;
+          aiMetadata = analysisResult.aiMetadata;
+          
+          console.log(`✅ Analysis completed: verified=${isVerified}, score=${verificationScore}, method=${analysisResult.analysisMethod}`);
         } else {
-          console.log(`Challenge not found for questId: ${validatedData.questId}`);
+          console.log(`❌ Challenge not found for questId: ${validatedData.questId}`);
+          // Even if challenge not found, perform basic analysis
+          const basicAnalysis = await performBasicPhotoAnalysis(path.join(uploadDir, req.file.filename), req.file);
+          isVerified = false; // Can't verify without challenge context
+          verificationScore = basicAnalysis.score;
+          aiAnalysis = "Fotovýzva nebyla nalezena, ale fotka byla analyzována a přidána do galerie.";
         }
       } else {
-        // For general gallery photos, just analyze content
+        // For general gallery photos, perform robust basic analysis
+        console.log(`📸 Analyzing general gallery photo`);
         const filePath = path.join(uploadDir, req.file.filename);
-        aiAnalysis = await analyzePhotoContent(filePath);
+        const basicAnalysis = await performBasicPhotoAnalysis(filePath, req.file);
+        
         isVerified = true; // Gallery photos are auto-approved
-        verificationScore = 85; // Good default score
+        verificationScore = basicAnalysis.score;
+        aiAnalysis = basicAnalysis.description;
+        
+        console.log(`✅ Gallery photo analyzed: score=${basicAnalysis.score}, method=${basicAnalysis.method}`);
       }
 
       // Always create photo record for gallery, whether it's a quest photo or general gallery photo
@@ -541,23 +677,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Log user behavior for AI learning
+      // Log user behavior for AI learning with analysis monitoring
       try {
+        const analysisStats = {
+          isVerified,
+          verificationScore,
+          questCompleted: validatedData.questId && isVerified,
+          fileSize: req.file.size,
+          mimeType: req.file.mimetype,
+          aiMetadata: aiMetadata || null,
+          // Add analysis monitoring data
+          analysisMethod: aiMetadata?.analysisMethod || 'unknown',
+          analysisSuccess: verificationScore > 0,
+          originalError: aiMetadata?.originalError || null
+        };
+
         await storage.logUserBehavior({
           userEmail: req.user.email || 'anonymous',
           actionType: validatedData.questId ? 'photo_quest_upload' : 'photo_gallery_upload',
           targetId: validatedData.questId || photo?.id,
-          actionData: {
-            isVerified,
-            verificationScore,
-            questCompleted: validatedData.questId && isVerified,
-            fileSize: req.file.size,
-            mimeType: req.file.mimetype,
-            aiMetadata: aiMetadata || null
-          },
+          actionData: analysisStats,
           userAgent: req.get('User-Agent') || null,
           ipAddress: req.ip
         });
+
+        // Log analysis success rate for monitoring
+        console.log(`📊 Analysis completed: method=${analysisStats.analysisMethod}, score=${verificationScore}, verified=${isVerified}`);
+        
       } catch (behaviorError) {
         console.warn('Failed to log upload behavior:', behaviorError);
       }
