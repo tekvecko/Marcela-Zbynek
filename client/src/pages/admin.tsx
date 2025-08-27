@@ -17,7 +17,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, Heart, Eye, Shield, AlertTriangle, CheckSquare, Square } from "lucide-react";
+import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, Heart, Eye, Shield, AlertTriangle, CheckSquare, Square, Zap, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -26,6 +26,90 @@ import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared
 import Navigation from "@/components/navigation";
 import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 import { BehaviorAnalytics, AiInsightsDisplay, DynamicAiRecommendations } from "@/components/behavior-analytics";
+
+// --- System Status Component ---
+function SystemStatus() {
+  const [status, setStatus] = useState<{ [key: string]: { ok: boolean; message: string } }>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const checkStatus = async () => {
+    setIsLoading(true);
+    setStatus({}); // Clear previous status
+    try {
+      // Simulate checking various services
+      const dbStatus = await fetch('/api/admin/status/database').then(res => res.json());
+      const geminiStatus = await fetch('/api/admin/status/gemini').then(res => res.json());
+      const dependenciesStatus = await fetch('/api/admin/status/dependencies').then(res => res.json());
+      const azdStatus = await fetch('/api/admin/status/azd').then(res => res.json()); // Assuming AZD check endpoint
+
+      setStatus({
+        database: dbStatus,
+        gemini: geminiStatus,
+        dependencies: dependenciesStatus,
+        azd: azdStatus,
+      });
+    } catch (error) {
+      setStatus({
+        overall: { ok: false, message: "Chyba při načítání stavu" }
+      });
+      console.error("Failed to fetch system status:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Automatically check status on mount
+  useState(() => {
+    checkStatus();
+  }, []);
+
+  const getStatusIcon = (ok: boolean) => {
+    return ok ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          Stav systému
+        </CardTitle>
+        <CardDescription>
+          Kontrola dostupnosti a funkčnosti klíčových služeb
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="text-center py-8">Načítání stavu systému...</div>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(status).map(([service, result]) => (
+              <div key={service} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border">
+                <div className="flex items-center gap-3">
+                  {getStatusIcon(result.ok)}
+                  <span className="font-medium capitalize">{service}</span>
+                </div>
+                <span className={`text-sm font-semibold ${result.ok ? 'text-green-600' : 'text-red-600'}`}>
+                  {result.ok ? "V pořádku" : `Chyba: ${result.message}`}
+                </span>
+              </div>
+            ))}
+            {Object.keys(status).length === 0 && !isLoading && (
+              <div className="text-center py-8 text-muted-foreground">
+                Stav systému není k dispozici.
+              </div>
+            )}
+          </div>
+        )}
+        <Button onClick={checkStatus} variant="outline" className="mt-4 w-full" disabled={isLoading}>
+          {isLoading ? "Kontroluji..." : "Znovu zkontrolovat stav"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+// --- End System Status Component ---
+
 
 // Form schemas
 const challengeSchema = z.object({
@@ -132,14 +216,14 @@ export default function AdminPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       setSelectedPhotos([]);
-      toast({ 
-        title: "Hromadné mazání dokončeno", 
-        description: data.message 
+      toast({
+        title: "Hromadné mazání dokončeno",
+        description: data.message
       });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Chyba", 
+      toast({
+        title: "Chyba",
         description: error.message || "Nepodařilo se smazat fotky",
         variant: "destructive"
       });
@@ -152,14 +236,14 @@ export default function AdminPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
       setSelectedChallenges([]);
-      toast({ 
-        title: "Hromadné mazání dokončeno", 
-        description: data.message 
+      toast({
+        title: "Hromadné mazání dokončeno",
+        description: data.message
       });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Chyba", 
+      toast({
+        title: "Chyba",
         description: error.message || "Nepodařilo se smazat výzvy",
         variant: "destructive"
       });
@@ -224,16 +308,16 @@ export default function AdminPage() {
 
   // Bulk selection handlers
   const toggleChallengeSelection = (id: string) => {
-    setSelectedChallenges(prev => 
-      prev.includes(id) 
+    setSelectedChallenges(prev =>
+      prev.includes(id)
         ? prev.filter(x => x !== id)
         : [...prev, id]
     );
   };
 
   const togglePhotoSelection = (id: string) => {
-    setSelectedPhotos(prev => 
-      prev.includes(id) 
+    setSelectedPhotos(prev =>
+      prev.includes(id)
         ? prev.filter(x => x !== id)
         : [...prev, id]
     );
@@ -283,9 +367,9 @@ export default function AdminPage() {
   const handleToggleChallengesByPoints = (points: number) => {
     const targetChallenges = challenges.filter(c => points === 15 ? c.points <= 15 : c.points === points);
     const allActive = targetChallenges.every(c => c.isActive);
-    massControlMutation.mutate({ 
-      action: allActive ? "deactivate-by-points" : "activate-by-points", 
-      data: { points } 
+    massControlMutation.mutate({
+      action: allActive ? "deactivate-by-points" : "activate-by-points",
+      data: { points }
     });
   };
 
@@ -351,7 +435,7 @@ export default function AdminPage() {
         </div>
 
         {/* Enhanced Statistics Cards with Animations */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -372,9 +456,9 @@ export default function AdminPage() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <motion.div
-                  whileHover={{ 
-                    scale: 1.05, 
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)" 
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
                   }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.2 }}
@@ -390,8 +474,8 @@ export default function AdminPage() {
                       </motion.div>
                     </CardHeader>
                     <CardContent>
-                      <motion.div 
-                        className="text-2xl font-bold" 
+                      <motion.div
+                        className="text-2xl font-bold"
                         data-testid={`text-${stat.key}-count`}
                         initial={{ scale: 0.8 }}
                         animate={{ scale: 1 }}
@@ -399,7 +483,7 @@ export default function AdminPage() {
                       >
                         {stat.value}
                       </motion.div>
-                      <motion.p 
+                      <motion.p
                         className="text-xs text-muted-foreground"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -448,6 +532,10 @@ export default function AdminPage() {
             <TabsTrigger value="game-control" data-testid="tab-game-control">
               <Settings className="h-4 w-4 mr-2" />
               Hra
+            </TabsTrigger>
+            <TabsTrigger value="system-status" data-testid="tab-system-status">
+              <Shield className="h-4 w-4 mr-2" />
+              Stav systému
             </TabsTrigger>
           </TabsList>
 
@@ -513,9 +601,9 @@ export default function AdminPage() {
                               <FormItem>
                                 <FormLabel>Počet fotek</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    {...field} 
+                                  <Input
+                                    type="number"
+                                    {...field}
                                     onChange={e => field.onChange(parseInt(e.target.value))}
                                     data-testid="input-challenge-photos"
                                   />
@@ -531,9 +619,9 @@ export default function AdminPage() {
                               <FormItem>
                                 <FormLabel>Body</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    {...field} 
+                                  <Input
+                                    type="number"
+                                    {...field}
                                     onChange={e => field.onChange(parseInt(e.target.value))}
                                     data-testid="input-challenge-points"
                                   />
@@ -565,8 +653,8 @@ export default function AdminPage() {
                           )}
                         />
                         <DialogFooter>
-                          <Button 
-                            type="submit" 
+                          <Button
+                            type="submit"
                             disabled={createChallengeMutation.isPending || updateChallengeMutation.isPending}
                             data-testid="button-save-challenge"
                           >
@@ -588,14 +676,14 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={selectedChallenges.length === challenges.length && challenges.length > 0}
-                          onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) =>
                             checked ? selectAllChallenges() : clearChallengeSelection()
                           }
                           data-testid="checkbox-select-all-challenges"
                         />
                         <span className="text-sm text-muted-foreground">
-                          {selectedChallenges.length > 0 
-                            ? `Vybráno: ${selectedChallenges.length}` 
+                          {selectedChallenges.length > 0
+                            ? `Vybráno: ${selectedChallenges.length}`
                             : 'Vybrat vše'
                           }
                         </span>
@@ -711,14 +799,14 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={selectedPhotos.length === photos.length && photos.length > 0}
-                          onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) =>
                             checked ? selectAllPhotos() : clearPhotoSelection()
                           }
                           data-testid="checkbox-select-all-photos"
                         />
                         <span className="text-sm text-muted-foreground">
-                          {selectedPhotos.length > 0 
-                            ? `Vybráno: ${selectedPhotos.length}` 
+                          {selectedPhotos.length > 0
+                            ? `Vybráno: ${selectedPhotos.length}`
                             : 'Vybrat vše'
                           }
                         </span>
@@ -817,7 +905,7 @@ export default function AdminPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => 
+                                    onClick={() =>
                                       togglePhotoVerificationMutation.mutate({
                                         id: photo.id,
                                         isVerified: !photo.isVerified
@@ -923,7 +1011,7 @@ export default function AdminPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button 
+                  <Button
                     onClick={() => fetch('/api/admin/ai-adjust-difficulty', { method: 'POST' })
                       .then(() => toast({ title: "Obtížnost výzev automaticky upravena" }))}
                     className="w-full"
@@ -931,8 +1019,8 @@ export default function AdminPage() {
                     <Settings className="h-4 w-4 mr-2" />
                     Upravit obtížnost výzev
                   </Button>
-                  
-                  <Button 
+
+                  <Button
                     onClick={() => fetch('/api/admin/ai-generate-engagement', { method: 'POST' })
                       .then(() => toast({ title: "Engagement akce vygenerovány" }))}
                     variant="outline"
@@ -941,8 +1029,8 @@ export default function AdminPage() {
                     <Heart className="h-4 w-4 mr-2" />
                     Generovat engagement akce
                   </Button>
-                  
-                  <Button 
+
+                  <Button
                     onClick={() => fetch('/api/admin/ai-moderate-content', { method: 'POST' })
                       .then(() => toast({ title: "Automatická moderace spuštěna" }))}
                     variant="outline"
@@ -951,7 +1039,7 @@ export default function AdminPage() {
                     <Shield className="h-4 w-4 mr-2" />
                     Moderovat obsah
                   </Button>
-                  
+
                   <div className="text-xs text-muted-foreground">
                     🤖 AI automaticky optimalizuje aplikaci na základě chování uživatelů
                   </div>
@@ -1008,6 +1096,11 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
+          {/* System Status Tab */}
+          <TabsContent value="system-status">
+            <SystemStatus />
+          </TabsContent>
+
           {/* Game Control Tab */}
           <TabsContent value="game-control">
             <div className="grid gap-6 md:grid-cols-2">
@@ -1024,7 +1117,7 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap gap-2">
-                    <Button 
+                    <Button
                       onClick={handleActivateAllChallenges}
                       disabled={massControlMutation.isPending}
                       className="flex-1"
@@ -1033,7 +1126,7 @@ export default function AdminPage() {
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Aktivovat vše
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleDeactivateAllChallenges}
                       disabled={massControlMutation.isPending}
                       variant="outline"
@@ -1048,25 +1141,25 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     <Label>Bodové kategorie</Label>
                     <div className="flex gap-2">
-                      <Button 
+                      <Button
                         onClick={() => handleToggleChallengesByPoints(25)}
-                        variant="outline" 
+                        variant="outline"
                         size="sm"
                         data-testid="button-toggle-high-points"
                       >
                         25 bodů (VIP)
                       </Button>
-                      <Button 
+                      <Button
                         onClick={() => handleToggleChallengesByPoints(20)}
-                        variant="outline" 
+                        variant="outline"
                         size="sm"
                         data-testid="button-toggle-medium-points"
                       >
                         20 bodů
                       </Button>
-                      <Button 
+                      <Button
                         onClick={() => handleToggleChallengesByPoints(15)}
-                        variant="outline" 
+                        variant="outline"
                         size="sm"
                         data-testid="button-toggle-low-points"
                       >
@@ -1105,10 +1198,10 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Button 
+                    <Button
                       onClick={handleResetAllProgress}
                       disabled={resetProgressMutation.isPending}
-                      variant="destructive" 
+                      variant="destructive"
                       size="sm"
                       className="w-full"
                       data-testid="button-reset-progress"
@@ -1117,9 +1210,9 @@ export default function AdminPage() {
                       Resetovat pokrok všech hráčů
                     </Button>
 
-                    <Button 
+                    <Button
                       onClick={handleExportData}
-                      variant="outline" 
+                      variant="outline"
                       size="sm"
                       className="w-full"
                       data-testid="button-export-data"
@@ -1151,8 +1244,8 @@ export default function AdminPage() {
                         data-testid="checkbox-select-all-photos"
                       />
                       <span className="text-sm text-muted-foreground">
-                        {selectedPhotos.length > 0 
-                          ? `Vybráno: ${selectedPhotos.length} fotek` 
+                        {selectedPhotos.length > 0
+                          ? `Vybráno: ${selectedPhotos.length} fotek`
                           : 'Vybrat všechny fotky'
                         }
                       </span>

@@ -1510,6 +1510,223 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: System status monitoring
+  app.get("/api/admin/system-status", async (req, res) => {
+    try {
+      const systemStatus = {
+        timestamp: new Date().toISOString(),
+        overall: 'healthy',
+        services: {
+          database: {
+            status: 'unknown',
+            latency: null,
+            details: '',
+            lastCheck: new Date().toISOString()
+          },
+          geminiAI: {
+            status: 'unknown',
+            configured: !!process.env.GEMINI_API_KEY,
+            details: '',
+            lastCheck: new Date().toISOString()
+          },
+          storage: {
+            status: 'unknown',
+            uploadsPath: '/uploads',
+            diskSpace: null,
+            details: '',
+            lastCheck: new Date().toISOString()
+          },
+          authentication: {
+            status: 'unknown',
+            jwtConfigured: !!process.env.JWT_SECRET,
+            details: '',
+            lastCheck: new Date().toISOString()
+          }
+        },
+        dependencies: {
+          essential: [],
+          optional: []
+        },
+        recommendations: []
+      };
+
+      // Test database connection
+      try {
+        const start = Date.now();
+        const dbTest = await storage.getQuestChallenges();
+        const latency = Date.now() - start;
+        
+        systemStatus.services.database = {
+          status: 'healthy',
+          latency: latency,
+          details: `Databáze odpovídá za ${latency}ms. Nalezeno ${dbTest.length} výzev.`,
+          lastCheck: new Date().toISOString()
+        };
+      } catch (dbError) {
+        systemStatus.services.database = {
+          status: 'error',
+          latency: null,
+          details: `Chyba databáze: ${dbError instanceof Error ? dbError.message : 'Neznámá chyba'}`,
+          lastCheck: new Date().toISOString()
+        };
+        systemStatus.overall = 'degraded';
+      }
+
+      // Test Gemini AI
+      if (process.env.GEMINI_API_KEY) {
+        try {
+          const { GoogleGenerativeAI } = await import("@google/generative-ai");
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          
+          // Simple test prompt
+          const result = await model.generateContent("Test connection. Respond with: OK");
+          const response = result.response.text();
+          
+          systemStatus.services.geminiAI = {
+            status: response.includes('OK') ? 'healthy' : 'warning',
+            configured: true,
+            details: response.includes('OK') ? 'Gemini AI odpovídá správně' : 'Gemini AI odpovídá, ale neočekávaně',
+            lastCheck: new Date().toISOString()
+          };
+        } catch (aiError) {
+          systemStatus.services.geminiAI = {
+            status: 'error',
+            configured: true,
+            details: `Gemini AI chyba: ${aiError instanceof Error ? aiError.message : 'Neznámá chyba'}`,
+            lastCheck: new Date().toISOString()
+          };
+          systemStatus.overall = 'degraded';
+        }
+      } else {
+        systemStatus.services.geminiAI = {
+          status: 'warning',
+          configured: false,
+          details: 'GEMINI_API_KEY není nastaven. AI ověřování nebude fungovat.',
+          lastCheck: new Date().toISOString()
+        };
+        systemStatus.recommendations.push('Nastavte GEMINI_API_KEY v Secrets pro AI ověřování fotografií');
+      }
+
+      // Test file storage
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const uploadDir = path.join(process.cwd(), "uploads");
+        
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        // Test write permission
+        const testFile = path.join(uploadDir, '.health-check');
+        fs.writeFileSync(testFile, 'test');
+        fs.unlinkSync(testFile);
+        
+        const stats = fs.statSync(uploadDir);
+        const files = fs.readdirSync(uploadDir);
+        
+        systemStatus.services.storage = {
+          status: 'healthy',
+          uploadsPath: uploadDir,
+          diskSpace: `${files.length} souborů`,
+          details: `Úložiště funguje správně. ${files.length} nahraných souborů.`,
+          lastCheck: new Date().toISOString()
+        };
+      } catch (storageError) {
+        systemStatus.services.storage = {
+          status: 'error',
+          uploadsPath: '/uploads',
+          diskSpace: null,
+          details: `Chyba úložiště: ${storageError instanceof Error ? storageError.message : 'Neznámá chyba'}`,
+          lastCheck: new Date().toISOString()
+        };
+        systemStatus.overall = 'degraded';
+      }
+
+      // Test authentication
+      try {
+        const { generateToken, verifyToken } = await import("../utils/jwt");
+        const testPayload = { userId: 'test', email: 'test@test.com', isAdmin: false };
+        const token = generateToken(testPayload);
+        const verified = verifyToken(token);
+        
+        systemStatus.services.authentication = {
+          status: verified ? 'healthy' : 'error',
+          jwtConfigured: !!process.env.JWT_SECRET,
+          details: verified ? 'JWT autentifikace funguje správně' : 'JWT autentifikace selhává',
+          lastCheck: new Date().toISOString()
+        };
+        
+        if (!verified) {
+          systemStatus.overall = 'degraded';
+        }
+      } catch (authError) {
+        systemStatus.services.authentication = {
+          status: 'error',
+          jwtConfigured: !!process.env.JWT_SECRET,
+          details: `Chyba autentifikace: ${authError instanceof Error ? authError.message : 'Neznámá chyba'}`,
+          lastCheck: new Date().toISOString()
+        };
+        systemStatus.overall = 'degraded';
+      }
+
+      // Check dependencies
+      try {
+        const packageJson = require('../../package.json');
+        const dependencies = packageJson.dependencies || {};
+        
+        const essentialDeps = ['express', 'drizzle-orm', '@google/generative-ai', 'multer'];
+        const optionalDeps = ['bcryptjs', 'jsonwebtoken'];
+        
+        systemStatus.dependencies.essential = essentialDeps.map(dep => ({
+          name: dep,
+          required: !!dependencies[dep],
+          version: dependencies[dep] || 'missing'
+        }));
+        
+        systemStatus.dependencies.optional = optionalDeps.map(dep => ({
+          name: dep,
+          required: !!dependencies[dep],
+          version: dependencies[dep] || 'missing'
+        }));
+      } catch (depError) {
+        systemStatus.recommendations.push('Nelze ověřit závislosti - zkontrolujte package.json');
+      }
+
+      // Generate recommendations based on status
+      if (!process.env.JWT_SECRET) {
+        systemStatus.recommendations.push('Nastavte JWT_SECRET v Secrets pro bezpečné autentifikace');
+      }
+      
+      if (!process.env.DATABASE_URL) {
+        systemStatus.recommendations.push('Nastavte DATABASE_URL pro persistentní úložiště');
+      }
+
+      // Determine overall status
+      const hasErrors = Object.values(systemStatus.services).some(service => service.status === 'error');
+      const hasWarnings = Object.values(systemStatus.services).some(service => service.status === 'warning');
+      
+      if (hasErrors) {
+        systemStatus.overall = 'unhealthy';
+      } else if (hasWarnings) {
+        systemStatus.overall = 'degraded';
+      } else {
+        systemStatus.overall = 'healthy';
+      }
+
+      res.json(systemStatus);
+    } catch (error) {
+      console.error('System status check failed:', error);
+      res.status(500).json({
+        timestamp: new Date().toISOString(),
+        overall: 'unhealthy',
+        error: 'Nepodařilo se provést kontrolu systému',
+        details: error instanceof Error ? error.message : 'Neznámá chyba'
+      });
+    }
+  });
+
   // Admin: Automaticky upravit obtížnost výzev
   app.post("/api/admin/ai-adjust-difficulty", async (req, res) => {
     try {
