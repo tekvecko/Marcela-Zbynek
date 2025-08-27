@@ -70,27 +70,30 @@ Vyhodnotte fotografii podle techto kriterii:
 5. Rozpoznani objektu a atmosfery
 6. Emocni obsah
 
-Odpovezte POUZE ve formatu JSON s temito poli (zadne dalsi text):
+DŮLEŽITÉ: Odpovězte POUZE platným JSON objektem, žádný další text před ani po JSON!
+Používejte pouze čísla mezi 0 a 1 pro skóre (např. 0.85, ne 0.8500000000000000000).
+Maximálně 5 prvků v každém poli typu array.
+
 {
-"isValid": boolean,
-"confidence": number,
-"explanation": "kratke vysvetleni v cestine",
-"suggestedImprovements": "navrhy na zlepseni",
+"isValid": true,
+"confidence": 0.85,
+"explanation": "Krátké vysvětlení v češtině (max 200 znaků)",
+"suggestedImprovements": "Návrhy na zlepšení (max 150 znaků)",
 "technicalQuality": {
-  "sharpness": number,
-  "composition": number,
-  "lighting": number,
-  "exposure": "spravna"
+  "sharpness": 0.8,
+  "composition": 0.7,
+  "lighting": 0.9,
+  "exposure": "dobrá"
 },
-"detectedObjects": ["seznam objektu"],
-"weddingElements": ["svatebni prvky"],
-"atmosphere": "nálada",
-"peopleCount": number,
-"location": "typ mista",
-"emotions": ["emoce"],
+"detectedObjects": ["max 5 objektů"],
+"weddingElements": ["max 5 svatebních prvků"],
+"atmosphere": "nálada fotky",
+"peopleCount": 2,
+"location": "typ místa",
+"emotions": ["max 5 emocí"],
 "category": "kategorie",
-"tags": ["hashtags"],
-"creativeTips": "kreativni navrhy"
+"tags": ["max 5 tagů"],
+"creativeTips": "Kreativní návrhy (max 100 znaků)"
 }`;
 
     const contents = [
@@ -185,7 +188,7 @@ Odpovezte POUZE ve formatu JSON s temito poli (zadne dalsi text):
         
         // Find JSON boundaries more reliably
         const jsonStart = cleanedJson.indexOf('{');
-        const jsonEnd = cleanedJson.lastIndexOf('}') + 1;
+        let jsonEnd = cleanedJson.lastIndexOf('}') + 1;
         
         if (jsonStart === -1 || jsonEnd <= jsonStart) {
           throw new Error("JSON object not found in response");
@@ -193,38 +196,105 @@ Odpovezte POUZE ve formatu JSON s temito poli (zadne dalsi text):
         
         let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
         
+        // Fix problematic very long numbers that cause JSON parsing issues
+        jsonString = jsonString.replace(/:\s*(\d+\.\d{10,}[e\-\+\d]*)/g, (match, number) => {
+          const num = parseFloat(number);
+          if (isNaN(num)) return ': 0';
+          // Round to reasonable precision and clamp to 0-1 range for scores
+          const rounded = Math.max(0, Math.min(1, Math.round(num * 100) / 100));
+          return `: ${rounded}`;
+        });
+        
+        // Fix arrays with too many repeated elements
+        jsonString = jsonString.replace(/"weddingElements":\s*\[([^\]]*)\]/g, (match, content) => {
+          try {
+            const items = content.split(',').map(item => item.trim().replace(/"/g, ''));
+            const uniqueItems = [...new Set(items)].slice(0, 10); // Limit to 10 unique items
+            const cleanItems = uniqueItems.map(item => `"${item.replace(/"/g, '\\"')}"`);
+            return `"weddingElements": [${cleanItems.join(', ')}]`;
+          } catch {
+            return '"weddingElements": []';
+          }
+        });
+        
         // Fix common JSON issues
         jsonString = jsonString
           .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
           .replace(/([{,]\s*)"(\w+)":\s*"([^"]*)"([^,}\]]*)/g, (match, prefix, key, value, suffix) => {
-            // Clean up string values
-            const cleanValue = value.replace(/"/g, '\\"');
-            return `${prefix}"${key}":"${cleanValue}"${suffix}`;
-          });
+            // Clean up string values and handle escaped quotes
+            const cleanValue = value.replace(/"/g, '\\"').replace(/\t+/g, ' ');
+            return `${prefix}"${key}": "${cleanValue}"${suffix}`;
+          })
+          // Fix any remaining malformed numbers
+          .replace(/:\s*(\d+\.?\d*)[e\-\+\d]{50,}/g, ': 0.8') // Replace super long scientific notation
+          .replace(/:\s*\d+\.\d{20,}/g, ': 0.8'); // Replace very long decimals
         
         console.log('Final JSON string:', jsonString.substring(0, 500));
         
         const result: PhotoVerificationResult = JSON.parse(jsonString);
         
-        // Strict validation with defaults
+        // Strict validation with defaults and better error handling
         const validatedResult: PhotoVerificationResult = {
           isValid: typeof result.isValid === 'boolean' ? result.isValid : false,
-          confidence: (typeof result.confidence === 'number' && result.confidence >= 0 && result.confidence <= 1) 
-            ? result.confidence : 0.5,
-          explanation: typeof result.explanation === 'string' && result.explanation.length > 0 
-            ? result.explanation : "AI analýza byla dokončena",
-          suggestedImprovements: typeof result.suggestedImprovements === 'string' 
-            ? result.suggestedImprovements : undefined,
-          technicalQuality: result.technicalQuality || undefined,
-          detectedObjects: Array.isArray(result.detectedObjects) ? result.detectedObjects : undefined,
-          weddingElements: Array.isArray(result.weddingElements) ? result.weddingElements : undefined,
-          atmosphere: typeof result.atmosphere === 'string' ? result.atmosphere : undefined,
-          peopleCount: typeof result.peopleCount === 'number' ? result.peopleCount : undefined,
-          location: typeof result.location === 'string' ? result.location : undefined,
-          emotions: Array.isArray(result.emotions) ? result.emotions : undefined,
-          category: typeof result.category === 'string' ? result.category : undefined,
-          tags: Array.isArray(result.tags) ? result.tags : undefined,
-          creativeTips: typeof result.creativeTips === 'string' ? result.creativeTips : undefined
+          confidence: (() => {
+            const conf = result.confidence;
+            if (typeof conf === 'number' && !isNaN(conf) && isFinite(conf)) {
+              return Math.max(0, Math.min(1, conf));
+            }
+            return 0.7; // Default confidence when AI works
+          })(),
+          explanation: (() => {
+            const exp = result.explanation;
+            if (typeof exp === 'string' && exp.length > 0 && exp.length < 1000) {
+              // Clean up explanation text
+              return exp.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+            return "AI analýza fotky byla dokončena úspěšně.";
+          })(),
+          suggestedImprovements: (() => {
+            const imp = result.suggestedImprovements;
+            if (typeof imp === 'string' && imp.length > 0 && imp.length < 500) {
+              return imp.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+            return undefined;
+          })(),
+          technicalQuality: (() => {
+            const tq = result.technicalQuality;
+            if (tq && typeof tq === 'object') {
+              return {
+                sharpness: typeof tq.sharpness === 'number' && isFinite(tq.sharpness) 
+                  ? Math.max(0, Math.min(1, tq.sharpness)) : 0.7,
+                composition: typeof tq.composition === 'number' && isFinite(tq.composition) 
+                  ? Math.max(0, Math.min(1, tq.composition)) : 0.7,
+                lighting: typeof tq.lighting === 'number' && isFinite(tq.lighting) 
+                  ? Math.max(0, Math.min(1, tq.lighting)) : 0.7,
+                exposure: typeof tq.exposure === 'string' ? tq.exposure : "dobrá"
+              };
+            }
+            return undefined;
+          })(),
+          detectedObjects: Array.isArray(result.detectedObjects) 
+            ? result.detectedObjects.slice(0, 15).filter(obj => typeof obj === 'string' && obj.length > 0)
+            : undefined,
+          weddingElements: Array.isArray(result.weddingElements) 
+            ? result.weddingElements.slice(0, 10).filter(elem => typeof elem === 'string' && elem.length > 0)
+            : undefined,
+          atmosphere: typeof result.atmosphere === 'string' && result.atmosphere.length < 200 
+            ? result.atmosphere : undefined,
+          peopleCount: typeof result.peopleCount === 'number' && isFinite(result.peopleCount) && result.peopleCount >= 0 
+            ? Math.floor(result.peopleCount) : undefined,
+          location: typeof result.location === 'string' && result.location.length < 100 
+            ? result.location : undefined,
+          emotions: Array.isArray(result.emotions) 
+            ? result.emotions.slice(0, 8).filter(emotion => typeof emotion === 'string' && emotion.length > 0)
+            : undefined,
+          category: typeof result.category === 'string' && result.category.length < 50 
+            ? result.category : undefined,
+          tags: Array.isArray(result.tags) 
+            ? result.tags.slice(0, 10).filter(tag => typeof tag === 'string' && tag.length > 0)
+            : undefined,
+          creativeTips: typeof result.creativeTips === 'string' && result.creativeTips.length < 300 
+            ? result.creativeTips.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim() : undefined
         };
         
         console.log('Validated result:', { 
