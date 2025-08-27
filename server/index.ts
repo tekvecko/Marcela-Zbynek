@@ -6,6 +6,7 @@ import { initializeDefaultMiniGames } from "./init-mini-games";
 import { authenticateUser as authenticateToken } from "./middleware/auth";
 import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from "./db";
 import { initializeDatabase } from "./init-database";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json({ limit: "50mb" }));
