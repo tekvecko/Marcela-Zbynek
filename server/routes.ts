@@ -446,12 +446,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             console.log(`Verification result: isValid=${verification.isValid}, confidence=${verification.confidence}, explanation="${verification.explanation.substring(0, 100)}..."`);
+            
+            // Fallback logic: If AI says photo is invalid but we have low confidence, 
+            // allow manual review by marking as pending instead of completely rejecting
+            if (!verification.isValid && verification.confidence < 0.3) {
+              console.log('Low confidence rejection - allowing manual review');
+              isVerified = false; // Still not auto-approved
+              verificationScore = 30; // Low but not zero score
+              aiAnalysis = verification.explanation + " Fotka bude předána k manuálnímu posouzení.";
+            }
+            
           } catch (verificationError) {
-            console.error('AI verification failed:', verificationError);
-            // Be strict when AI fails to prevent invalid photos from being approved
-            isVerified = false;
-            verificationScore = 0;
-            aiAnalysis = "Automatické ověření se nezdařilo z technických důvodů. Zkuste prosím nahrát fotku znovu.";
+            console.error('AI verification failed completely:', verificationError);
+            // Implement basic fallback verification based on file properties
+            const fs = require('fs');
+            const stats = fs.statSync(filePath);
+            const fileSize = stats.size;
+            const isReasonableSize = fileSize > 10000 && fileSize < 50000000; // 10KB to 50MB
+            
+            if (isReasonableSize) {
+              // Allow the photo but mark it for manual review
+              isVerified = false; // Not auto-approved, but not completely rejected
+              verificationScore = 40; // Moderate score for manual review
+              aiAnalysis = "Automatické ověření se nezdařilo. Fotka byla přijata k manuálnímu posouzení. Výsledky budou dostupné později.";
+            } else {
+              // Reject photos that are clearly problematic (too small/large)
+              isVerified = false;
+              verificationScore = 0;
+              aiAnalysis = "Automatické ověření se nezdařilo a soubor má nesprávnou velikost. Zkuste nahrát jinou fotografii.";
+            }
           }
         } else {
           console.log(`Challenge not found for questId: ${validatedData.questId}`);
