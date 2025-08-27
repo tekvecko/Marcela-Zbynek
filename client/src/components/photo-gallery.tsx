@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn } from "lucide-react";
+import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn, MessageCircle, Share, MoreHorizontal, Globe, ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -368,51 +368,62 @@ export default function PhotoGallery() {
   }
 
   return (
-    <section id="gallery" className="py-20 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-4">
-            Svatební galerie <span className="heart-decoration">💕</span>
-          </h2>
-          <p className="text-lg text-charcoal/70">Nejkrásnější momenty z našeho velkého dne</p>
+    <section id="gallery" className="min-h-screen bg-gray-100">
+      {/* Facebook-style Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              Svatební galerie
+            </h2>
+            <p className="text-gray-600 text-sm">Marcela & Zbyněk • 11. října 2025</p>
+          </div>
         </div>
+      </div>
 
-        {/* Photo upload section */}
-        <Card className="bg-gradient-to-r from-blush to-cream rounded-3xl mb-12">
-          <CardContent className="p-8 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <h3 className="font-display text-2xl font-bold text-charcoal">Nahrajte své fotky</h3>
-              <HelpTooltip
-                content="Nahrajte svoje nejkrásnější fotky ze svatby. Fotky budou automaticky analyzovány AI a ostatní hosté je mohou ohodnotit lajky."
-                side="bottom"
-              />
-            </div>
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <p className="text-charcoal/70">Sdílejte s námi své vzpomínky z naší svatby</p>
+      <div className="max-w-2xl mx-auto px-4">
+
+        {/* Facebook-style Create Post */}
+        <Card className="bg-white rounded-lg shadow-sm mb-4 mt-4">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                <Camera className="text-white" size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">Přidat fotky ze svatby</h3>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Globe size={14} />
+                  <span>Veřejné</span>
+                  <ChevronDown size={14} />
+                </div>
+              </div>
               {user ? (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                  ✓ Přihlášen jako {user.firstName || user.email.split('@')[0]}
+                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                  ✓ {user.firstName || user.email.split('@')[0]}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
-                  🔒 Přihlaste se pro plné funkce
+                <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200 text-xs">
+                  🔒 Přihlaste se
                 </Badge>
               )}
             </div>
 
             <Dialog>
               <DialogTrigger asChild>
-                <div className="border-2 border-dashed border-romantic rounded-2xl p-8 mb-6 bg-white/50 cursor-pointer hover:bg-white/70 transition-colors">
-                  <Camera className="text-romantic text-4xl mb-4 mx-auto" size={48} />
-                  <p className="text-charcoal font-medium mb-2">Klikněte pro nahrání fotek</p>
-                  <p className="text-charcoal/60 text-sm">Podporované formáty: JPG, PNG, HEIC (max 10MB)</p>
+                <div className="border border-gray-300 rounded-lg p-6 hover:bg-gray-50 cursor-pointer transition-colors">
+                  <div className="flex items-center justify-center gap-3">
+                    <Camera className="text-blue-500" size={24} />
+                    <span className="text-gray-700 font-medium">Nahrát fotky ze svatby</span>
+                  </div>
+                  <p className="text-gray-500 text-sm mt-2 text-center">JPG, PNG, HEIC • Max 10MB</p>
                 </div>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Nahrát fotku do galerie</DialogTitle>
+                  <DialogTitle>Přidat fotky</DialogTitle>
                   <DialogDescription>
-                    Sdílejte své krásné vzpomínky ze svatby s ostatními hosty.
+                    Sdílejte své vzpomínky ze svatby Marcely a Zbyňka.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -481,125 +492,143 @@ export default function PhotoGallery() {
 
 
 
-        {/* Photo grid */}
+        {/* Facebook-style Photo Posts */}
         {photos.length === 0 ? (
           <div className="text-center py-16">
-            <Images size={64} className="mx-auto text-charcoal/30 mb-4" />
-            <p className="text-charcoal/70 text-lg">Zatím zde nejsou žádné fotky.</p>
-            <p className="text-charcoal/50">Buďte první, kdo nahraje vzpomínku!</p>
+            <div className="bg-white rounded-lg shadow-sm p-8">
+              <Images size={64} className="mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-700 text-lg mb-2">Zatím zde nejsou žádné fotky</p>
+              <p className="text-gray-500">Buďte první, kdo sdílí vzpomínku ze svatby!</p>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="space-y-4 pb-8">
             {photos.map((photo) => (
-              <Card 
-                key={photo.id} 
-                className="group relative overflow-hidden rounded-2xl aspect-square cursor-pointer hover:scale-105 transition-transform duration-300"
-                onClick={() => setSelectedPhoto(photo)}
-              >
-                <CardContent className="p-0">
-                  <img
-                    src={`/api/photos/${photo.filename}`}
-                    alt={`Nahrál ${photo.uploaderName}`}
-                    className="w-full h-full object-cover pointer-events-none"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl pointer-events-none">
-                    {/* AI Verification Badge */}
-                    {/* Enhanced AI Verification Tooltip */}
-                    {(photo.isVerified || (photo.verificationScore && photo.verificationScore > 0)) && (
-                      <div className="absolute top-2 left-2">
-                        <VerificationTooltip
-                          isVerified={photo.isVerified || false}
-                          verificationScore={(photo.verificationScore || 0) / 100}
-                          aiAnalysis={photo.aiAnalysis || undefined}
-                          size="sm"
-                        />
-                      </div>
-                    )}
-
-                    {/* Hover Info */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-xl">
-                      <div className="text-white space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs overflow-hidden">
-                              {users[photo.uploaderName]?.profileImageUrl ? (
-                                <img 
-                                  src={users[photo.uploaderName].profileImageUrl} 
-                                  alt={getDisplayName(photo.uploaderName, users)}
-                                  className="w-full h-full object-cover rounded-full"
-                                />
-                              ) : (
-                                getProfileImage(photo.uploaderName, users)
-                              )}
-                            </div>
-                            <span className="text-sm font-medium">
-                              {getDisplayName(photo.uploaderName, users)}
-                            </span>
-                          </div>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (!user) {
-                                    toast({
-                                      title: "🔒 Přihlášení vyžadováno",
-                                      description: "Pro hodnocení fotek se musíte přihlásit.",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  if (!photo.userHasLiked && !likePhotoMutation.isPending) {
-                                    likePhotoMutation.mutate({ 
-                                      photoId: photo.id, 
-                                      buttonElement: e.currentTarget 
-                                    });
-                                  }
-                                }}
-                                className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-all duration-200 ${
-                                  !user 
-                                    ? 'bg-gray-500/80 cursor-pointer hover:bg-gray-400/80' 
-                                    : photo.userHasLiked 
-                                      ? 'bg-red-500/90 cursor-default shadow-lg animate-pulse-once' 
-                                      : 'bg-black/60 hover:bg-red-500/80 cursor-pointer hover:scale-105'
-                                } ${likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === photo.id ? 'animate-bounce' : ''}`}
-                                disabled={likePhotoMutation.isPending}
-                              >
-                                {!user ? (
-                                  <Lock className="w-3 h-3 text-white" />
-                                ) : (
-                                  <Heart className={`w-4 h-4 transition-all duration-300 ${
-                                    photo.userHasLiked ? 'text-white fill-white scale-110' : 'text-white'
-                                  }`} />
-                                )}
-                                <span className={`text-xs font-medium transition-all duration-300 ${
-                                  photo.userHasLiked ? 'text-white font-bold' : 'text-white'
-                                }`}>
-                                  {photo.likes || 0}
-                                </span>
-                                {likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === photo.id && (
-                                  <LoadingSpinner size="sm" className="text-white" />
-                                )}
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs">
-                              {!user 
-                                ? "Přihlaste se pro hodnocení fotek" 
-                                : photo.userHasLiked 
-                                  ? "Už jste tuto fotku ohodnotili" 
-                                  : "Klikněte pro lajk"}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        {photo.questTitle && (
-                          <div className="text-xs text-white/80">
-                            {photo.questTitle}
-                          </div>
+              <Card key={photo.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                {/* Post Header */}
+                <div className="p-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                        {users[photo.uploaderName]?.profileImageUrl ? (
+                          <img 
+                            src={users[photo.uploaderName].profileImageUrl} 
+                            alt={getDisplayName(photo.uploaderName, users)}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          getProfileImage(photo.uploaderName, users)
                         )}
                       </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {getDisplayName(photo.uploaderName, users)}
+                        </h3>
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <span>
+                            {new Date(photo.createdAt).toLocaleDateString('cs-CZ', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <span>·</span>
+                          <Globe size={14} />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* AI Verification Badge */}
+                    {(photo.isVerified || (photo.verificationScore && photo.verificationScore > 0)) && (
+                      <VerificationTooltip
+                        isVerified={photo.isVerified || false}
+                        verificationScore={(photo.verificationScore || 0) / 100}
+                        aiAnalysis={photo.aiAnalysis || undefined}
+                        size="sm"
+                      />
+                    )}
+                    
+                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                      <MoreHorizontal size={20} className="text-gray-500" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Photo */}
+                <div className="relative cursor-pointer" onClick={() => setSelectedPhoto(photo)}>
+                  <img
+                    src={`/api/photos/${photo.filename}`}
+                    alt={`Fotka od ${getDisplayName(photo.uploaderName, users)}`}
+                    className="w-full h-auto object-cover pointer-events-none"
+                  />
+                </div>
+
+                {/* Post Actions */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={(e) => {
+                          if (!user) {
+                            toast({
+                              title: "🔒 Přihlášení vyžadováno",
+                              description: "Pro hodnocení fotek se musíte přihlásit.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          if (!photo.userHasLiked && !likePhotoMutation.isPending) {
+                            likePhotoMutation.mutate({ 
+                              photoId: photo.id, 
+                              buttonElement: e.currentTarget 
+                            });
+                          }
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                          !user 
+                            ? 'hover:bg-gray-100 text-gray-600' 
+                            : photo.userHasLiked 
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                              : 'hover:bg-gray-100 text-gray-600'
+                        }`}
+                        disabled={likePhotoMutation.isPending}
+                      >
+                        <Heart className={`${photo.userHasLiked ? 'fill-current' : ''}`} size={20} />
+                        <span className="font-medium">Líbí se mi</span>
+                      </button>
+                      
+                      <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                        <MessageCircle size={20} />
+                        <span className="font-medium">Komentář</span>
+                      </button>
+                      
+                      <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                        <Share size={20} />
+                        <span className="font-medium">Sdílet</span>
+                      </button>
                     </div>
                   </div>
-                </CardContent>
+                  
+                  {/* Like Count */}
+                  {(photo.likes && photo.likes > 0) && (
+                    <div className="flex items-center gap-1 mb-2">
+                      <div className="bg-blue-500 w-5 h-5 rounded-full flex items-center justify-center">
+                        <Heart size={12} className="text-white fill-white" />
+                      </div>
+                      <span className="text-sm text-gray-600">
+                        {photo.likes} {photo.likes === 1 ? 'osoba' : 'lidí'} to má rád
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* AI Analysis */}
+                  {photo.aiAnalysis && (
+                    <p className="text-sm text-gray-600 mt-2 italic">
+                      AI: {photo.aiAnalysis}
+                    </p>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
