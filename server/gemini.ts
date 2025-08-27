@@ -186,24 +186,52 @@ Maximálně 5 prvků v každém poli typu array.
         console.log('Raw response length:', rawJson.length);
         console.log('Cleaned response preview:', cleanedJson.substring(0, 300));
         
-        // Find JSON boundaries more reliably
+        // Find JSON boundaries more reliably with better error handling
         const jsonStart = cleanedJson.indexOf('{');
         let jsonEnd = cleanedJson.lastIndexOf('}') + 1;
         
-        if (jsonStart === -1 || jsonEnd <= jsonStart) {
+        if (jsonStart === -1) {
           throw new Error("JSON object not found in response");
+        }
+        
+        // If no closing brace found, try to find where JSON likely ends
+        if (jsonEnd <= jsonStart) {
+          console.log('⚠️ No closing brace found, trying to reconstruct JSON');
+          // Take from start and try to build valid JSON
+          jsonEnd = cleanedJson.length;
         }
         
         let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
         
+        // Remove any clearly invalid trailing content
+        jsonString = jsonString.replace(/[^}\]]*$/, ''); // Remove trailing non-JSON content
+        
         // Fix problematic very long numbers that cause JSON parsing issues
         jsonString = jsonString.replace(/:\s*(\d+\.\d{10,}[e\-\+\d]*)/g, (match: string, number: string) => {
           const num = parseFloat(number);
-          if (isNaN(num)) return ': 0';
+          if (isNaN(num)) return ': 0.7';
           // Round to reasonable precision and clamp to 0-1 range for scores
           const rounded = Math.max(0, Math.min(1, Math.round(num * 100) / 100));
           return `: ${rounded}`;
         });
+        
+        // Fix truncated arrays and objects more aggressively
+        // If JSON ends abruptly in an array or object, close it properly
+        if (jsonString.includes('[') && !jsonString.endsWith(']') && jsonString.lastIndexOf('[') > jsonString.lastIndexOf(']')) {
+          const lastOpenBracket = jsonString.lastIndexOf('[');
+          jsonString = jsonString.substring(0, lastOpenBracket) + '[]';
+        }
+        
+        if (jsonString.includes('{') && !jsonString.endsWith('}')) {
+          // Count braces to ensure proper closing
+          const openBraces = (jsonString.match(/\{/g) || []).length;
+          const closeBraces = (jsonString.match(/\}/g) || []).length;
+          
+          if (openBraces > closeBraces) {
+            // Add missing closing braces
+            jsonString += '}'.repeat(openBraces - closeBraces);
+          }
+        }
         
         // Fix arrays with too many repeated elements
         jsonString = jsonString.replace(/"weddingElements":\s*\[([^\]]*)\]/g, (match: string, content: string) => {
