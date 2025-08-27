@@ -478,11 +478,11 @@ export async function moderateContent(imagePath: string): Promise<{
       autoAction: result.autoAction || 'flag'
     };
   } catch (error) {
-    console.error('Content moderation error:', error);
+    console.error('Content moderation failed:', error);
     return {
       isAppropriate: false,
       confidence: 0,
-      issues: ['Chyba při moderaci obsahu'],
+      issues: ['Moderation service unavailable'],
       autoAction: 'flag'
     };
   }

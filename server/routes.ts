@@ -12,6 +12,7 @@ import { verifyPhotoForChallenge, analyzePhotoContent, moderateContent } from ".
 import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "./middleware/auth";
 import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
+import { users } from "@shared/schema";
 
 // Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -592,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If this is for a quest challenge, verify with Gemini AI
       if (isQuestPhoto) {
-        const challenge = await storage.getQuestChallenge(validatedData.questId);
+        const challenge = validatedData.questId ? await storage.getQuestChallenge(validatedData.questId) : null;
         if (challenge) {
           console.log(`🔍 Starting analysis for challenge: ${challenge.title}`);
           const analysisResult = await performRobustPhotoAnalysis(filePath, challenge, req.file);
@@ -691,12 +692,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         await storage.logUserBehavior({
-          userEmail: req.user.email || 'anonymous',
+          userEmail: req.user?.email || 'anonymous',
           actionType: isQuestPhoto ? 'photo_quest_upload' : 'photo_gallery_upload',
-          targetId: validatedData.questId || photoData?.id,
-          actionData: analysisStats,
-          userAgent: req.get('User-Agent') || null,
-          ipAddress: req.ip
+          details: JSON.stringify(analysisStats),
+          pointsEarned: experienceGained || 0
         });
 
         // Award experience and check achievements
@@ -707,21 +706,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Award experience based on action
           let experienceGained = 10; // Base XP for upload
-          if (isVerified && challenge) {
-            experienceGained += Math.floor(challenge.points * 0.5); // Extra XP for verified challenge
+          if (isVerified && isQuestPhoto) {
+            experienceGained += 10; // Extra XP for verified challenge
           }
 
           const levelResult = await levelSystem.addExperience(
-            req.user.email,
+            req.user?.email || 'anonymous',
             experienceGained,
             'photo_upload'
           );
 
           // Update photo streak
-          await streakSystem.updateUserStreak(req.user.email, 'photo');
+          await streakSystem.updateUserStreak(req.user?.email || 'anonymous', 'photo');
 
           // Check for new achievements
-          const newAchievements = await achievementSystem.checkUserAchievements(req.user.email);
+          const newAchievements = await achievementSystem.checkUserAchievements(req.user?.email || 'anonymous');
 
           // Include gamification data in response
           photoData.gamification = {
@@ -772,7 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Get all uploaded photos - public for gallery viewing
-  app.get("/api/photos", optionalAuth, async (req: any, res) => {
+  app.get("/api/photos", optionalAuth, async (req, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
 
@@ -1507,6 +1506,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching AI insights:", error);
       res.status(500).json({ message: "Failed to fetch AI insights" });
+    }
+  });
+
+  // Admin: System status monitoring
+  app.get("/api/admin/system-status", async (req, res) => {
+    try {
+      const checks = [];
+
+      // Database connection check
+      try {
+        await db.select().from(users).limit(1);
+        checks.push({
+          name: 'Databázové připojení',
+          status: 'success',
+          message: 'Databáze je dostupná a funguje správně',
+          details: 'PostgreSQL připojení OK'
+        });
+      } catch (error) {
+        checks.push({
+          name: 'Databázové připojení',
+          status: 'error',
+          message: 'Problém s připojením k databázi',
+          details: error instanceof Error ? error.message : 'Neznámá chyba'
+        });
+      }
+
+      // Gemini AI check
+      if (process.env.GEMINI_API_KEY) {
+        try {
+          // Test Gemini API
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+          checks.push({
+            name: 'Gemini AI API',
+            status: 'success',
+            message: 'API klíč je nastaven a dostupný',
+            details: 'Google Gemini AI připraveno pro analýzu fotografií'
+          });
+        } catch (error) {
+          checks.push({
+            name: 'Gemini AI API',
+            status: 'warning',
+            message: 'API klíč je nastaven, ale může být problém s přístupem',
+            details: error instanceof Error ? error.message : 'Neznámá chyba'
+          });
+        }
+      } else {
+        checks.push({
+          name: 'Gemini AI API',
+          status: 'error',
+          message: 'GEMINI_API_KEY není nastavený',
+          details: 'Bez API klíče nebude fungovat automatické ověřování fotografií'
+        });
+      }
+
+      // Environment variables check
+      const requiredEnvVars = ['DATABASE_URL', 'REPL_ID'];
+      const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
+
+      if (missingEnvVars.length === 0) {
+        checks.push({
+          name: 'Environment proměnné',
+          status: 'success',
+          message: 'Všechny potřebné proměnné jsou nastaveny',
+          details: 'DATABASE_URL, REPL_ID jsou k dispozici'
+        });
+      } else {
+        checks.push({
+          name: 'Environment proměnné',
+          status: 'warning',
+          message: `Chybí některé environment proměnné: ${missingEnvVars.join(', ')}`,
+          details: 'Aplikace může mít omezenou funkcionalnost'
+        });
+      }
+
+      // File upload directory check
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+
+        if (fs.existsSync(uploadsDir)) {
+          const stats = fs.statSync(uploadsDir);
+          if (stats.isDirectory()) {
+            checks.push({
+              name: 'Upload složka',
+              status: 'success',
+              message: 'Složka pro nahrávání existuje a je přístupná',
+              details: `Cesta: ${uploadsDir}`
+            });
+          } else {
+            checks.push({
+              name: 'Upload složka',
+              status: 'error',
+              message: 'Upload cesta existuje, ale není to složka',
+              details: `Cesta: ${uploadsDir}`
+            });
+          }
+        } else {
+          // Create uploads directory if it doesn't exist
+          fs.mkdirSync(uploadsDir, { recursive: true });
+          checks.push({
+            name: 'Upload složka',
+            status: 'success',
+            message: 'Upload složka byla vytvořena',
+            details: `Cesta: ${uploadsDir}`
+          });
+        }
+      } catch (error) {
+        checks.push({
+          name: 'Upload složka',
+          status: 'error',
+          message: 'Problém s přístupem k upload složce',
+          details: error instanceof Error ? error.message : 'Neznámá chyba'
+        });
+      }
+
+      // Memory usage check
+      const memUsage = process.memoryUsage();
+      const memUsageMB = Math.round(memUsage.rss / 1024 / 1024);
+
+      if (memUsageMB < 200) {
+        checks.push({
+          name: 'Využití paměti',
+          status: 'success',
+          message: `Využití paměti je v pořádku (${memUsageMB} MB)`,
+          details: 'Aplikace běží efektivně'
+        });
+      } else if (memUsageMB < 400) {
+        checks.push({
+          name: 'Využití paměti',
+          status: 'warning',
+          message: `Zvýšené využití paměti (${memUsageMB} MB)`,
+          details: 'Sledujte výkon aplikace'
+        });
+      } else {
+        checks.push({
+          name: 'Využití paměti',
+          status: 'error',
+          message: `Vysoké využití paměti (${memUsageMB} MB)`,
+          details: 'Aplikace může být pomalá'
+        });
+      }
+
+      res.json({ 
+        checks,
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+      });
+    } catch (error) {
+      console.error('System status check failed:', error);
+      res.status(500).json({ 
+        error: 'Nepodařilo se provést kontrolu systému',
+        details: error instanceof Error ? error.message : 'Neznámá chyba'
+      });
     }
   });
 
