@@ -5,10 +5,14 @@ import { initializeDefaultChallenges } from "./init-challenges";
 import { initializeDefaultMiniGames } from "./init-mini-games";
 import { authenticateUser as authenticateToken } from "./middleware/auth";
 import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from "./db";
+import { initializeDatabase } from "./init-database";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false }));
+
+// Initialize database on startup
+initializeDatabase().catch(console.error);
 
 // Security headers middleware
 app.use((req, res, next) => {

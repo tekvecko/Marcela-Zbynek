@@ -1,37 +1,19 @@
 import {
-  type User,
-  type InsertUser,
-  type UpsertUser,
-  type QuestChallenge,
-  type InsertQuestChallenge,
-  type UploadedPhoto,
-  type InsertUploadedPhoto,
-  type PhotoLike,
-  type InsertPhotoLike,
-  type QuestProgress,
-  type InsertQuestProgress,
-  type AuthUser,
-  type InsertAuthUser,
-  AuthSession
+  users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
+  userBehaviorLogs, aiLearningInsights, userAchievements, userStreaks, userLevels,
+  type User, type InsertUser, type UpsertUser,
+  type QuestChallenge, type InsertQuestChallenge,
+  type UploadedPhoto, type InsertUploadedPhoto,
+  type PhotoLike, type InsertPhotoLike,
+  type QuestProgress, type InsertQuestProgress,
+  type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession,
+  type UserBehaviorLog, type InsertUserBehaviorLog,
+  type AiLearningInsight, type InsertAiLearningInsight
 } from "@shared/schema";
 import { db, dbName } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from 'bcryptjs';
-import {
-  users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
-  type User, type QuestChallenge, type UploadedPhoto, type PhotoLike, type QuestProgress,
-  type InsertQuestChallenge, type InsertUploadedPhoto, type InsertPhotoLike, type InsertQuestProgress,
-  type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession
-} from "@shared/schema";
-import {
-  users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
-  userBehaviorLogs, aiLearningInsights,
-  type User, type QuestChallenge, type UploadedPhoto, type PhotoLike, type QuestProgress,
-  type InsertQuestChallenge, type InsertUploadedPhoto, type InsertPhotoLike, type InsertQuestProgress,
-  type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession,
-  type UserBehaviorLog, type InsertUserBehaviorLog, type AiLearningInsight, type InsertAiLearningInsight
-} from "@shared/schema";
 
 // Assuming these types are defined in @shared/schema or similar
 // type UserAchievement = { id: string; userId: string; achievementId: string; unlockedAt: Date; progress: number };
