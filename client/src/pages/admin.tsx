@@ -26,6 +26,7 @@ import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared
 import Navigation from "@/components/navigation";
 import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 import { BehaviorAnalytics, AiInsightsDisplay, DynamicAiRecommendations } from "@/components/behavior-analytics";
+import SystemStatus from "@/components/system-status";
 
 // --- System Status Component ---
 function SystemStatus() {
@@ -512,7 +513,7 @@ export default function AdminPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="challenges" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="challenges" data-testid="tab-challenges">
               <Trophy className="h-4 w-4 mr-2" />
               Výzvy
@@ -1097,7 +1098,11 @@ export default function AdminPage() {
           </TabsContent>
 
           {/* System Status Tab */}
-          <TabsContent value="system-status">
+          <TabsContent value="system-status" className="space-y-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Shield className="h-6 w-6" />
+              <h2 className="text-2xl font-bold">Systémový status</h2>
+            </div>
             <SystemStatus />
           </TabsContent>
 

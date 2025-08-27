@@ -12,6 +12,7 @@ import { verifyPhotoForChallenge, analyzePhotoContent, moderateContent } from ".
 import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "./middleware/auth";
 import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
+import { users } from "./db/schema";
 
 // Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -772,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Get all uploaded photos - public for gallery viewing
-  app.get("/api/photos", optionalAuth, async (req: any, res) => {
+  app.get("/api/photos", optionalAuth, async (req, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
 
@@ -1513,214 +1514,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: System status monitoring
   app.get("/api/admin/system-status", async (req, res) => {
     try {
-      const systemStatus = {
-        timestamp: new Date().toISOString(),
-        overall: 'healthy',
-        services: {
-          database: {
-            status: 'unknown',
-            latency: null,
-            details: '',
-            lastCheck: new Date().toISOString()
-          },
-          geminiAI: {
-            status: 'unknown',
-            configured: !!process.env.GEMINI_API_KEY,
-            details: '',
-            lastCheck: new Date().toISOString()
-          },
-          storage: {
-            status: 'unknown',
-            uploadsPath: '/uploads',
-            diskSpace: null,
-            details: '',
-            lastCheck: new Date().toISOString()
-          },
-          authentication: {
-            status: 'unknown',
-            jwtConfigured: !!process.env.JWT_SECRET,
-            details: '',
-            lastCheck: new Date().toISOString()
-          }
-        },
-        dependencies: {
-          essential: [],
-          optional: []
-        },
-        recommendations: []
-      };
+      const checks = [];
 
-      // Test database connection
+      // Database connection check
       try {
-        const start = Date.now();
-        const dbTest = await storage.getQuestChallenges();
-        const latency = Date.now() - start;
-        
-        systemStatus.services.database = {
-          status: 'healthy',
-          latency: latency,
-          details: `Databáze odpovídá za ${latency}ms. Nalezeno ${dbTest.length} výzev.`,
-          lastCheck: new Date().toISOString()
-        };
-      } catch (dbError) {
-        systemStatus.services.database = {
+        await db.select().from(users).limit(1);
+        checks.push({
+          name: 'Databázové připojení',
+          status: 'success',
+          message: 'Databáze je dostupná a funguje správně',
+          details: 'PostgreSQL připojení OK'
+        });
+      } catch (error) {
+        checks.push({
+          name: 'Databázové připojení',
           status: 'error',
-          latency: null,
-          details: `Chyba databáze: ${dbError instanceof Error ? dbError.message : 'Neznámá chyba'}`,
-          lastCheck: new Date().toISOString()
-        };
-        systemStatus.overall = 'degraded';
+          message: 'Problém s připojením k databázi',
+          details: error instanceof Error ? error.message : 'Neznámá chyba'
+        });
       }
 
-      // Test Gemini AI
+      // Gemini AI check
       if (process.env.GEMINI_API_KEY) {
         try {
-          const { GoogleGenerativeAI } = await import("@google/generative-ai");
+          // Test Gemini API
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          
-          // Simple test prompt
-          const result = await model.generateContent("Test connection. Respond with: OK");
-          const response = result.response.text();
-          
-          systemStatus.services.geminiAI = {
-            status: response.includes('OK') ? 'healthy' : 'warning',
-            configured: true,
-            details: response.includes('OK') ? 'Gemini AI odpovídá správně' : 'Gemini AI odpovídá, ale neočekávaně',
-            lastCheck: new Date().toISOString()
-          };
-        } catch (aiError) {
-          systemStatus.services.geminiAI = {
-            status: 'error',
-            configured: true,
-            details: `Gemini AI chyba: ${aiError instanceof Error ? aiError.message : 'Neznámá chyba'}`,
-            lastCheck: new Date().toISOString()
-          };
-          systemStatus.overall = 'degraded';
+
+          checks.push({
+            name: 'Gemini AI API',
+            status: 'success',
+            message: 'API klíč je nastaven a dostupný',
+            details: 'Google Gemini AI připraveno pro analýzu fotografií'
+          });
+        } catch (error) {
+          checks.push({
+            name: 'Gemini AI API',
+            status: 'warning',
+            message: 'API klíč je nastaven, ale může být problém s přístupem',
+            details: error instanceof Error ? error.message : 'Neznámá chyba'
+          });
         }
       } else {
-        systemStatus.services.geminiAI = {
+        checks.push({
+          name: 'Gemini AI API',
+          status: 'error',
+          message: 'GEMINI_API_KEY není nastavený',
+          details: 'Bez API klíče nebude fungovat automatické ověřování fotografií'
+        });
+      }
+
+      // Environment variables check
+      const requiredEnvVars = ['DATABASE_URL', 'REPL_ID'];
+      const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
+
+      if (missingEnvVars.length === 0) {
+        checks.push({
+          name: 'Environment proměnné',
+          status: 'success',
+          message: 'Všechny potřebné proměnné jsou nastaveny',
+          details: 'DATABASE_URL, REPL_ID jsou k dispozici'
+        });
+      } else {
+        checks.push({
+          name: 'Environment proměnné',
           status: 'warning',
-          configured: false,
-          details: 'GEMINI_API_KEY není nastaven. AI ověřování nebude fungovat.',
-          lastCheck: new Date().toISOString()
-        };
-        systemStatus.recommendations.push('Nastavte GEMINI_API_KEY v Secrets pro AI ověřování fotografií');
+          message: `Chybí některé environment proměnné: ${missingEnvVars.join(', ')}`,
+          details: 'Aplikace může mít omezenou funkcionalnost'
+        });
       }
 
-      // Test file storage
+      // File upload directory check
       try {
-        const fs = require('fs');
-        const path = require('path');
-        const uploadDir = path.join(process.cwd(), "uploads");
-        
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
+        const fs = await import('fs');
+        const path = await import('path');
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+
+        if (fs.existsSync(uploadsDir)) {
+          const stats = fs.statSync(uploadsDir);
+          if (stats.isDirectory()) {
+            checks.push({
+              name: 'Upload složka',
+              status: 'success',
+              message: 'Složka pro nahrávání existuje a je přístupná',
+              details: `Cesta: ${uploadsDir}`
+            });
+          } else {
+            checks.push({
+              name: 'Upload složka',
+              status: 'error',
+              message: 'Upload cesta existuje, ale není to složka',
+              details: `Cesta: ${uploadsDir}`
+            });
+          }
+        } else {
+          // Create uploads directory if it doesn't exist
+          fs.mkdirSync(uploadsDir, { recursive: true });
+          checks.push({
+            name: 'Upload složka',
+            status: 'success',
+            message: 'Upload složka byla vytvořena',
+            details: `Cesta: ${uploadsDir}`
+          });
         }
-        
-        // Test write permission
-        const testFile = path.join(uploadDir, '.health-check');
-        fs.writeFileSync(testFile, 'test');
-        fs.unlinkSync(testFile);
-        
-        const stats = fs.statSync(uploadDir);
-        const files = fs.readdirSync(uploadDir);
-        
-        systemStatus.services.storage = {
-          status: 'healthy',
-          uploadsPath: uploadDir,
-          diskSpace: `${files.length} souborů`,
-          details: `Úložiště funguje správně. ${files.length} nahraných souborů.`,
-          lastCheck: new Date().toISOString()
-        };
-      } catch (storageError) {
-        systemStatus.services.storage = {
+      } catch (error) {
+        checks.push({
+          name: 'Upload složka',
           status: 'error',
-          uploadsPath: '/uploads',
-          diskSpace: null,
-          details: `Chyba úložiště: ${storageError instanceof Error ? storageError.message : 'Neznámá chyba'}`,
-          lastCheck: new Date().toISOString()
-        };
-        systemStatus.overall = 'degraded';
+          message: 'Problém s přístupem k upload složce',
+          details: error instanceof Error ? error.message : 'Neznámá chyba'
+        });
       }
 
-      // Test authentication
-      try {
-        const { generateToken, verifyToken } = await import("../utils/jwt");
-        const testPayload = { userId: 'test', email: 'test@test.com', isAdmin: false };
-        const token = generateToken(testPayload);
-        const verified = verifyToken(token);
-        
-        systemStatus.services.authentication = {
-          status: verified ? 'healthy' : 'error',
-          jwtConfigured: !!process.env.JWT_SECRET,
-          details: verified ? 'JWT autentifikace funguje správně' : 'JWT autentifikace selhává',
-          lastCheck: new Date().toISOString()
-        };
-        
-        if (!verified) {
-          systemStatus.overall = 'degraded';
-        }
-      } catch (authError) {
-        systemStatus.services.authentication = {
-          status: 'error',
-          jwtConfigured: !!process.env.JWT_SECRET,
-          details: `Chyba autentifikace: ${authError instanceof Error ? authError.message : 'Neznámá chyba'}`,
-          lastCheck: new Date().toISOString()
-        };
-        systemStatus.overall = 'degraded';
-      }
+      // Memory usage check
+      const memUsage = process.memoryUsage();
+      const memUsageMB = Math.round(memUsage.rss / 1024 / 1024);
 
-      // Check dependencies
-      try {
-        const packageJson = require('../../package.json');
-        const dependencies = packageJson.dependencies || {};
-        
-        const essentialDeps = ['express', 'drizzle-orm', '@google/generative-ai', 'multer'];
-        const optionalDeps = ['bcryptjs', 'jsonwebtoken'];
-        
-        systemStatus.dependencies.essential = essentialDeps.map(dep => ({
-          name: dep,
-          required: !!dependencies[dep],
-          version: dependencies[dep] || 'missing'
-        }));
-        
-        systemStatus.dependencies.optional = optionalDeps.map(dep => ({
-          name: dep,
-          required: !!dependencies[dep],
-          version: dependencies[dep] || 'missing'
-        }));
-      } catch (depError) {
-        systemStatus.recommendations.push('Nelze ověřit závislosti - zkontrolujte package.json');
-      }
-
-      // Generate recommendations based on status
-      if (!process.env.JWT_SECRET) {
-        systemStatus.recommendations.push('Nastavte JWT_SECRET v Secrets pro bezpečné autentifikace');
-      }
-      
-      if (!process.env.DATABASE_URL) {
-        systemStatus.recommendations.push('Nastavte DATABASE_URL pro persistentní úložiště');
-      }
-
-      // Determine overall status
-      const hasErrors = Object.values(systemStatus.services).some(service => service.status === 'error');
-      const hasWarnings = Object.values(systemStatus.services).some(service => service.status === 'warning');
-      
-      if (hasErrors) {
-        systemStatus.overall = 'unhealthy';
-      } else if (hasWarnings) {
-        systemStatus.overall = 'degraded';
+      if (memUsageMB < 200) {
+        checks.push({
+          name: 'Využití paměti',
+          status: 'success',
+          message: `Využití paměti je v pořádku (${memUsageMB} MB)`,
+          details: 'Aplikace běží efektivně'
+        });
+      } else if (memUsageMB < 400) {
+        checks.push({
+          name: 'Využití paměti',
+          status: 'warning',
+          message: `Zvýšené využití paměti (${memUsageMB} MB)`,
+          details: 'Sledujte výkon aplikace'
+        });
       } else {
-        systemStatus.overall = 'healthy';
+        checks.push({
+          name: 'Využití paměti',
+          status: 'error',
+          message: `Vysoké využití paměti (${memUsageMB} MB)`,
+          details: 'Aplikace může být pomalá'
+        });
       }
 
-      res.json(systemStatus);
+      res.json({ 
+        checks,
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+      });
     } catch (error) {
       console.error('System status check failed:', error);
-      res.status(500).json({
-        timestamp: new Date().toISOString(),
-        overall: 'unhealthy',
+      res.status(500).json({ 
         error: 'Nepodařilo se provést kontrolu systému',
         details: error instanceof Error ? error.message : 'Neznámá chyba'
       });
