@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
-import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 interface SystemCheck {
   name: string;
@@ -54,8 +52,6 @@ export default function SystemStatus() {
         return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       default:
         return <AlertCircle className="h-5 w-5 text-gray-500" />;
-    }
-  };
     }
   };
 

@@ -593,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If this is for a quest challenge, verify with Gemini AI
       if (isQuestPhoto) {
-        const challenge = await storage.getQuestChallenge(validatedData.questId);
+        const challenge = validatedData.questId ? await storage.getQuestChallenge(validatedData.questId) : null;
         if (challenge) {
           console.log(`🔍 Starting analysis for challenge: ${challenge.title}`);
           const analysisResult = await performRobustPhotoAnalysis(filePath, challenge, req.file);
@@ -692,12 +692,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         await storage.logUserBehavior({
-          userEmail: req.user.email || 'anonymous',
+          userEmail: req.user?.email || 'anonymous',
           actionType: isQuestPhoto ? 'photo_quest_upload' : 'photo_gallery_upload',
-          targetId: validatedData.questId || photoData?.id,
-          actionData: analysisStats,
-          userAgent: req.get('User-Agent') || null,
-          ipAddress: req.ip
+          details: JSON.stringify(analysisStats),
+          pointsEarned: experienceGained || 0
         });
 
         // Award experience and check achievements
@@ -708,21 +706,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Award experience based on action
           let experienceGained = 10; // Base XP for upload
-          if (isVerified && challenge) {
-            experienceGained += Math.floor(challenge.points * 0.5); // Extra XP for verified challenge
+          if (isVerified && isQuestPhoto) {
+            experienceGained += 10; // Extra XP for verified challenge
           }
 
           const levelResult = await levelSystem.addExperience(
-            req.user.email,
+            req.user?.email || 'anonymous',
             experienceGained,
             'photo_upload'
           );
 
           // Update photo streak
-          await streakSystem.updateUserStreak(req.user.email, 'photo');
+          await streakSystem.updateUserStreak(req.user?.email || 'anonymous', 'photo');
 
           // Check for new achievements
-          const newAchievements = await achievementSystem.checkUserAchievements(req.user.email);
+          const newAchievements = await achievementSystem.checkUserAchievements(req.user?.email || 'anonymous');
 
           // Include gamification data in response
           photoData.gamification = {
