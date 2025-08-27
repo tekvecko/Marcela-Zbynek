@@ -486,12 +486,4 @@ export async function moderateContent(imagePath: string): Promise<{
       autoAction: 'flag'
     };
   }
-}eration error:', error);
-    return {
-      isAppropriate: false,
-      confidence: 0,
-      issues: ['Chyba při moderaci obsahu'],
-      autoAction: 'flag'
-    };
-  }
 }
