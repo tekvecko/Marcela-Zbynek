@@ -275,21 +275,14 @@ export default function PhotoQuest() {
             return (
               <Card
                 key={challenge.id}
-                className={`group relative overflow-hidden backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 ${
+                className={`group relative overflow-hidden backdrop-blur-sm border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
                   completed 
-                    ? 'bg-gradient-to-br from-green-50/60 to-emerald-100/60 border-green-400/60 hover:border-green-500/70 shadow-lg hover:shadow-xl cursor-pointer' 
-                    : unlocked ? 'bg-white/20 border-white/20 hover:border-white/40 hover:shadow-xl cursor-pointer' : 'bg-gray-50/10 border-gray-300/10 text-gray-400 cursor-not-allowed'
+                    ? 'bg-gradient-to-br from-green-100/40 to-emerald-200/40 border-green-300/50' 
+                    : unlocked ? 'bg-white/20 cursor-pointer' : 'bg-gray-50/10 border-gray-300/10 text-gray-400 cursor-not-allowed'
                 }`}
                 onClick={() => unlocked && handleQuestClick(challenge.id)}
                 data-testid={`card-challenge-${challenge.id}`}
               >
-                {/* Overlay ikona pro splněné výzvy */}
-                {completed && (
-                  <div className="absolute top-3 right-3 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg z-10">
-                    <CheckCircle className="text-white" size={18} />
-                  </div>
-                )}
-                
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -303,9 +296,9 @@ export default function PhotoQuest() {
                         )}
                       </div>
                       {completed && (
-                        <div className="flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
+                        <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
                           <CheckCircle size={14} />
-                          ✓ Splněno
+                          Splněno
                         </div>
                       )}
                     </div>
