@@ -1,3 +1,4 @@
+
 import {
   users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
   userBehaviorLogs, aiLearningInsights, userAchievements, userStreaks, userLevels,
@@ -14,16 +15,6 @@ import { db, dbName } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from 'bcryptjs';
-
-// Assuming these types are defined in @shared/schema or similar
-// type UserAchievement = { id: string; userId: string; achievementId: string; unlockedAt: Date; progress: number };
-// type InsertUserAchievement = Omit<UserAchievement, 'id' | 'unlockedAt'>;
-// type UserStreak = { id: string; userId: string; streakType: string; currentStreak: number; longestStreak: number; lastActivityDate: Date };
-// type InsertUserStreak = Omit<UserStreak, 'id'>;
-// type UserLevel = { id: string; userId: string; level: number; experience: number; title: string; updatedAt: Date };
-// type InsertUserLevel = Omit<UserLevel, 'id' | 'updatedAt'>;
-// type MiniGameScore = { id: string; playerEmail: string; score: number; createdAt: Date };
-// type InsertMiniGameScore = Omit<MiniGameScore, 'id'>;
 
 // Placeholder for schema definitions that might be missing in the provided snippet
 // In a real scenario, these would be properly imported from "@shared/schema"
@@ -96,12 +87,6 @@ declare module "@shared/schema" {
     createdAt: Date;
   }
 }
-
-// Mock implementations for schema types if they are not fully available
-const userAchievements = { /* mock schema object */ userId: null, achievementId: null, unlockedAt: null, progress: null } as any;
-const userStreaks = { /* mock schema object */ userId: null, streakType: null, currentStreak: null, longestStreak: null, lastActivityDate: null } as any;
-const userLevels = { /* mock schema object */ userId: null, level: null, experience: null, title: null, updatedAt: null } as any;
-const miniGameScores = { /* mock schema object */ playerEmail: null, score: null, createdAt: null } as any;
 
 export interface IStorage {
   // User operations
@@ -999,28 +984,9 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private uploadedPhotos: Map<string, UploadedPhoto>;
-  private photoLikes: Map<string, PhotoLike>;
-  private questProgress: Map<string, QuestProgress>;
-  private authUsers: Map<string, AuthUser>;
-  private authSessions: Map<string, AuthSession>;
-  private userAchievements: Map<string, any>;
-  private userStreaks: Map<string, any>;
-  private userLevels: Map<string, any>;
-  private miniGameScores: Map<string, any>;
   private memoryFallback: MemStorage | null = null;
 
   constructor() {
-    this.uploadedPhotos = new Map();
-    this.photoLikes = new Map();
-    this.questProgress = new Map();
-    this.authUsers = new Map();
-    this.authSessions = new Map();
-    this.userAchievements = new Map();
-    this.userStreaks = new Map();
-    this.userLevels = new Map();
-    this.miniGameScores = new Map();
-
     // Pokud není databáze dostupná, použij memory storage
     if (!db) {
       console.log(`🔄 Používám in-memory storage místo databáze (${dbName})`);
@@ -1374,90 +1340,6 @@ export class DatabaseStorage implements IStorage {
         targetPhotos: 1,
         points: 10,
         isActive: true,
-      },
-      {
-        title: 'Konfety a rýže 🎊',
-        description: 'Házení rýže, konfet nebo okvětních lístků',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-      {
-        title: 'Generační foto 👴👵',
-        description: 'Tři generace na jedné fotce',
-        targetPhotos: 1,
-        points: 20,
-        isActive: true,
-      },
-      {
-        title: 'Podvazek tradice 🎀',
-        description: 'Tradice s podvazkem',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
-      },
-      {
-        title: 'Družička v akci 👭',
-        description: 'Družičky pomáhají nebo se baví',
-        targetPhotos: 1,
-        points: 12,
-        isActive: true,
-      },
-      {
-        title: 'Místo obřadu 🏰',
-        description: 'Zachyťte místo kde se koná svatební obřad',
-        targetPhotos: 1,
-        points: 10,
-        isActive: true,
-      },
-      {
-        title: 'Hudba živá 🎵',
-        description: 'Hudebníci nebo DJ při práci',
-        targetPhotos: 1,
-        points: 12,
-        isActive: true,
-      },
-      {
-        title: 'Svatební auto 🚗',
-        description: 'Auto nevěsty nebo ženicha s výzdobou',
-        targetPhotos: 1,
-        points: 12,
-        isActive: true,
-      },
-      {
-        title: 'Svatební boty 👠',
-        description: 'Detail svatebních bot nevěsty nebo ženicha',
-        targetPhotos: 1,
-        points: 10,
-        isActive: true,
-      },
-      {
-        title: 'Detox slz 😢',
-        description: 'Někdo se dojme až do slz štěstím',
-        targetPhotos: 1,
-        points: 18,
-        isActive: true,
-      },
-      {
-        title: 'Svatební svíčky 🕯️',
-        description: 'Rituál se svatebními svíčkami',
-        targetPhotos: 1,
-        points: 18,
-        isActive: true,
-      },
-      {
-        title: 'Výzdoba stolu 🍽️',
-        description: 'Krásně prostřený svatební stůl',
-        targetPhotos: 1,
-        points: 12,
-        isActive: true,
-      },
-      {
-        title: 'Příprava ženicha 🤵',
-        description: 'Ženich se připravuje před obřadem',
-        targetPhotos: 1,
-        points: 15,
-        isActive: true,
       }
     ];
 
@@ -1471,7 +1353,9 @@ export class DatabaseStorage implements IStorage {
   // Photo operations
   async getUploadedPhotos(): Promise<UploadedPhoto[]> {
     try {
-      return Array.from(this.uploadedPhotos.values());
+      if (!db) throw new Error("Database not available");
+      const photos = await db.select().from(uploadedPhotos).orderBy(desc(uploadedPhotos.createdAt));
+      return photos;
     } catch (error) {
       console.error("Failed to get uploaded photos:", error);
       return [];
@@ -1479,287 +1363,343 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined> {
-    return this.uploadedPhotos.get(id);
+    try {
+      if (!db) throw new Error("Database not available");
+      const [photo] = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id)).limit(1);
+      return photo;
+    } catch (error) {
+      console.error("Failed to get uploaded photo:", error);
+      return undefined;
+    }
   }
 
   async getPhotosByQuestId(questId: string): Promise<UploadedPhoto[]> {
-    return Array.from(this.uploadedPhotos.values()).filter(photo => photo.questId === questId);
+    try {
+      if (!db) throw new Error("Database not available");
+      const photos = await db.select().from(uploadedPhotos)
+        .where(eq(uploadedPhotos.questId, questId))
+        .orderBy(desc(uploadedPhotos.createdAt));
+      return photos;
+    } catch (error) {
+      console.error("Failed to get photos by quest ID:", error);
+      return [];
+    }
   }
 
   async createUploadedPhoto(photo: InsertUploadedPhoto): Promise<UploadedPhoto> {
-    const id = randomUUID();
-    const uploadedPhoto: UploadedPhoto = {
-      id,
-      filename: photo.filename,
-      originalName: photo.originalName,
-      mimeType: photo.mimeType,
-      size: photo.size,
-      uploaderName: photo.uploaderName,
-      questId: photo.questId ?? null,
-      likes: 0,
-      isVerified: photo.isVerified ?? false,
-      verificationScore: photo.verificationScore ?? null,
-      aiAnalysis: photo.aiAnalysis ?? null,
-      technicalQuality: photo.technicalQuality ?? null,
-      detectedObjects: photo.detectedObjects ?? null,
-      weddingElements: photo.weddingElements ?? null,
-      atmosphere: photo.atmosphere ?? null,
-      peopleCount: photo.peopleCount ?? null,
-      emotions: photo.emotions ?? null,
-      category: photo.category ?? null,
-      tags: photo.tags ?? null,
-      creativeTips: photo.creativeTips ?? null,
-      createdAt: new Date(),
-    };
-    this.uploadedPhotos.set(id, uploadedPhoto);
-    return uploadedPhoto;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [createdPhoto] = await db.insert(uploadedPhotos).values(photo).returning();
+      return createdPhoto;
+    } catch (error) {
+      console.error("Failed to create uploaded photo:", error);
+      throw error;
+    }
   }
 
   async updatePhotoLikes(id: string, likes: number): Promise<UploadedPhoto | undefined> {
-    const photo = this.uploadedPhotos.get(id);
-    if (photo) {
-      photo.likes = likes;
-      this.uploadedPhotos.set(id, photo);
-      return photo;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [updatedPhoto] = await db
+        .update(uploadedPhotos)
+        .set({ likes })
+        .where(eq(uploadedPhotos.id, id))
+        .returning();
+      return updatedPhoto;
+    } catch (error) {
+      console.error("Failed to update photo likes:", error);
+      return undefined;
     }
-    return undefined;
   }
 
   async updatePhotoVerification(id: string, isVerified: boolean): Promise<UploadedPhoto | undefined> {
-    const photo = this.uploadedPhotos.get(id);
-    if (photo) {
-      photo.isVerified = isVerified;
-      this.uploadedPhotos.set(id, photo);
-      return photo;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [updatedPhoto] = await db
+        .update(uploadedPhotos)
+        .set({ isVerified })
+        .where(eq(uploadedPhotos.id, id))
+        .returning();
+      return updatedPhoto;
+    } catch (error) {
+      console.error("Failed to update photo verification:", error);
+      return undefined;
     }
-    return undefined;
   }
 
   async deleteUploadedPhoto(id: string): Promise<boolean> {
-    // Also delete related likes
-    Array.from(this.photoLikes.entries()).forEach(([likeId, like]) => {
-      if (like.photoId === id) {
-        this.photoLikes.delete(likeId);
-      }
-    });
-    return this.uploadedPhotos.delete(id);
+    try {
+      if (!db) throw new Error("Database not available");
+      // Delete related likes first
+      await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
+      const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error("Failed to delete uploaded photo:", error);
+      return false;
+    }
   }
 
   async getPhotoLikes(photoId: string): Promise<PhotoLike[]> {
-    return Array.from(this.photoLikes.values()).filter(like => like.photoId === photoId);
+    try {
+      if (!db) throw new Error("Database not available");
+      const likes = await db.select().from(photoLikes).where(eq(photoLikes.photoId, photoId));
+      return likes;
+    } catch (error) {
+      console.error("Failed to get photo likes:", error);
+      return [];
+    }
   }
 
   async createPhotoLike(like: InsertPhotoLike): Promise<PhotoLike> {
-    const id = randomUUID();
-    const photoLike: PhotoLike = {
-      ...like,
-      id,
-      createdAt: new Date(),
-    };
-    this.photoLikes.set(id, photoLike);
-    return photoLike;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [createdLike] = await db.insert(photoLikes).values(like).returning();
+      return createdLike;
+    } catch (error) {
+      console.error("Failed to create photo like:", error);
+      throw error;
+    }
   }
 
   async hasUserLikedPhoto(photoId: string, voterName: string): Promise<boolean> {
-    const result = Array.from(this.photoLikes.values()).some(
-      like => like.photoId === photoId && like.voterName === voterName
-    );
-    console.log(`Checking if ${voterName} liked ${photoId}: ${result}`);
-    return result;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [like] = await db.select().from(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)))
+        .limit(1);
+      return !!like;
+    } catch (error) {
+      console.error("Failed to check if user liked photo:", error);
+      return false;
+    }
   }
 
   async cleanupAnonymousLikes(photoId: string): Promise<void> {
-    // Remove old anonymous likes for this photo
-    Array.from(this.photoLikes.entries()).forEach(([likeId, like]) => {
-      if (like.photoId === photoId && like.voterName === "anonymous") {
-        this.photoLikes.delete(likeId);
-        console.log(`Cleaned up anonymous like for photo ${photoId}`);
-      }
-    });
+    try {
+      if (!db) throw new Error("Database not available");
+      await db.delete(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, "anonymous")));
+    } catch (error) {
+      console.error("Failed to cleanup anonymous likes:", error);
+    }
   }
 
   async removePhotoLike(photoId: string, voterName: string): Promise<boolean> {
-    let deleted = false;
-    const entries = Array.from(this.photoLikes.entries());
-    for (const [likeId, like] of entries) {
-      if (like.photoId === photoId && like.voterName === voterName) {
-        this.photoLikes.delete(likeId);
-        deleted = true;
-        break;
-      }
+    try {
+      if (!db) throw new Error("Database not available");
+      const result = await db.delete(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error("Failed to remove photo like:", error);
+      return false;
     }
-    return deleted;
   }
 
-  // Thread-safe atomic like/unlike operation to prevent race conditions
   async togglePhotoLike(photoId: string, voterName: string): Promise<{
     userHasLiked: boolean;
     likes: number;
     action: 'liked' | 'unliked';
   }> {
-    // Get current photo
-    const photo = this.uploadedPhotos.get(photoId);
-    if (!photo) {
-      throw new Error('Fotka nebyla nalezena');
-    }
+    try {
+      if (!db) throw new Error("Database not available");
+      
+      // Use transaction for atomic operation
+      const result = await db.transaction(async (tx) => {
+        // Check if user has already liked
+        const [existingLike] = await tx.select().from(photoLikes)
+          .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)))
+          .limit(1);
 
-    // Check current like status
-    const hasLiked = Array.from(this.photoLikes.values()).some(
-      like => like.photoId === photoId && like.voterName === voterName
-    );
+        if (existingLike) {
+          // Remove like
+          await tx.delete(photoLikes)
+            .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.voterName, voterName)));
 
-    if (hasLiked) {
-      // Remove like
-      const entries = Array.from(this.photoLikes.entries());
-      for (const [likeId, like] of entries) {
-        if (like.photoId === photoId && like.voterName === voterName) {
-          this.photoLikes.delete(likeId);
-          break;
+          // Update photo likes count
+          const [updatedPhoto] = await tx
+            .update(uploadedPhotos)
+            .set({ likes: sql`${uploadedPhotos.likes} - 1` })
+            .where(eq(uploadedPhotos.id, photoId))
+            .returning({ likes: uploadedPhotos.likes });
+
+          return {
+            userHasLiked: false,
+            likes: updatedPhoto.likes,
+            action: 'unliked' as const
+          };
+        } else {
+          // Add like
+          await tx.insert(photoLikes).values({
+            photoId,
+            voterName,
+          });
+
+          // Update photo likes count
+          const [updatedPhoto] = await tx
+            .update(uploadedPhotos)
+            .set({ likes: sql`${uploadedPhotos.likes} + 1` })
+            .where(eq(uploadedPhotos.id, photoId))
+            .returning({ likes: uploadedPhotos.likes });
+
+          return {
+            userHasLiked: true,
+            likes: updatedPhoto.likes,
+            action: 'liked' as const
+          };
         }
-      }
+      });
 
-      // Update photo likes count atomically
-      const newLikeCount = Math.max(0, photo.likes - 1);
-      photo.likes = newLikeCount;
-      this.uploadedPhotos.set(photoId, photo);
-
-      return {
-        userHasLiked: false,
-        likes: newLikeCount,
-        action: 'unliked'
-      };
-    } else {
-      // Add like
-      const likeId = randomUUID();
-      const newLike: PhotoLike = {
-        id: likeId,
-        photoId,
-        voterName,
-        createdAt: new Date(),
-      };
-      this.photoLikes.set(likeId, newLike);
-
-      // Update photo likes count atomically
-      const newLikeCount = photo.likes + 1;
-      photo.likes = newLikeCount;
-      this.uploadedPhotos.set(photoId, photo);
-
-      return {
-        userHasLiked: true,
-        likes: newLikeCount,
-        action: 'liked'
-      };
+      return result;
+    } catch (error) {
+      console.error("Failed to toggle photo like:", error);
+      throw new Error('Nepodařilo se aktualizovat hodnocení fotky');
     }
   }
 
   async getQuestProgress(): Promise<QuestProgress[]> {
-    return Array.from(this.questProgress.values());
+    try {
+      if (!db) throw new Error("Database not available");
+      const progress = await db.select().from(questProgress);
+      return progress;
+    } catch (error) {
+      console.error("Failed to get quest progress:", error);
+      return [];
+    }
   }
 
   async getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]> {
-    return Array.from(this.questProgress.values()).filter(
-      progress => progress.participantName === participantName
-    );
+    try {
+      if (!db) throw new Error("Database not available");
+      const progress = await db.select().from(questProgress)
+        .where(eq(questProgress.participantName, participantName));
+      return progress;
+    } catch (error) {
+      console.error("Failed to get quest progress by participant:", error);
+      return [];
+    }
   }
 
   async createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress> {
-    const id = randomUUID();
-    const questProgressRecord: QuestProgress = {
-      id,
-      questId: progress.questId,
-      participantName: progress.participantName,
-      photosUploaded: progress.photosUploaded ?? 0,
-      isCompleted: progress.isCompleted ?? false,
-      completedAt: null,
-      createdAt: new Date(),
-    };
-    this.questProgress.set(id, questProgressRecord);
-    return questProgressRecord;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [createdProgress] = await db.insert(questProgress).values(progress).returning();
+      return createdProgress;
+    } catch (error) {
+      console.error("Failed to create quest progress:", error);
+      throw error;
+    }
   }
 
   async updateQuestProgress(id: string, photosUploaded: number, isCompleted?: boolean): Promise<QuestProgress | undefined> {
-    const progress = this.questProgress.get(id);
-    if (progress) {
-      progress.photosUploaded = photosUploaded;
+    try {
+      if (!db) throw new Error("Database not available");
+      const updateData: any = { photosUploaded };
       if (isCompleted !== undefined) {
-        progress.isCompleted = isCompleted;
-        progress.completedAt = isCompleted ? new Date() : null;
+        updateData.isCompleted = isCompleted;
+        updateData.completedAt = isCompleted ? new Date() : null;
       }
-      this.questProgress.set(id, progress);
-      return progress;
+
+      const [updatedProgress] = await db
+        .update(questProgress)
+        .set(updateData)
+        .where(eq(questProgress.id, id))
+        .returning();
+      return updatedProgress;
+    } catch (error) {
+      console.error("Failed to update quest progress:", error);
+      return undefined;
     }
-    return undefined;
   }
 
   async getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress> {
-    const existing = Array.from(this.questProgress.values()).find(
-      progress => progress.questId === questId && progress.participantName === participantName
-    );
+    try {
+      if (!db) throw new Error("Database not available");
+      
+      const [existing] = await db.select().from(questProgress)
+        .where(and(eq(questProgress.questId, questId), eq(questProgress.participantName, participantName)))
+        .limit(1);
 
-    if (existing) {
-      return existing;
+      if (existing) {
+        return existing;
+      }
+
+      return this.createQuestProgress({
+        questId,
+        participantName,
+        photosUploaded: 0,
+        isCompleted: false,
+      });
+    } catch (error) {
+      console.error("Failed to get or create quest progress:", error);
+      throw error;
     }
-
-    return this.createQuestProgress({
-      questId,
-      participantName,
-      photosUploaded: 0,
-      isCompleted: false,
-    });
   }
 
   async getUnlockedChallenges(participantName: string): Promise<QuestChallenge[]> {
-    // Mock implementation for MemStorage
-    const allChallenges = Array.from(this.questChallenges.values());
-    const userProgress = await this.getQuestProgressByParticipant(participantName);
-    const completedChallengesCount = userProgress.filter(p => p.isCompleted).length;
+    try {
+      if (!db) throw new Error("Database not available");
+      
+      // Get all challenges and user progress
+      const allChallenges = await db.select().from(questChallenges);
+      const userProgress = await this.getQuestProgressByParticipant(participantName);
+      const completedChallengesCount = userProgress.filter(p => p.isCompleted).length;
 
-    return allChallenges.map((challenge, index) => {
-      let isUnlocked = false;
-      let unlockRequirement = '';
+      return allChallenges.map((challenge, index) => {
+        let isUnlocked = false;
+        let unlockRequirement = '';
 
-      if (index < 3) {
-        isUnlocked = true;
-      } else {
-        const requiredCompleted = Math.floor(index / 2);
-        if (completedChallengesCount >= requiredCompleted) {
+        if (index < 3) {
           isUnlocked = true;
         } else {
-          unlockRequirement = `Splňte ${requiredCompleted} výzev pro odemčení`;
+          const requiredCompleted = Math.floor(index / 2);
+          if (completedChallengesCount >= requiredCompleted) {
+            isUnlocked = true;
+          } else {
+            unlockRequirement = `Splňte ${requiredCompleted} výzev pro odemčení`;
+          }
         }
-      }
-      return { ...challenge, isUnlocked, unlockRequirement };
-    });
+        return { ...challenge, isUnlocked, unlockRequirement };
+      });
+    } catch (error) {
+      console.error("Failed to get unlocked challenges:", error);
+      return [];
+    }
   }
 
   // Auth operations
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
-    const id = randomUUID();
-    // Password is already hashed in the registration route, so don't hash it again
-    const passwordHash = userData.passwordHash ?? null;
-
-    const authUser: AuthUser = {
-      id,
-      email: userData.email ?? null,
-      passwordHash,
-      firstName: userData.firstName ?? null,
-      lastName: userData.lastName ?? null,
-      profileImageUrl: null,
-      isAdmin: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.authUsers.set(id, authUser);
-    return authUser;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [user] = await db.insert(users).values(userData).returning();
+      return user;
+    } catch (error) {
+      console.error("Failed to create auth user:", error);
+      throw error;
+    }
   }
 
   async getAuthUserByEmail(email: string): Promise<AuthUser | undefined> {
-    return Array.from(this.authUsers.values()).find(user => user.email === email);
+    try {
+      if (!db) throw new Error("Database not available");
+      const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      return user;
+    } catch (error) {
+      console.error("Failed to get auth user by email:", error);
+      return undefined;
+    }
   }
 
   async getAuthUserById(id: string): Promise<AuthUser | undefined> {
-    return this.authUsers.get(id);
+    try {
+      if (!db) throw new Error("Database not available");
+      const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+      return user;
+    } catch (error) {
+      console.error("Failed to get auth user by id:", error);
+      return undefined;
+    }
   }
 
   async verifyPassword(password: string, hash: string): Promise<boolean> {
@@ -1767,117 +1707,201 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAuthSession(userId: string): Promise<AuthSession> {
-    const id = randomUUID();
-    const sessionToken = randomUUID();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+    try {
+      if (!db) throw new Error("Database not available");
+      const sessionToken = randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-    const session: AuthSession = {
-      id,
-      userId,
-      sessionToken,
-      expiresAt,
-      createdAt: new Date(),
-    };
+      const sessionData = {
+        userId,
+        sessionToken,
+        expiresAt,
+      };
 
-    this.authSessions.set(id, session);
-    return session;
+      const [session] = await db.insert(authSessions).values(sessionData).returning();
+      return session;
+    } catch (error) {
+      console.error("Failed to create auth session:", error);
+      throw error;
+    }
   }
 
   async getAuthSessionByToken(token: string): Promise<AuthSession | undefined> {
-    return Array.from(this.authSessions.values()).find(session =>
-      session.sessionToken === token && session.expiresAt > new Date()
-    );
+    try {
+      if (!db) throw new Error("Database not available");
+      const [session] = await db.select().from(authSessions)
+        .where(and(eq(authSessions.sessionToken, token), sql`${authSessions.expiresAt} > NOW()`))
+        .limit(1);
+      return session;
+    } catch (error) {
+      console.error("Failed to get auth session by token:", error);
+      return undefined;
+    }
   }
 
   async deleteAuthSession(sessionId: string): Promise<boolean> {
-    return this.authSessions.delete(sessionId);
+    try {
+      if (!db) throw new Error("Database not available");
+      const result = await db.delete(authSessions).where(eq(authSessions.id, sessionId));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error("Failed to delete auth session:", error);
+      return false;
+    }
   }
 
   // User behavior tracking
   async logUserBehavior(behaviorData: InsertUserBehaviorLog): Promise<UserBehaviorLog> {
-    const id = randomUUID();
-    const log: UserBehaviorLog = {
-      ...behaviorData,
-      id,
-      createdAt: new Date(),
-    };
-    // For MemStorage, we don't have a persistent log, but we can simulate it or just return the created log.
-    // In a real scenario, this would write to a log file or a dedicated logging service.
-    console.log("DatabaseStorage: Logging user behavior:", log);
-    return log;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [log] = await db.insert(userBehaviorLogs).values(behaviorData).returning();
+      return log;
+    } catch (error) {
+      console.error("Failed to log user behavior:", error);
+      throw error;
+    }
   }
 
   async getUserBehaviorLogs(filters?: { userEmail?: string; actionType?: string; limit?: number }): Promise<UserBehaviorLog[]> {
-    // In-memory storage doesn't persist logs, so this would return an empty array or simulated data.
-    // For demonstration, returning an empty array.
-    console.log("DatabaseStorage: Fetching user behavior logs with filters:", filters);
-    return [];
+    try {
+      if (!db) throw new Error("Database not available");
+      let query = db.select().from(userBehaviorLogs);
+
+      if (filters?.userEmail) {
+        query = query.where(eq(userBehaviorLogs.userEmail, filters.userEmail));
+      }
+      if (filters?.actionType) {
+        query = query.where(eq(userBehaviorLogs.actionType, filters.actionType));
+      }
+
+      query = query.orderBy(desc(userBehaviorLogs.createdAt));
+
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+
+      const logs = await query;
+      return logs;
+    } catch (error) {
+      console.error("Failed to get user behavior logs:", error);
+      return [];
+    }
   }
 
   // AI learning insights
   async createAiInsight(insightData: InsertAiLearningInsight): Promise<AiLearningInsight> {
-    const id = randomUUID();
-    const insight: AiLearningInsight = {
-      ...insightData,
-      id,
-      lastUpdated: new Date(),
-    };
-    // In-memory storage, so we don't have a persistent store for insights.
-    console.log("DatabaseStorage: Creating AI insight:", insight);
-    return insight;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [insight] = await db.insert(aiLearningInsights).values(insightData).returning();
+      return insight;
+    } catch (error) {
+      console.error("Failed to create AI insight:", error);
+      throw error;
+    }
   }
 
   async getAiInsights(type?: string): Promise<AiLearningInsight[]> {
-    // In-memory storage doesn't persist insights.
-    console.log("DatabaseStorage: Fetching AI insights with type:", type);
-    return [];
+    try {
+      if (!db) throw new Error("Database not available");
+      let query = db.select().from(aiLearningInsights);
+
+      if (type) {
+        query = query.where(eq(aiLearningInsights.type, type));
+      }
+
+      const insights = await query.orderBy(desc(aiLearningInsights.lastUpdated));
+      return insights;
+    } catch (error) {
+      console.error("Failed to get AI insights:", error);
+      return [];
+    }
   }
 
   async updateAiInsight(id: string, updateData: Partial<InsertAiLearningInsight>): Promise<AiLearningInsight | null> {
-    // In-memory storage doesn't persist insights.
-    console.log("DatabaseStorage: Updating AI insight with id:", id, "and data:", updateData);
-    return null;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [updatedInsight] = await db
+        .update(aiLearningInsights)
+        .set({ ...updateData, lastUpdated: new Date() })
+        .where(eq(aiLearningInsights.id, id))
+        .returning();
+      return updatedInsight || null;
+    } catch (error) {
+      console.error("Failed to update AI insight:", error);
+      return null;
+    }
   }
 
   // Gamification methods (Achievements, Streaks, Levels, Points)
   async getUserAchievements(userId: string): Promise<any[]> {
-    return Array.from(this.userAchievements.values()).filter(ach => ach.userId === userId);
+    try {
+      if (!db) throw new Error("Database not available");
+      const achievements = await db.select().from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+      return achievements;
+    } catch (error) {
+      console.error("Failed to get user achievements:", error);
+      return [];
+    }
   }
 
   async saveUserAchievement(achievement: any): Promise<void> {
-    const id = randomUUID();
-    this.userAchievements.set(id, { ...achievement, id });
+    try {
+      if (!db) throw new Error("Database not available");
+      await db.insert(userAchievements).values(achievement);
+    } catch (error) {
+      console.error("Failed to save user achievement:", error);
+      throw error;
+    }
   }
 
   async getUserStreak(userId: string, streakType: string): Promise<any | null> {
-    for (const streak of this.userStreaks.values()) {
-      if (streak.userId === userId && streak.streakType === streakType) {
-        return streak;
-      }
+    try {
+      if (!db) throw new Error("Database not available");
+      const [streak] = await db.select().from(userStreaks)
+        .where(and(eq(userStreaks.userId, userId), eq(userStreaks.streakType, streakType)))
+        .limit(1);
+      return streak || null;
+    } catch (error) {
+      console.error("Failed to get user streak:", error);
+      return null;
     }
-    return null;
   }
 
   async saveUserStreak(streak: any): Promise<void> {
-    const existing = await this.getUserStreak(streak.userId, streak.streakType);
-    if (existing) {
-      Object.assign(existing, streak); // Update existing
-    } else {
-      const id = randomUUID();
-      this.userStreaks.set(id, { ...streak, id });
+    try {
+      if (!db) throw new Error("Database not available");
+      
+      const existing = await this.getUserStreak(streak.userId, streak.streakType);
+      if (existing) {
+        await db.update(userStreaks)
+          .set(streak)
+          .where(and(eq(userStreaks.userId, streak.userId), eq(userStreaks.streakType, streak.streakType)));
+      } else {
+        await db.insert(userStreaks).values(streak);
+      }
+    } catch (error) {
+      console.error("Failed to save user streak:", error);
+      throw error;
     }
   }
 
   async getStreakLeaderboard(streakType: string): Promise<any[]> {
-    return Array.from(this.userStreaks.values())
-      .filter(streak => streak.streakType === streakType)
-      .sort((a, b) => b.currentStreak - a.currentStreak)
-      .slice(0, 20);
+    try {
+      if (!db) throw new Error("Database not available");
+      const streaks = await db.select().from(userStreaks)
+        .where(eq(userStreaks.streakType, streakType))
+        .orderBy(desc(userStreaks.currentStreak))
+        .limit(20);
+      return streaks;
+    } catch (error) {
+      console.error("Failed to get streak leaderboard:", error);
+      return [];
+    }
   }
 
   async addUserPoints(userId: string, points: number): Promise<void> {
-    // In MemStorage, we can just log the behavior
     await this.logUserBehavior({
       userEmail: userId,
       actionType: 'points_awarded',
@@ -1887,40 +1911,64 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMiniGameScores(userId?: string): Promise<any[]> {
-    const scores = Array.from(this.miniGameScores.values());
-    if (userId) {
-      return scores.filter(score => score.playerEmail === userId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    }
-    return scores.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // This would need a mini game scores table implementation
+    console.log("DatabaseStorage: Getting mini game scores for user:", userId);
+    return [];
   }
 
   async getUserLevel(userId: string): Promise<any | null> {
-    return this.userLevels.get(userId) || null;
+    try {
+      if (!db) throw new Error("Database not available");
+      const [level] = await db.select().from(userLevels)
+        .where(eq(userLevels.userId, userId))
+        .limit(1);
+      return level || null;
+    } catch (error) {
+      console.error("Failed to get user level:", error);
+      return null;
+    }
   }
 
   async saveUserLevel(level: any): Promise<void> {
-    this.userLevels.set(level.userId, level);
+    try {
+      if (!db) throw new Error("Database not available");
+      
+      const existing = await this.getUserLevel(level.userId);
+      if (existing) {
+        await db.update(userLevels)
+          .set({ ...level, updatedAt: new Date() })
+          .where(eq(userLevels.userId, level.userId));
+      } else {
+        await db.insert(userLevels).values(level);
+      }
+    } catch (error) {
+      console.error("Failed to save user level:", error);
+      throw error;
+    }
   }
 
   async updateUserLevel(level: any): Promise<void> {
-    this.userLevels.set(level.userId, level); // Overwrite or update
+    await this.saveUserLevel(level); // Same as save for this implementation
   }
 
   async getLevelLeaderboard(): Promise<any[]> {
-    return Array.from(this.userLevels.values())
-      .sort((a, b) => {
-        if (b.level !== a.level) {
-          return b.level - a.level;
-        }
-        return b.experience - a.experience;
-      })
-      .slice(0, 20);
+    try {
+      if (!db) throw new Error("Database not available");
+      const levels = await db.select().from(userLevels)
+        .orderBy(desc(userLevels.level), desc(userLevels.experience))
+        .limit(20);
+      return levels;
+    } catch (error) {
+      console.error("Failed to get level leaderboard:", error);
+      return [];
+    }
   }
 
   // Helper to initialize memory storage if needed (e.g., for fallback)
   initializeMemoryStorage(): void {
-    if (this.userAchievements.size === 0 && this.questChallenges.size === 0) {
-      // Initialize basic data if needed
+    if (!this.memoryFallback) {
+      this.memoryFallback = new MemStorage();
+      this.memoryFallback.initializeMemoryStorage();
     }
   }
 }
