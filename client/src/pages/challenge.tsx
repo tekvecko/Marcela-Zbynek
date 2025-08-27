@@ -188,6 +188,37 @@ export default function ChallengePage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Frontend validation for supported file types
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Nepodporovaný formát souboru",
+          description: `Typ souboru "${file.type}" není podporován. Povolené formáty: JPG, PNG, WebP, HEIC`,
+          variant: "destructive",
+        });
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
+      // Check file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast({
+          title: "Soubor je příliš velký",
+          description: `Maximální velikost souboru je 5MB. Váš soubor má ${(file.size / (1024 * 1024)).toFixed(1)}MB`,
+          variant: "destructive",
+        });
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
       setSelectedFile(file);
       setAnalysisResult(null);
       setUploadStage('idle');
@@ -462,7 +493,7 @@ export default function ChallengePage() {
                     <Input
                       id="photo"
                       type="file"
-                      accept="image/*"
+                      accept="image/*,image/webp,image/heic,image/heif"
                       ref={fileInputRef}
                       onChange={handleFileSelect}
                       className="hidden"
