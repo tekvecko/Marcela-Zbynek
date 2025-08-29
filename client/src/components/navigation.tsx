@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
@@ -40,6 +41,13 @@ export default function Navigation({}: NavigationProps = {}) {
   const [location] = useLocation();
   const { user, logout, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
+
+  // Fetch user level for navigation display
+  const { data: userLevel } = useQuery({
+    queryKey: ["/api/user/level"],
+    enabled: !!user,
+    staleTime: 30 * 1000, // 30 seconds
+  });
 
   // Enhanced adaptive viewport detection
   const viewportBreakpoint = useMemo(() => {
@@ -472,51 +480,157 @@ export default function Navigation({}: NavigationProps = {}) {
               })}
             </div>
 
-            {/* User Menu */}
+            {/* Enhanced User Menu */}
             <div className="flex items-center space-x-2">
               <AnimatePresence mode="wait">
                 {!user ? (
                   <motion.div
                     key="login"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                   >
-                    <a 
+                    <motion.a 
                       href="/login"
-                      className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
+                      className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
+                      whileHover={{ scale: 1.05, y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                      style={{
+                        boxShadow: '0 4px 15px rgba(155, 119, 148, 0.1)'
+                      }}
                     >
-                      <span className="text-lg">👤</span>
-                      <span className="text-sm font-medium">Přihlášení</span>
-                    </a>
+                      {/* Gradient overlay při hover */}
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-romantic/5 to-romantic/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      <motion.div
+                        className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm"
+                        whileHover={{ rotate: [0, -10, 10, 0] }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <span className="text-xl">👤</span>
+                      </motion.div>
+                      
+                      <div className="relative flex flex-col">
+                        <span className="text-sm font-medium text-charcoal hidden sm:block">Přihlášení</span>
+                        <span className="text-xs text-charcoal/60 hidden md:block">Vstupte do hry</span>
+                      </div>
+
+                      {/* Pulzující indikátor */}
+                      <motion.div
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-md"
+                        animate={{
+                          scale: [1, 1.3, 1],
+                          opacity: [0.8, 1, 0.8]
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    </motion.a>
                   </motion.div>
                 ) : (
                   <motion.div
                     key="user-menu"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                     className="relative"
                   >
-                    <motion.button
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {user?.profileImageUrl ? (
-                        <img 
-                          src={user.profileImageUrl} 
-                          alt={user.firstName || 'User'} 
-                          className="w-6 h-6 rounded-full"
-                        />
-                      ) : (
-                        <span className="text-lg">👤</span>
-                      )}
-                    </motion.button>
+                    <div className="flex items-center space-x-3">
+                      {/* User Avatar/Profile Button */}
+                      <motion.a
+                        href="/profile"
+                        className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
+                        whileHover={{ scale: 1.05, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        style={{
+                          boxShadow: '0 4px 15px rgba(155, 119, 148, 0.1)'
+                        }}
+                      >
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-romantic/5 to-romantic/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        
+                        <motion.div
+                          className="relative"
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {user?.profileImageUrl ? (
+                            <div className="relative">
+                              <img 
+                                src={user.profileImageUrl} 
+                                alt={user.firstName || 'User'} 
+                                className="w-8 h-8 rounded-full border-2 border-white/50 shadow-sm object-cover"
+                              />
+                              {/* Online status indicator */}
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-romantic to-romantic/80 flex items-center justify-center border-2 border-white/50 shadow-sm">
+                              <span className="text-white text-sm font-bold">
+                                {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'}
+                              </span>
+                            </div>
+                          )}
+                        </motion.div>
+                        
+                        <div className="hidden sm:flex flex-col relative">
+                          <span className="text-sm font-medium text-charcoal leading-none">
+                            {user?.firstName || user?.email?.split('@')[0]}
+                          </span>
+                          <span className="text-xs text-charcoal/60 leading-none mt-0.5">
+                            Profil & úroveň
+                          </span>
+                        </div>
+
+                        {/* Level badge */}
+                        <motion.div
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-gold to-yellow-400 rounded-full flex items-center justify-center border-2 border-white shadow-lg"
+                          whileHover={{ scale: 1.2, rotate: [0, -5, 5, 0] }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <span className="text-xs font-bold text-white">
+                            {userLevel?.level || 1}
+                          </span>
+                        </motion.div>
+                      </motion.a>
+
+                      {/* Logout Button */}
+                      <motion.button
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200/50 transition-all duration-300 group relative"
+                        whileHover={{ scale: 1.1, rotate: [0, -3, 3, 0] }}
+                        whileTap={{ scale: 0.9 }}
+                        style={{
+                          boxShadow: '0 2px 8px rgba(220, 38, 38, 0.1)'
+                        }}
+                      >
+                        {/* Hover background effect */}
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-400/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        
+                        <motion.span 
+                          className="text-lg relative z-10"
+                          animate={isLoggingOut ? { rotate: 360 } : {}}
+                          transition={{ duration: 1, repeat: isLoggingOut ? Infinity : 0 }}
+                        >
+                          {isLoggingOut ? '⏳' : '🚪'}
+                        </motion.span>
+
+                        {/* Tooltip */}
+                        <motion.div
+                          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20"
+                          initial={{ opacity: 0, y: -5 }}
+                          whileHover={{ opacity: 1, y: 0 }}
+                        >
+                          Odhlásit se
+                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                        </motion.div>
+                      </motion.button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

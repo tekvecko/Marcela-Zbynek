@@ -84,6 +84,84 @@
   animation: logoPulse 2s infinite;
 }
 
+/* Styly pro vylepšené uživatelské menu */
+.user-menu-button {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-menu-button:hover {
+  filter: drop-shadow(0 6px 12px rgba(155, 119, 148, 0.2));
+}
+
+.user-menu-button::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #9b7794, #d4af37, #9b7794);
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.user-menu-button:hover::before {
+  opacity: 0.3;
+}
+
+/* Level badge glow effect */
+.level-badge {
+  background: linear-gradient(135deg, #d4af37 0%, #ffd700 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.level-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: levelBadgeShine 3s infinite;
+}
+
+@keyframes levelBadgeShine {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 100%;
+  }
+}
+
+/* Logout button hover effect */
+.logout-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.logout-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, transparent 70%);
+  transition: all 0.3s ease;
+  transform: translate(-50%, -50%);
+}
+
+.logout-button:hover::before {
+  width: 200%;
+  height: 200%;
+}
+
 /* Pokročilé efekty pro auth formulář */
 .auth-form-input:focus {
   box-shadow: 
