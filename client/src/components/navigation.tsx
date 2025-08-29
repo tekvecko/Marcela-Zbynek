@@ -525,8 +525,8 @@ export default function Navigation({}: NavigationProps = {}) {
         className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{ 
-          y: (isVisible || isMenuOpen) ? 0 : -100,
-          opacity: (isVisible || isMenuOpen) ? 1 : 0
+          y: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 0 : -100,
+          opacity: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 1 : 0
         }}
         transition={{ 
           type: "spring",
