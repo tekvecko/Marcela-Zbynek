@@ -2,6 +2,7 @@
 import { storage } from "./storage";
 
 interface UserLevel {
+  id: string;
   userId: string;
   level: number;
   experience: number;
@@ -93,6 +94,7 @@ export class LevelSystem {
       if (!userLevel) {
         // Create initial level for new user
         userLevel = {
+          id: `level_${userId}_${Date.now()}`, // Generate unique ID
           userId,
           level: 1,
           experience: 0,
@@ -104,7 +106,7 @@ export class LevelSystem {
       return userLevel;
     } catch (error) {
       console.error('Error getting user level:', error);
-      return { userId, level: 1, experience: 0, title: "Svatební nováček" };
+      return { id: `level_${userId}_${Date.now()}`, userId, level: 1, experience: 0, title: "Svatební nováček" };
     }
   }
   
