@@ -644,8 +644,8 @@ export default function Navigation({}: NavigationProps = {}) {
                         </motion.div>
                         
                         <div className="relative flex flex-col">
-                          <span className="text-sm font-medium text-charcoal hidden sm:block">Přihlášení</span>
-                          <span className="text-xs text-charcoal/60 hidden md:block flex items-center">
+                          <span className="text-sm font-medium text-charcoal">Přihlášení</span>
+                          <span className="text-xs text-charcoal/60 hidden sm:flex items-center">
                             Vstupte do hry
                             <motion.span 
                               className="ml-1"
