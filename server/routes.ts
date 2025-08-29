@@ -393,6 +393,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all challenges with lock status for authenticated user
+  app.get("/api/quest-challenges/all-with-status", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.email) {
+        return res.status(401).json({ message: "Přihlášení je vyžadováno" });
+      }
+
+      const challengesWithStatus = await storage.getUnlockedChallenges(req.user.email);
+      res.json(challengesWithStatus);
+    } catch (error) {
+      console.error('Error fetching challenges with status:', error);
+      res.status(500).json({ message: "Chyba při načítání výzev se statusem" });
+    }
+  });
+
   // Get quest progress for a participant (protected)
   app.get("/api/quest-progress/:participantName", async (req, res) => {
     try {

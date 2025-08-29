@@ -95,7 +95,7 @@ export default function PhotoQuest() {
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const response = await fetch(user ? '/api/quest-challenges/unlocked' : '/api/quest-challenges', {
+        const response = await fetch(user ? '/api/quest-challenges/all-with-status' : '/api/quest-challenges', {
           headers,
           credentials: 'include',
         });
@@ -226,8 +226,10 @@ export default function PhotoQuest() {
   };
 
   // Helper function to handle quest click
-  const handleQuestClick = (questId: string) => {
-    setLocation(`/challenge/${questId}`);
+  const handleQuestClick = (questId: string, isUnlocked: boolean) => {
+    if (isUnlocked) {
+      setLocation(`/challenge/${questId}`);
+    }
   };
 
   if (challengesLoading || progressLoading || photosLoading) {
@@ -238,9 +240,14 @@ export default function PhotoQuest() {
     );
   }
 
-  // Separate completed and available challenges
+  // Separate challenges into categories
   const completedChallenges = challenges.filter(challenge => isQuestCompleted(challenge.id));
-  const availableChallenges = challenges.filter(challenge => !isQuestCompleted(challenge.id));
+  const availableChallenges = challenges.filter(challenge => 
+    !isQuestCompleted(challenge.id) && (challenge as any).isUnlocked !== false
+  );
+  const lockedChallenges = challenges.filter(challenge => 
+    !isQuestCompleted(challenge.id) && (challenge as any).isUnlocked === false
+  );
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-cream via-blush to-romantic/10">
@@ -257,7 +264,7 @@ export default function PhotoQuest() {
                 Photo Quest
               </h1>
               <p className="text-charcoal/70 text-lg mb-6">
-                {challenges.length} celkem výzev • {availableChallenges.length} k dispozici • {completedChallenges.length} splněno
+                {challenges.length} celkem výzev • {availableChallenges.length} k dispozici • {lockedChallenges.length} uzamčeno • {completedChallenges.length} splněno
               </p>
             </div>
           </div>
@@ -291,7 +298,7 @@ export default function PhotoQuest() {
                 <div
                   key={challenge.id}
                   className="group bg-white/80 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 hover:shadow-lg transition-all cursor-pointer border border-romantic/20"
-                  onClick={() => handleQuestClick(challenge.id)}
+                  onClick={() => handleQuestClick(challenge.id, true)}
                   data-testid={`challenge-card-${challenge.id}`}
                 >
                   <div className="flex items-center gap-4">
@@ -338,6 +345,69 @@ export default function PhotoQuest() {
             })}
           </div>
 
+          {/* Locked Challenges Section */}
+          {lockedChallenges.length > 0 && (
+            <>
+              <div className="py-8">
+                <h3 className="text-charcoal text-2xl font-display font-bold mb-6 flex items-center gap-3">
+                  <Lock className="text-charcoal/60" size={24} />
+                  Uzamčené výzvy
+                </h3>
+              </div>
+              
+              <div className="grid gap-4 mb-8">
+                {lockedChallenges.map((challenge, index) => {
+                  const Icon = getQuestIcon(challenge.title);
+                  const unlockRequirement = (challenge as any).unlockRequirement || 'Čeká na odemčení';
+
+                  return (
+                    <div
+                      key={challenge.id}
+                      className="group bg-gray-100/80 backdrop-blur-sm rounded-2xl p-4 border border-charcoal/20 cursor-not-allowed opacity-60"
+                      data-testid={`locked-challenge-${challenge.id}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Locked Icon */}
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-charcoal/40 to-charcoal/60 flex items-center justify-center flex-shrink-0 shadow-md">
+                          <Lock className="text-white" size={20} />
+                        </div>
+
+                        {/* Challenge Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-charcoal/70 font-display font-semibold text-lg">
+                            {challenge.title}
+                          </h3>
+                          <p className="text-charcoal/50 text-sm mt-1">
+                            {unlockRequirement}
+                          </p>
+                        </div>
+
+                        {/* Challenge Stats */}
+                        <div className="hidden md:flex items-center gap-6 text-sm">
+                          <div className="text-center">
+                            <div className="px-3 py-1 rounded-full text-xs font-medium bg-charcoal/10 text-charcoal/50">
+                              Uzamčeno
+                            </div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-charcoal/50">+{challenge.points}</div>
+                            <div className="text-xs text-charcoal/40">bodů</div>
+                          </div>
+                        </div>
+
+                        {/* Mobile stats */}
+                        <div className="md:hidden text-right">
+                          <div className="text-lg font-bold text-charcoal/50">+{challenge.points}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           {/* Completed Challenges Section */}
           {completedChallenges.length > 0 && (
             <>
@@ -357,7 +427,7 @@ export default function PhotoQuest() {
                     <div
                       key={challenge.id}
                       className="group bg-gradient-to-r from-romantic/20 to-love/20 backdrop-blur-sm rounded-2xl p-4 hover:from-romantic/30 hover:to-love/30 hover:shadow-lg transition-all cursor-pointer border border-romantic/30"
-                      onClick={() => handleQuestClick(challenge.id)}
+                      onClick={() => handleQuestClick(challenge.id, true)}
                       data-testid={`completed-challenge-${challenge.id}`}
                     >
                       <div className="flex items-center gap-4">
