@@ -23,51 +23,51 @@ const onboardingSteps: OnboardingStep[] = [
     position: "center"
   },
   {
-    id: "navigation",
-    title: "Navigace",
-    description: "Zde najdete všechny sekce našeho webu - Photo Quest, Galerii, Detaily svatby a další.",
-    element: "nav",
+    id: "floating-navigation",
+    title: "Plovoucí navigace",
+    description: "Nahoře vidíte plovoucí navigační panel. Automaticky se skryje při rolování dolů a zobrazí při rolování nahoru.",
+    element: "nav[class*='fixed']",
     position: "bottom"
   },
   {
     id: "photo-quest",
     title: "Photo Quest",
     description: "Plňte fotografické úkoly a pomozte nám zachytit naši svatbu z různých úhlů. Za splněné úkoly získáte body!",
-    element: "[href='/photo-quest']",
+    element: "nav [href='/photo-quest']",
     position: "bottom"
   },
   {
     id: "mini-games",
     title: "Mini-hry",
     description: "Bavte se mezi fotografováním! Zahrajte si svatební kvízy, pexeso a další zábavné hry. Soutěžte s ostatními hosty!",
-    element: "[href='/mini-games']",
+    element: "nav [href='/mini-games']",
     position: "bottom"
   },
   {
     id: "gallery",
     title: "Galerie",
     description: "Prohlížejte si fotografie od ostatních hostů a lajkujte ty nejkrásnější.",
-    element: "[href='/gallery']",
+    element: "nav [href='/gallery']",
     position: "bottom"
-  },
-  {
-    id: "countdown",
-    title: "Odpočítávání",
-    description: "Sledujte, kolik času zbývá do našeho velkého dne!",
-    element: "#countdown",
-    position: "top"
   },
   {
     id: "mobile-menu",
     title: "Mobilní menu",
-    description: "Na mobilních zařízeních použijte srdce pro otevření navigačního menu.",
+    description: "Na mobilních zařízeních klikněte na srdce v plovoucí navigaci pro otevření menu.",
     element: "[data-testid='mobile-heart-menu-toggle']",
     position: "left"
   },
   {
+    id: "countdown",
+    title: "Odpočítávání",
+    description: "Sledujte, kolik času zbývá do našeho velkého dne! Najdete ho na hlavní stránce.",
+    element: "#countdown",
+    position: "top"
+  },
+  {
     id: "complete",
     title: "Hotovo!",
-    description: "Nyní jste připraveni prozkoumávat naši svatební stránku. Bavte se!",
+    description: "Nyní jste připraveni prozkoumávat naši svatební stránku. Plovoucí navigace vám pomůže se pohybovat mezi sekcemi. Bavte se!",
     position: "center"
   }
 ];
@@ -165,24 +165,51 @@ export default function OnboardingTutorial() {
 
     const step = onboardingSteps[currentStep];
     if (step.element) {
-      const element = document.querySelector(step.element);
-      if (element) {
-        setHighlightedElement(element);
+      // For floating navigation steps, ensure navigation is visible first
+      if (step.id === 'floating-navigation' || step.element.includes('nav')) {
+        // Scroll to top to ensure floating navigation is visible
+        window.scrollTo({ top: 0, behavior: "smooth" });
         
-        // Calculate optimal card position
-        const position = calculateCardPosition(element, step.position || 'bottom');
-        setCardPosition(position);
-        
-        // Smooth scroll to element with better positioning
+        // Wait for scroll to complete, then find element
         setTimeout(() => {
-          element.scrollIntoView({ 
-            behavior: "smooth", 
-            block: "center",
-            inline: "center"
-          });
-        }, 100);
+          const element = document.querySelector(step.element);
+          if (element) {
+            setHighlightedElement(element);
+            
+            // Calculate optimal card position
+            const position = calculateCardPosition(element, step.position || 'bottom');
+            setCardPosition(position);
+          } else {
+            console.warn(`Tutorial element not found: ${step.element}`);
+            // Fallback: try alternative selectors for navigation
+            const navElement = document.querySelector('nav') || document.querySelector('[role="navigation"]');
+            if (navElement) {
+              setHighlightedElement(navElement);
+              const position = calculateCardPosition(navElement, step.position || 'bottom');
+              setCardPosition(position);
+            }
+          }
+        }, 500);
       } else {
-        console.warn(`Tutorial element not found: ${step.element}`);
+        const element = document.querySelector(step.element);
+        if (element) {
+          setHighlightedElement(element);
+          
+          // Calculate optimal card position
+          const position = calculateCardPosition(element, step.position || 'bottom');
+          setCardPosition(position);
+          
+          // Smooth scroll to element with better positioning
+          setTimeout(() => {
+            element.scrollIntoView({ 
+              behavior: "smooth", 
+              block: "center",
+              inline: "center"
+            });
+          }, 100);
+        } else {
+          console.warn(`Tutorial element not found: ${step.element}`);
+        }
       }
     } else {
       setHighlightedElement(null);
