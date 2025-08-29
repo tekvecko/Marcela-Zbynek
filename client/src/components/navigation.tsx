@@ -5,7 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
-import { Trophy, Star } from "lucide-react"; // Importuji Star icon for Profile link
+import { Trophy, Star, Mail, Lock, User, Loader2 } from "lucide-react"; // Importuji Star icon for Profile link
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 // Placeholder for GlassButton, assuming it's imported from a UI library
 // import { GlassButton } from "@/components/ui/glass-button"; 
 // Mock GlassButton for demonstration purposes
@@ -29,6 +34,7 @@ interface NavigationProps {}
 export default function Navigation({}: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
@@ -40,8 +46,60 @@ export default function Navigation({}: NavigationProps = {}) {
   const [contextMenuPosition, setContextMenuPosition] = useState<{x: number, y: number} | null>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { user, logout, isLoggingOut } = useAuth();
+  const { user, logout, login, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+
+  // Login form state
+  const [loginFormData, setLoginFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
+
+  // Login schema
+  const loginSchema = z.object({
+    email: z.string().email("Neplatný e-mail"),
+    password: z.string().min(6, "Heslo musí mít alespoň 6 znaků"),
+  });
+
+  // Login mutation
+  const loginMutation = useMutation({
+    mutationFn: async (data: typeof loginFormData) => {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      const token = data.token;
+      localStorage.setItem("auth_token", token);
+      localStorage.setItem("auth_user", JSON.stringify(data.user));
+      login(data.user, token);
+      setIsLoginDropdownOpen(false);
+      setLoginFormData({ email: "", password: "" });
+      setLoginErrors({});
+      toast({
+        title: "Přihlášení úspěšné!",
+        description: `Vítejte${data.user.firstName ? `, ${data.user.firstName}` : ""}!`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Chyba přihlášení",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch user level for navigation display
   const { data: userLevel } = useQuery({
@@ -296,6 +354,10 @@ export default function Navigation({}: NavigationProps = {}) {
       if (isUserMenuOpen && !(e.target as Element)?.closest('[data-user-menu]')) {
         setIsUserMenuOpen(false);
       }
+      // Zavřít login dropdown při kliknutí mimo něj
+      if (isLoginDropdownOpen && !(e.target as Element)?.closest('[data-login-dropdown]')) {
+        setIsLoginDropdownOpen(false);
+      }
     };
 
     // Use capture phase for faster response
@@ -349,6 +411,33 @@ export default function Navigation({}: NavigationProps = {}) {
   const handleLogout = async () => {
     await logout();
     setIsMenuOpen(false);
+  };
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginErrors({});
+
+    try {
+      loginSchema.parse(loginFormData);
+      loginMutation.mutate(loginFormData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setLoginErrors(fieldErrors);
+      }
+    }
+  };
+
+  const handleLoginInputChange = (field: string, value: string) => {
+    setLoginFormData((prev) => ({ ...prev, [field]: value }));
+    if (loginErrors[field]) {
+      setLoginErrors((prev) => ({ ...prev, [field]: "" }));
+    }
   };
 
   const toggleMenu = () => {
@@ -495,46 +584,192 @@ export default function Navigation({}: NavigationProps = {}) {
                     animate={{ opacity: 1, scale: 1, x: 0 }}
                     exit={{ opacity: 0, scale: 0.8, x: 20 }}
                     transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+                    className="relative"
                   >
-                    <motion.a 
-                      href="/login"
-                      className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
-                      whileHover={{ scale: 1.05, y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                      style={{
-                        boxShadow: '0 4px 15px rgba(155, 119, 148, 0.1)'
-                      }}
-                    >
-                      {/* Gradient overlay při hover */}
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-romantic/5 to-romantic/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
-                      <motion.div
-                        className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm"
-                        whileHover={{ rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 0.5 }}
+                    <div className="relative" data-login-dropdown>
+                      <motion.button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsLoginDropdownOpen(!isLoginDropdownOpen);
+                        }}
+                        className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
+                        whileHover={{ scale: 1.05, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        style={{
+                          boxShadow: '0 4px 15px rgba(155, 119, 148, 0.1)'
+                        }}
                       >
-                        <span className="text-xl">👤</span>
-                      </motion.div>
-                      
-                      <div className="relative flex flex-col">
-                        <span className="text-sm font-medium text-charcoal hidden sm:block">Přihlášení</span>
-                        <span className="text-xs text-charcoal/60 hidden md:block">Vstupte do hry</span>
-                      </div>
+                        {/* Gradient overlay při hover */}
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-romantic/5 to-romantic/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        
+                        <motion.div
+                          className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm"
+                          whileHover={{ rotate: [0, -10, 10, 0] }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <span className="text-xl">👤</span>
+                        </motion.div>
+                        
+                        <div className="relative flex flex-col">
+                          <span className="text-sm font-medium text-charcoal hidden sm:block">Přihlášení</span>
+                          <span className="text-xs text-charcoal/60 hidden md:block flex items-center">
+                            Vstupte do hry
+                            <motion.span 
+                              className="ml-1"
+                              animate={{ rotate: isLoginDropdownOpen ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              ▼
+                            </motion.span>
+                          </span>
+                        </div>
 
-                      {/* Pulzující indikátor */}
-                      <motion.div
-                        className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-md"
-                        animate={{
-                          scale: [1, 1.3, 1],
-                          opacity: [0.8, 1, 0.8]
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      />
-                    </motion.a>
+                        {/* Pulzující indikátor */}
+                        <motion.div
+                          className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-md"
+                          animate={{
+                            scale: [1, 1.3, 1],
+                            opacity: [0.8, 1, 0.8]
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      </motion.button>
+
+                      {/* Login Dropdown */}
+                      <AnimatePresence>
+                        {isLoginDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute right-0 top-full mt-2 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden z-50"
+                            style={{
+                              backdropFilter: 'blur(40px) saturate(180%)',
+                              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="p-6">
+                              <div className="text-center mb-6">
+                                <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
+                                <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
+                              </div>
+
+                              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="nav-email" className="text-charcoal/80 font-medium">E-mail</Label>
+                                  <div className="relative group">
+                                    <motion.div
+                                      className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
+                                      animate={{ 
+                                        scale: loginFormData.email ? 1.1 : 1,
+                                        color: loginFormData.email ? "#9b7794" : "#64748b66"
+                                      }}
+                                      transition={{ duration: 0.2 }}
+                                    >
+                                      <Mail className="h-4 w-4" />
+                                    </motion.div>
+                                    <Input
+                                      id="nav-email"
+                                      type="email"
+                                      placeholder="vas.email@example.com"
+                                      value={loginFormData.email}
+                                      onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                                      className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
+                                    />
+                                  </div>
+                                  <AnimatePresence>
+                                    {loginErrors.email && (
+                                      <motion.p 
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="text-red-500 text-sm"
+                                      >
+                                        {loginErrors.email}
+                                      </motion.p>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label htmlFor="nav-password" className="text-charcoal/80 font-medium">Heslo</Label>
+                                  <div className="relative group">
+                                    <motion.div
+                                      className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
+                                      animate={{ 
+                                        scale: loginFormData.password ? 1.1 : 1,
+                                        color: loginFormData.password ? "#9b7794" : "#64748b66"
+                                      }}
+                                      transition={{ duration: 0.2 }}
+                                    >
+                                      <Lock className="h-4 w-4" />
+                                    </motion.div>
+                                    <Input
+                                      id="nav-password"
+                                      type="password"
+                                      placeholder="••••••••"
+                                      value={loginFormData.password}
+                                      onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                                      className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
+                                    />
+                                  </div>
+                                  <AnimatePresence>
+                                    {loginErrors.password && (
+                                      <motion.p 
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="text-red-500 text-sm"
+                                      >
+                                        {loginErrors.password}
+                                      </motion.p>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+
+                                <motion.button
+                                  type="submit"
+                                  disabled={loginMutation.isPending}
+                                  className="w-full bg-gradient-to-r from-romantic to-love text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  {loginMutation.isPending && (
+                                    <motion.div
+                                      animate={{ rotate: 360 }}
+                                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    >
+                                      <Loader2 size={18} />
+                                    </motion.div>
+                                  )}
+                                  {loginMutation.isPending ? "Přihlašování..." : "🚀 Přihlásit se"}
+                                </motion.button>
+                              </form>
+
+                              <div className="mt-4 text-center">
+                                <motion.a
+                                  href="/login"
+                                  onClick={() => setIsLoginDropdownOpen(false)}
+                                  className="text-sm text-romantic hover:text-love transition-colors"
+                                  whileHover={{ scale: 1.05 }}
+                                >
+                                  ✨ Nemáte účet? Registrujte se zde
+                                </motion.a>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </motion.div>
                 ) : (
                   <motion.div
