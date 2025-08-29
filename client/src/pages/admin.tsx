@@ -41,6 +41,15 @@ const challengeSchema = z.object({
 
 type ChallengeFormData = z.infer<typeof challengeSchema>;
 
+// Placeholder for PerformanceMonitor component
+const PerformanceMonitor = () => {
+  return (
+    <div className="p-4 border border-dashed border-gray-300 rounded-md text-center text-gray-500">
+      Feature coming soon: Monitor page load times and network throttling simulation.
+    </div>
+  );
+};
+
 export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1216,6 +1225,12 @@ export default function AdminPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Performance Monitoring */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-2xl font-bold text-charcoal mb-6">Monitor výkonu</h2>
+          <PerformanceMonitor />
+        </div>
       </div>
     </div>
   );
