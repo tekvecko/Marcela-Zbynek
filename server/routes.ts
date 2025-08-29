@@ -139,6 +139,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Použij monitoring middleware globálně
   app.use('/api', serviceMonitoringMiddleware);
 
+  // Performance monitoring endpoint
+  app.get('/api/performance', async (req, res) => {
+    const start = Date.now();
+    
+    try {
+      // Test database response time
+      const dbStart = Date.now();
+      await storage.getQuestChallenges();
+      const dbTime = Date.now() - dbStart;
+      
+      // Test memory usage
+      const memUsage = process.memoryUsage();
+      
+      const performanceData = {
+        serverResponseTime: Date.now() - start,
+        databaseResponseTime: dbTime,
+        memory: {
+          used: Math.round(memUsage.heapUsed / 1024 / 1024),
+          total: Math.round(memUsage.heapTotal / 1024 / 1024),
+          external: Math.round(memUsage.external / 1024 / 1024)
+        },
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+      };
+      
+      res.json(performanceData);
+    } catch (error) {
+      res.status(500).json({ error: 'Performance check failed' });
+    }
+  });
+
   // Health check endpoint for Render
   app.get('/api/health', (req, res) => {
     res.status(200).json({
