@@ -767,25 +767,48 @@ export class MemStorage implements IStorage {
   }
 
   async getUnlockedChallenges(participantName: string): Promise<QuestChallenge[]> {
-    // Mock implementation for MemStorage
+    // Time-based unlocking system
     const allChallenges = Array.from(this.questChallenges.values());
-    const userProgress = await this.getQuestProgressByParticipant(participantName);
-    const completedChallengesCount = userProgress.filter(p => p.isCompleted).length;
+    const currentTime = new Date();
 
-    return allChallenges.map((challenge, index) => {
+    // Sort challenges by unlock order first, then by creation date
+    const sortedChallenges = allChallenges.sort((a, b) => {
+      if (a.unlockOrder !== b.unlockOrder) {
+        return a.unlockOrder - b.unlockOrder;
+      }
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    return sortedChallenges.map((challenge, index) => {
       let isUnlocked = false;
       let unlockRequirement = '';
 
-      if (index < 3) {
-        isUnlocked = true;
+      // If challenge has an unlock date, check against current time
+      if (challenge.unlockDate) {
+        const unlockTime = new Date(challenge.unlockDate);
+        isUnlocked = currentTime >= unlockTime;
+        
+        if (!isUnlocked) {
+          const timeUntilUnlock = unlockTime.getTime() - currentTime.getTime();
+          const daysUntil = Math.ceil(timeUntilUnlock / (1000 * 60 * 60 * 24));
+          const hoursUntil = Math.ceil(timeUntilUnlock / (1000 * 60 * 60));
+          
+          if (daysUntil > 1) {
+            unlockRequirement = `Odemkne se za ${daysUntil} dní`;
+          } else if (hoursUntil > 1) {
+            unlockRequirement = `Odemkne se za ${hoursUntil} hodin`;
+          } else {
+            unlockRequirement = 'Odemkne se brzy';
+          }
+        }
       } else {
-        const requiredCompleted = Math.floor(index / 2);
-        if (completedChallengesCount >= requiredCompleted) {
-          isUnlocked = true;
-        } else {
-          unlockRequirement = `Splňte ${requiredCompleted} výzev pro odemčení`;
+        // Fallback: first 3 challenges are always unlocked, others unlock progressively
+        isUnlocked = index < 3;
+        if (!isUnlocked) {
+          unlockRequirement = 'Čeká na harmonogram odemčení';
         }
       }
+
       return { ...challenge, isUnlocked, unlockRequirement };
     });
   }
