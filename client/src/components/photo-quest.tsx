@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Camera, Trophy, Users, Crown, CheckCircle, Lock, Play, Music, Pause, Heart, MoreHorizontal, Clock, Star } from "lucide-react";
+import { Camera, Trophy, Users, Crown, CheckCircle, Lock, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
@@ -243,49 +243,36 @@ export default function PhotoQuest() {
   const availableChallenges = challenges.filter(challenge => !isQuestCompleted(challenge.id));
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white">
-      {/* Spotify-style Header */}
-      <div className="relative px-8 pt-16 pb-8">
-        <div className="flex items-end gap-6">
-          <div className="w-60 h-60 bg-gradient-to-br from-green-400 to-green-600 rounded-lg shadow-2xl flex items-center justify-center">
-            <Camera className="text-white drop-shadow-lg" size={80} />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-white/80 mb-2">SVATEBNÍ PLAYLIST</p>
-            <h1 className="text-6xl md:text-8xl font-black text-white mb-4 tracking-tight">
-              Photo Quest
-            </h1>
-            <p className="text-white/70 text-lg mb-6">
-              Marcela & Zbyněk • {challenges.length} výzev • {availableChallenges.length} dostupných
-            </p>
-            <div className="flex items-center gap-4">
-              <button className="bg-green-500 hover:bg-green-400 text-black w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-105">
-                <Play className="ml-1" size={20} fill="currentColor" />
-              </button>
-              <button className="text-white/60 hover:text-white">
-                <Heart size={32} />
-              </button>
-              <button className="text-white/60 hover:text-white">
-                <MoreHorizontal size={32} />
-              </button>
+    <section className="min-h-screen bg-gradient-to-br from-cream via-blush to-romantic/10">
+      {/* Wedding-style Header */}
+      <div className="relative px-4 sm:px-8 pt-16 pb-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+            <div className="w-48 h-48 md:w-60 md:h-60 bg-gradient-to-br from-romantic to-love rounded-3xl shadow-2xl flex items-center justify-center">
+              <Camera className="text-white drop-shadow-lg" size={60} />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <p className="text-sm font-bold text-romantic/80 mb-2 tracking-wide">SVATEBNÍ FOTOVÝZVY</p>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-charcoal mb-4 tracking-tight">
+                Photo Quest
+              </h1>
+              <p className="text-charcoal/70 text-lg mb-6">
+                {challenges.length} celkem výzev • {availableChallenges.length} k dispozici • {completedChallenges.length} splněno
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Playlist Controls */}
-      <div className="px-8 py-6 border-b border-white/10">
-        <div className="flex items-center justify-between text-white/60 text-sm">
+      {/* Challenge List Header */}
+      <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between text-charcoal/60 text-sm font-medium">
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <span>#</span>
-              <span>NÁZEV</span>
-            </div>
+            <span>VÝZVA</span>
           </div>
-          <div className="flex items-center gap-8">
-            <span>OBTÍŽNOST</span>
+          <div className="hidden md:flex items-center gap-8">
+            <span>STATUS</span>
             <span>BODY</span>
-            <Clock size={16} />
           </div>
         </div>
       </div>
@@ -293,198 +280,180 @@ export default function PhotoQuest() {
       {/* Quest Challenges */}
       <div className="space-y-12">
 
-        {/* Spotify-style Track List */}
-        <div className="px-8 pb-8">
+        {/* Available Challenges Grid */}
+        <div className="px-4 sm:px-8 pb-8 max-w-6xl mx-auto">
           {/* Available Challenges */}
-          {availableChallenges.map((challenge, index) => {
-            const Icon = getQuestIcon(challenge.title);
-            const isEven = index % 2 === 0;
+          <div className="grid gap-4">
+            {availableChallenges.map((challenge, index) => {
+              const Icon = getQuestIcon(challenge.title);
 
-            return (
-              <div
-                key={challenge.id}
-                className={`group flex items-center gap-4 px-4 py-3 rounded-md hover:bg-white/10 transition-all cursor-pointer ${
-                  isEven ? 'bg-white/5' : ''
-                }`}
-                onClick={() => handleQuestClick(challenge.id)}
-                data-testid={`track-challenge-${challenge.id}`}
-              >
-                {/* Track Number & Play Button */}
-                <div className="w-4 text-right text-white/40 text-sm group-hover:hidden">
-                  {index + 1}
-                </div>
-                <button className="w-4 h-4 text-white hidden group-hover:block hover:scale-110 transition-transform">
-                  <Play size={16} fill="currentColor" />
-                </button>
+              return (
+                <div
+                  key={challenge.id}
+                  className="group bg-white/80 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 hover:shadow-lg transition-all cursor-pointer border border-romantic/20"
+                  onClick={() => handleQuestClick(challenge.id)}
+                  data-testid={`challenge-card-${challenge.id}`}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Challenge Icon */}
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-romantic to-love flex items-center justify-center flex-shrink-0 shadow-md">
+                      <Icon className="text-white" size={20} />
+                    </div>
 
-                {/* Album Art & Track Info */}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0">
-                    <Icon className="text-white" size={16} />
+                    {/* Challenge Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-charcoal font-display font-semibold text-lg group-hover:text-romantic transition-colors">
+                        {challenge.title}
+                      </h3>
+                      <p className="text-charcoal/60 text-sm mt-1">
+                        {challenge.description}
+                      </p>
+                    </div>
+
+                    {/* Challenge Stats */}
+                    <div className="hidden md:flex items-center gap-6 text-sm">
+                      <div className="text-center">
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          challenge.isActive 
+                            ? 'bg-romantic/20 text-romantic' 
+                            : 'bg-charcoal/20 text-charcoal/60'
+                        }`}>
+                          {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-romantic">+{challenge.points}</div>
+                        <div className="text-xs text-charcoal/60">bodů</div>
+                      </div>
+                    </div>
+
+                    {/* Mobile stats */}
+                    <div className="md:hidden text-right">
+                      <div className="text-lg font-bold text-romantic">+{challenge.points}</div>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-medium truncate group-hover:text-green-400 transition-colors">
-                      {challenge.title}
-                    </h3>
-                    <p className="text-white/60 text-sm truncate">
-                      {challenge.description.length > 50 
-                        ? challenge.description.substring(0, 50) + '...'
-                        : challenge.description
-                      }
-                    </p>
-                  </div>
                 </div>
-
-                {/* Track Stats */}
-                <div className="hidden md:block text-white/60 text-sm">
-                  {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
-                </div>
-                
-                <div className="hidden md:block text-white/60 text-sm font-medium">
-                  +{challenge.points}
-                </div>
-
-                {/* Duration / Action */}
-                <div className="flex items-center gap-2">
-                  <button className="opacity-0 group-hover:opacity-100 text-white/60 hover:text-white transition-all p-1">
-                    <Heart size={16} />
-                  </button>
-                  <span className="text-white/40 text-sm w-12 text-right">
-                    {Math.floor(Math.random() * 3) + 2}:{'0' + Math.floor(Math.random() * 6)}{Math.floor(Math.random() * 10)}
-                  </span>
-                  <button className="opacity-0 group-hover:opacity-100 text-white/60 hover:text-white transition-all p-1">
-                    <MoreHorizontal size={16} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {/* Completed Challenges Section */}
           {completedChallenges.length > 0 && (
             <>
               <div className="py-8">
-                <h3 className="text-white text-xl font-bold px-4 mb-4 flex items-center gap-2">
-                  <CheckCircle className="text-green-400" size={20} />
+                <h3 className="text-charcoal text-2xl font-display font-bold mb-6 flex items-center gap-3">
+                  <CheckCircle className="text-romantic" size={24} />
                   Dokončené výzvy
                 </h3>
               </div>
               
-              {completedChallenges.map((challenge, index) => {
-                const Icon = getQuestIcon(challenge.title);
-                const completedPhoto = completedChallengePhotos.get(challenge.id);
-                const isEven = index % 2 === 0;
+              <div className="grid gap-4">
+                {completedChallenges.map((challenge, index) => {
+                  const Icon = getQuestIcon(challenge.title);
+                  const completedPhoto = completedChallengePhotos.get(challenge.id);
 
-                return (
-                  <div
-                    key={challenge.id}
-                    className={`group flex items-center gap-4 px-4 py-3 rounded-md hover:bg-white/10 transition-all cursor-pointer ${
-                      isEven ? 'bg-white/5' : ''
-                    }`}
-                    onClick={() => handleQuestClick(challenge.id)}
-                    data-testid={`track-completed-${challenge.id}`}
-                  >
-                    {/* Track Number & Play Button */}
-                    <div className="w-4 text-right text-green-400 text-sm">
-                      <CheckCircle size={16} />
-                    </div>
+                  return (
+                    <div
+                      key={challenge.id}
+                      className="group bg-gradient-to-r from-romantic/20 to-love/20 backdrop-blur-sm rounded-2xl p-4 hover:from-romantic/30 hover:to-love/30 hover:shadow-lg transition-all cursor-pointer border border-romantic/30"
+                      onClick={() => handleQuestClick(challenge.id)}
+                      data-testid={`completed-challenge-${challenge.id}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Success Icon */}
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-romantic to-love flex items-center justify-center flex-shrink-0 shadow-md">
+                          <CheckCircle className="text-white" size={20} />
+                        </div>
 
-                    {/* Album Art & Track Info */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded bg-green-500 flex items-center justify-center flex-shrink-0">
-                        <Icon className="text-white" size={16} />
+                        {/* Challenge Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-charcoal font-display font-semibold text-lg">
+                            {challenge.title}
+                          </h3>
+                          <p className="text-charcoal/70 text-sm mt-1">
+                            Splněno {completedPhoto?.analysisResult && `• AI skóre: ${Math.round(completedPhoto.analysisResult.confidence * 100)}%`}
+                          </p>
+                        </div>
+
+                        {/* Points Earned */}
+                        <div className="text-center">
+                          <div className="flex items-center gap-2">
+                            <Star className="text-gold" size={20} fill="currentColor" />
+                            <span className="text-lg font-bold text-romantic">+{challenge.points}</span>
+                          </div>
+                          <div className="text-xs text-charcoal/60">získáno</div>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-green-400 font-medium truncate">
-                          {challenge.title}
-                        </h3>
-                        <p className="text-white/60 text-sm truncate">
-                          Splněno • AI skóre: {completedPhoto?.analysisResult ? Math.round(completedPhoto.analysisResult.confidence * 100) : 'N/A'}%
-                        </p>
-                      </div>
                     </div>
-
-                    {/* Track Stats */}
-                    <div className="hidden md:block text-green-400 text-sm font-medium">
-                      +{challenge.points} získáno
-                    </div>
-
-                    {/* Duration / Action */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-400 text-sm w-12 text-right">
-                        <Star size={16} fill="currentColor" />
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </>
           )}
         </div>
 
         {challenges.length === 0 && !challengesLoading && (
           <div className="text-center py-12 px-8">
-            <p className="text-white/60 text-lg">Žádné výzvy nenalezeny. Zkuste obnovit stránku.</p>
+            <p className="text-charcoal/60 text-lg">Žádné výzvy nenalezeny. Zkuste obnovit stránku.</p>
           </div>
         )}
       </div>
 
-      {/* Spotify-style Leaderboard */}
+      {/* Wedding-style Leaderboard */}
       {!leaderboardLoading && leaderboard.length > 0 && (
-        <div className="px-8 py-8 border-t border-white/10">
-          <h2 className="text-white text-2xl font-bold mb-6 flex items-center gap-3">
-            <Crown className="text-yellow-400" size={24} />
-            Top svatební fotografové
-          </h2>
-          
-          <div className="space-y-2">
-            {leaderboard.slice(0, 10).map((entry, index) => (
-              <div
-                key={entry.participantName}
-                className={`flex items-center gap-4 px-4 py-3 rounded-md hover:bg-white/10 transition-all ${
-                  index % 2 === 0 ? 'bg-white/5' : ''
-                }`}
-              >
-                {/* Rank */}
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  index === 0 ? 'bg-yellow-500 text-black' :
-                  index === 1 ? 'bg-gray-400 text-white' :
-                  index === 2 ? 'bg-orange-500 text-white' :
-                  'text-white/60'
-                }`}>
-                  {index < 3 ? (index === 0 ? '👑' : index + 1) : index + 1}
-                </div>
+        <div className="px-4 sm:px-8 py-8 max-w-6xl mx-auto">
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 border border-romantic/20">
+            <h2 className="text-charcoal text-2xl font-display font-bold mb-6 flex items-center gap-3">
+              <Crown className="text-gold" size={24} />
+              Nejlepší svatební fotografové
+            </h2>
+            
+            <div className="space-y-3">
+              {leaderboard.slice(0, 10).map((entry, index) => (
+                <div
+                  key={entry.participantName}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition-all"
+                >
+                  {/* Rank */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    index === 0 ? 'bg-gold text-white' :
+                    index === 1 ? 'bg-charcoal/60 text-white' :
+                    index === 2 ? 'bg-romantic text-white' :
+                    'bg-charcoal/20 text-charcoal/60'
+                  }`}>
+                    {index < 3 ? (index === 0 ? '👑' : index + 1) : index + 1}
+                  </div>
 
-                {/* Profile Picture Placeholder */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-                  <Camera className="text-white" size={16} />
-                </div>
+                  {/* Profile Picture */}
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-romantic to-love flex items-center justify-center">
+                    <Camera className="text-white" size={16} />
+                  </div>
 
-                {/* User Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className={`font-medium truncate ${
-                    index === 0 ? 'text-yellow-400' : 'text-white'
-                  }`} data-testid={`text-participant-${index}`}>
-                    {getDisplayName(entry.participantName)}
-                  </h3>
-                  <p className="text-white/60 text-sm" data-testid={`text-quests-${index}`}>
-                    {entry.completedQuests} úkolů splněno
-                  </p>
-                </div>
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-display font-semibold truncate ${
+                      index === 0 ? 'text-gold' : 'text-charcoal'
+                    }`} data-testid={`text-participant-${index}`}>
+                      {getDisplayName(entry.participantName)}
+                    </h3>
+                    <p className="text-charcoal/60 text-sm" data-testid={`text-quests-${index}`}>
+                      {entry.completedQuests} úkolů splněno
+                    </p>
+                  </div>
 
-                {/* Points */}
-                <div className={`text-right ${
-                  index === 0 ? 'text-yellow-400' : 'text-white/80'
-                } font-medium`} data-testid={`text-points-${index}`}>
-                  {entry.totalPoints} bodů
+                  {/* Points */}
+                  <div className="text-right">
+                    <div className={`text-lg font-bold ${
+                      index === 0 ? 'text-gold' : 'text-romantic'
+                    }`} data-testid={`text-points-${index}`}>
+                      {entry.totalPoints}
+                    </div>
+                    <div className="text-xs text-charcoal/60">bodů</div>
+                  </div>
                 </div>
-
-                {/* Action Button */}
-                <button className="opacity-0 group-hover:opacity-100 text-white/60 hover:text-white transition-all p-1">
-                  <MoreHorizontal size={16} />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
