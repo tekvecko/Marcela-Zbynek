@@ -202,8 +202,8 @@ export default function Navigation({}: NavigationProps = {}) {
     let lastScrollTime = 0;
 
     const handleScroll = () => {
-      // Skip scroll handling when menu is open to prevent conflicts
-      if (isMenuOpen) {
+      // Skip scroll handling when any menu is open to prevent conflicts
+      if (isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) {
         return;
       }
 
@@ -235,7 +235,7 @@ export default function Navigation({}: NavigationProps = {}) {
         if (scrollDelta > 0) {
           // Scrolling down - hide with delay to prevent flickering
           scrollTimeout = setTimeout(() => {
-            if (window.scrollY > 10 && !isMenuOpen) {
+            if (window.scrollY > 10 && !isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen) {
               setIsVisible(false);
             }
           }, 100);
@@ -262,8 +262,8 @@ export default function Navigation({}: NavigationProps = {}) {
       }
     };
 
-    // Only add scroll listener when menu is closed
-    if (!isMenuOpen) {
+    // Only add scroll listener when all menus are closed
+    if (!isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen) {
       window.addEventListener('scroll', throttledScroll, { passive: true });
     }
 
@@ -273,7 +273,7 @@ export default function Navigation({}: NavigationProps = {}) {
         clearTimeout(scrollTimeout);
       }
     };
-  }, [isMenuOpen, isVisible]);
+  }, [isMenuOpen, isUserMenuOpen, isLoginDropdownOpen, isVisible]);
 
   // Ultra-responsive gesture handling
   useEffect(() => {
@@ -464,6 +464,22 @@ export default function Navigation({}: NavigationProps = {}) {
     }
   };
 
+  // Handler pro uživatelské menu - zajistí viditelnost navigace
+  const handleUserMenuToggle = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+    if (!isUserMenuOpen) {
+      setIsVisible(true);
+    }
+  };
+
+  // Handler pro login dropdown - zajistí viditelnost navigace
+  const handleLoginDropdownToggle = () => {
+    setIsLoginDropdownOpen(!isLoginDropdownOpen);
+    if (!isLoginDropdownOpen) {
+      setIsVisible(true);
+    }
+  };
+
   const LogoElement = ({ className = "w-12 h-12 sm:w-14 sm:h-14", onClick }: { className?: string; onClick?: () => void }) => (
     <motion.div className="relative">
       <motion.button
@@ -605,7 +621,7 @@ export default function Navigation({}: NavigationProps = {}) {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setIsLoginDropdownOpen(!isLoginDropdownOpen);
+                          handleLoginDropdownToggle();
                         }}
                         className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
                         whileHover={{ scale: 1.05, y: -1 }}
@@ -800,7 +816,7 @@ export default function Navigation({}: NavigationProps = {}) {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setIsUserMenuOpen(!isUserMenuOpen);
+                          handleUserMenuToggle();
                         }}
                         className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
                         whileHover={{ scale: 1.05, y: -1 }}
