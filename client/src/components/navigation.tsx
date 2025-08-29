@@ -348,31 +348,58 @@ export default function Navigation({}: NavigationProps = {}) {
     }
   };
 
-  const LogoElement = ({ className = "w-8 h-8", onClick }: { className?: string; onClick?: () => void }) => (
-    <motion.button
-      onClick={onClick}
-      className={`${className} logo-toggle-button focus:outline-none focus:ring-2 focus:ring-romantic/20 rounded-lg`}
-      data-testid="logo-menu-toggle"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      style={{
-        backgroundColor: 'transparent',
-        border: 'none',
-        padding: '2px'
-      }}
-    >
-      <img 
-        src={logoImage}
-        alt="M&Z Logo - Menu Toggle"
-        className={`w-full h-full transition-all duration-300 ${isMenuOpen ? 'logo-animate' : 'logo-static'}`}
+  const LogoElement = ({ className = "w-12 h-12 sm:w-14 sm:h-14", onClick }: { className?: string; onClick?: () => void }) => (
+    <motion.div className="relative">
+      <motion.button
+        onClick={onClick}
+        className={`${className} logo-toggle-button focus:outline-none focus:ring-4 focus:ring-romantic/30 rounded-xl relative group`}
+        data-testid="logo-menu-toggle"
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
         style={{
-          backgroundColor: 'transparent',
-          objectFit: 'contain',
-          imageRendering: 'crisp-edges'
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          border: '2px solid rgba(255, 255, 255, 0.2)',
+          padding: '6px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
         }}
-      />
-    </motion.button>
+      >
+        <img 
+          src={logoImage}
+          alt="M&Z Logo - Menu Toggle"
+          className={`w-full h-full transition-all duration-300 ${isMenuOpen ? 'logo-animate' : 'logo-static'}`}
+          style={{
+            backgroundColor: 'transparent',
+            objectFit: 'contain',
+            imageRendering: 'crisp-edges'
+          }}
+        />
+        
+        {/* Vizuální indikátor pro kliknutí */}
+        <motion.div
+          className="absolute -top-1 -right-1 w-3 h-3 bg-romantic rounded-full shadow-lg"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.7, 1, 0.7]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        
+        {/* Tooltip indikátor */}
+        <motion.div
+          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-romantic text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+          initial={{ opacity: 0, y: -5 }}
+          whileHover={{ opacity: 1, y: 0 }}
+        >
+          Klikni pro menu
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-romantic"></div>
+        </motion.div>
+      </motion.button>
+    </motion.div>
   );
 
   return (
@@ -404,12 +431,12 @@ export default function Navigation({}: NavigationProps = {}) {
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-3 sm:px-5 md:px-7 py-3 sm:py-4">
             {/* Logo as Menu Toggle */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <LogoElement 
-                className="w-7 h-7 sm:w-8 sm:h-8" 
+                className="w-12 h-12 sm:w-14 sm:h-14" 
                 onClick={toggleMenu}
               />
-              <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
+              <div className="font-dancing text-3xl sm:text-4xl text-romantic font-bold hidden sm:block">
                 M&Z
               </div>
             </div>
