@@ -644,6 +644,7 @@ export default function Navigation({}: NavigationProps = {}) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden pointer-events-auto"
+            data-menu-open="true"
             style={{
               touchAction: 'none', // Prevent touch scrolling on overlay
               WebkitTouchCallout: 'none',

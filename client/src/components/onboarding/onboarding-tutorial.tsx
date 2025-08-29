@@ -160,10 +160,31 @@ export default function OnboardingTutorial() {
     }
   };
 
+  // Function to open navigation menu
+  const openNavigationMenu = () => {
+    const menuToggle = document.querySelector('[data-testid="logo-menu-toggle"]') as HTMLButtonElement;
+    if (menuToggle) {
+      menuToggle.click();
+    }
+  };
+
+  // Function to close navigation menu
+  const closeNavigationMenu = () => {
+    const menuToggle = document.querySelector('[data-testid="logo-menu-toggle"]') as HTMLButtonElement;
+    const isMenuOpen = document.querySelector('[data-menu-open="true"]');
+    if (menuToggle && isMenuOpen) {
+      menuToggle.click();
+    }
+  };
+
   useEffect(() => {
     if (!isOnboardingOpen) return;
 
     const step = onboardingSteps[currentStep];
+    
+    // Steps 3-5 (photo-quest, mini-games, gallery) should open the navigation menu
+    const shouldOpenMenu = ['photo-quest', 'mini-games', 'gallery'].includes(step.id);
+    
     if (step.element) {
       // For floating navigation steps, ensure navigation is visible first
       if (step.id === 'floating-navigation' || step.element.includes('nav')) {
@@ -172,7 +193,7 @@ export default function OnboardingTutorial() {
         
         // Wait for scroll to complete, then find element
         setTimeout(() => {
-          const element = document.querySelector(step.element);
+          const element = step.element ? document.querySelector(step.element) : null;
           if (element) {
             setHighlightedElement(element);
             
@@ -190,8 +211,32 @@ export default function OnboardingTutorial() {
             }
           }
         }, 500);
+      } else if (shouldOpenMenu) {
+        // For steps that show navigation buttons, open menu first
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        
+        setTimeout(() => {
+          openNavigationMenu();
+          
+          // Wait a bit more for menu to open, then find element
+          setTimeout(() => {
+            const element = step.element ? document.querySelector(step.element) : null;
+            if (element) {
+              setHighlightedElement(element);
+              
+              // Calculate optimal card position
+              const position = calculateCardPosition(element, step.position || 'bottom');
+              setCardPosition(position);
+            } else {
+              console.warn(`Tutorial element not found: ${step.element}`);
+            }
+          }, 300);
+        }, 500);
       } else {
-        const element = document.querySelector(step.element);
+        // For other steps, close menu if open and proceed normally
+        closeNavigationMenu();
+        
+        const element = step.element ? document.querySelector(step.element) : null;
         if (element) {
           setHighlightedElement(element);
           
@@ -212,6 +257,11 @@ export default function OnboardingTutorial() {
         }
       }
     } else {
+      // For steps without elements, close menu if open
+      if (!shouldOpenMenu) {
+        closeNavigationMenu();
+      }
+      
       setHighlightedElement(null);
       setCardPosition({x: 0, y: 0, position: 'center'});
       // For center-positioned steps without elements, scroll to top to ensure tutorial is visible
