@@ -548,7 +548,11 @@ export default function Navigation({}: NavigationProps = {}) {
                     {/* Dropdown menu */}
                     <div className="relative" data-user-menu>
                       <motion.button
-                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsUserMenuOpen(!isUserMenuOpen);
+                        }}
                         className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
                         whileHover={{ scale: 1.05, y: -1 }}
                         whileTap={{ scale: 0.98 }}
@@ -628,7 +632,11 @@ export default function Navigation({}: NavigationProps = {}) {
                             {/* Profile Link */}
                             <motion.a
                               href="/profile"
-                              onClick={() => setIsUserMenuOpen(false)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setIsUserMenuOpen(false);
+                                window.location.href = '/profile';
+                              }}
                               className="flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group"
                               whileHover={{ x: 4 }}
                             >
@@ -647,7 +655,9 @@ export default function Navigation({}: NavigationProps = {}) {
 
                             {/* Settings (pokud máte) */}
                             <motion.button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 setIsUserMenuOpen(false);
                                 // Zde můžete přidat logiku pro nastavení
                               }}
@@ -668,7 +678,9 @@ export default function Navigation({}: NavigationProps = {}) {
 
                             {/* Logout Button */}
                             <motion.button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 setIsUserMenuOpen(false);
                                 handleLogout();
                               }}
