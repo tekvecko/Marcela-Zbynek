@@ -929,6 +929,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photo comments API endpoints
+  app.get("/api/photos/:photoId/comments", async (req, res) => {
+    try {
+      const { photoId } = req.params;
+
+      // Validate photoId format
+      if (!photoId || typeof photoId !== 'string' || photoId.length > 100) {
+        return res.status(400).json({ message: "Neplatný formát ID fotky" });
+      }
+
+      const sanitizedPhotoId = photoId.trim();
+      if (!/^[\w\-]+$/.test(sanitizedPhotoId)) {
+        return res.status(400).json({ message: "Neplatné znaky v ID fotky" });
+      }
+
+      const comments = await storage.getPhotoComments(sanitizedPhotoId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching photo comments:", error);
+      res.status(500).json({ message: "Chyba při načítání komentářů" });
+    }
+  });
+
+  app.post("/api/photos/:photoId/comments", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { photoId } = req.params;
+      const { content } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ message: "Pro komentování se musíte přihlásit" });
+      }
+
+      // Validate photoId format
+      if (!photoId || typeof photoId !== 'string' || photoId.length > 100) {
+        return res.status(400).json({ message: "Neplatný formát ID fotky" });
+      }
+
+      const sanitizedPhotoId = photoId.trim();
+      if (!/^[\w\-]+$/.test(sanitizedPhotoId)) {
+        return res.status(400).json({ message: "Neplatné znaky v ID fotky" });
+      }
+
+      // Validate content
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ message: "Komentář nesmí být prázdný" });
+      }
+
+      if (content.length > 500) {
+        return res.status(400).json({ message: "Komentář je příliš dlouhý (max 500 znaků)" });
+      }
+
+      // Check if photo exists
+      const photo = await storage.getUploadedPhoto(sanitizedPhotoId);
+      if (!photo) {
+        return res.status(404).json({ message: "Fotka nenalezena" });
+      }
+
+      const commentData = {
+        photoId: sanitizedPhotoId,
+        commenterEmail: req.user.email,
+        commenterName: req.user.firstName || req.user.email.split('@')[0],
+        content: content.trim()
+      };
+
+      const comment = await storage.addPhotoComment(commentData);
+      res.json(comment);
+    } catch (error) {
+      console.error("Error adding photo comment:", error);
+      res.status(500).json({ message: "Chyba při přidávání komentáře" });
+    }
+  });
+
   // Mini-games API routes
   app.get("/api/mini-games", async (req, res) => {
     try {

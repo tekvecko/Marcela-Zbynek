@@ -1,11 +1,12 @@
 
 import {
-  users, questChallenges, uploadedPhotos, photoLikes, questProgress, authSessions,
+  users, questChallenges, uploadedPhotos, photoLikes, photoComments, questProgress, authSessions,
   userBehaviorLogs, aiLearningInsights, userAchievements, userStreaks, userLevels,
   type User, type InsertUser, type UpsertUser,
   type QuestChallenge, type InsertQuestChallenge,
   type UploadedPhoto, type InsertUploadedPhoto,
   type PhotoLike, type InsertPhotoLike,
+  type PhotoComment, type InsertPhotoComment,
   type QuestProgress, type InsertQuestProgress,
   type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession,
   type UserBehaviorLog, type InsertUserBehaviorLog,
@@ -123,6 +124,10 @@ export interface IStorage {
     action: 'liked' | 'unliked';
   }>;
 
+  // Photo comments
+  getPhotoComments(photoId: string): Promise<PhotoComment[]>;
+  addPhotoComment(comment: InsertPhotoComment): Promise<PhotoComment>;
+
   getQuestProgress(): Promise<QuestProgress[]>;
   getQuestProgressByParticipant(participantName: string): Promise<QuestProgress[]>;
   createQuestProgress(progress: InsertQuestProgress): Promise<QuestProgress>;
@@ -167,6 +172,7 @@ export class MemStorage implements IStorage {
   private questChallenges: Map<string, QuestChallenge>;
   private uploadedPhotos: Map<string, UploadedPhoto>;
   private photoLikes: Map<string, PhotoLike>;
+  private photoComments: Map<string, PhotoComment>;
   private questProgress: Map<string, QuestProgress>;
   private authUsers: Map<string, AuthUser>;
   private authSessions: Map<string, AuthSession>;
@@ -182,6 +188,7 @@ export class MemStorage implements IStorage {
     this.questChallenges = new Map();
     this.uploadedPhotos = new Map();
     this.photoLikes = new Map();
+    this.photoComments = new Map();
     this.questProgress = new Map();
     this.authUsers = new Map();
     this.authSessions = new Map();
@@ -708,6 +715,24 @@ export class MemStorage implements IStorage {
         action: 'liked'
       };
     }
+  }
+
+  // Photo comments operations
+  async getPhotoComments(photoId: string): Promise<PhotoComment[]> {
+    return Array.from(this.photoComments.values())
+      .filter(comment => comment.photoId === photoId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async addPhotoComment(comment: InsertPhotoComment): Promise<PhotoComment> {
+    const id = randomUUID();
+    const photoComment: PhotoComment = {
+      ...comment,
+      id,
+      createdAt: new Date(),
+    };
+    this.photoComments.set(id, photoComment);
+    return photoComment;
   }
 
   async getQuestProgress(): Promise<QuestProgress[]> {
