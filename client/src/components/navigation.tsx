@@ -630,14 +630,14 @@ export default function Navigation({}: NavigationProps = {}) {
                             onClick={(e) => e.stopPropagation()}
                           >
                             {/* Profile Link */}
-                            <motion.a
-                              href="/profile"
+                            <motion.button
                               onClick={(e) => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 setIsUserMenuOpen(false);
                                 window.location.href = '/profile';
                               }}
-                              className="flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group"
+                              className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group text-left"
                               whileHover={{ x: 4 }}
                             >
                               <div className="w-8 h-8 rounded-lg bg-romantic/20 flex items-center justify-center">
@@ -648,7 +648,7 @@ export default function Navigation({}: NavigationProps = {}) {
                                 <span className="text-xs text-charcoal/60">Úroveň a statistiky</span>
                               </div>
                               <Star className="w-4 h-4 text-romantic ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </motion.a>
+                            </motion.button>
 
                             {/* Divider */}
                             <div className="h-px bg-romantic/10 mx-4" />
