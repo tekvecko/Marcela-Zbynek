@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UserAvatar } from "@/components/ui/user-avatar";
 // Placeholder for GlassButton, assuming it's imported from a UI library
 // import { GlassButton } from "@/components/ui/glass-button"; 
 // Mock GlassButton for demonstration purposes
@@ -640,23 +641,11 @@ export default function Navigation({}: NavigationProps = {}) {
                           whileHover={{ scale: 1.1 }}
                           transition={{ duration: 0.2 }}
                         >
-                          {user?.profileImageUrl ? (
-                            <div className="relative">
-                              <img 
-                                src={user.profileImageUrl} 
-                                alt={user.firstName || 'User'} 
-                                className="w-8 h-8 rounded-full border-2 border-white/50 shadow-sm object-cover"
-                              />
-                              {/* Online status indicator */}
-                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-romantic to-romantic/80 flex items-center justify-center border-2 border-white/50 shadow-sm">
-                              <span className="text-white text-sm font-bold">
-                                {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'}
-                              </span>
-                            </div>
-                          )}
+                          <UserAvatar 
+                            user={user} 
+                            size="md" 
+                            showOnlineStatus={true}
+                          />
                         </motion.div>
                         
                         <div className="hidden sm:flex flex-col relative">
@@ -903,15 +892,10 @@ export default function Navigation({}: NavigationProps = {}) {
                     >
                       <div className="flex items-center justify-between p-3 bg-romantic/5 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          {user?.profileImageUrl ? (
-                            <img 
-                              src={user.profileImageUrl} 
-                              alt={user.firstName || 'User'} 
-                              className="w-8 h-8 rounded-full"
-                            />
-                          ) : (
-                            <span className="text-2xl">👤</span>
-                          )}
+                          <UserAvatar 
+                            user={user} 
+                            size="md"
+                          />
                           <div className="text-sm font-medium text-gray-700">
                             {user?.firstName} {user?.lastName}
                           </div>
