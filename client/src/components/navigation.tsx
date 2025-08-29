@@ -346,31 +346,45 @@ export default function Navigation({}: NavigationProps = {}) {
     };
 
     const handleClick = (e: MouseEvent) => {
+      // Nezasahovat do klikání na interaktivní elementy
+      const target = e.target as Element;
+      if (target && (
+        target.closest('button') || 
+        target.closest('a') || 
+        target.closest('[role="button"]') ||
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('select')
+      )) {
+        return;
+      }
+
       if (isContextMenuOpen) {
         setIsContextMenuOpen(false);
         setContextMenuPosition(null);
       }
       // Zavřít user menu při kliknutí mimo něj
-      if (isUserMenuOpen && !(e.target as Element)?.closest('[data-user-menu]')) {
+      if (isUserMenuOpen && !target?.closest('[data-user-menu]')) {
         setIsUserMenuOpen(false);
       }
       // Zavřít login dropdown při kliknutí mimo něj
-      if (isLoginDropdownOpen && !(e.target as Element)?.closest('[data-login-dropdown]')) {
+      if (isLoginDropdownOpen && !target?.closest('[data-login-dropdown]')) {
         setIsLoginDropdownOpen(false);
       }
     };
 
-    // Use capture phase for faster response
+    // Use capture phase for faster response on touch events only
     document.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
     document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
     document.addEventListener('touchend', handleTouchEnd, { passive: true, capture: true });
-    document.addEventListener('click', handleClick, { capture: true });
+    // Click event bez capture aby se nespouštěl dříve než onClick handlery tlačítek
+    document.addEventListener('click', handleClick, { passive: true });
 
     return () => {
       document.removeEventListener('touchstart', handleTouchStart, { capture: true } as any);
       document.removeEventListener('touchmove', handleTouchMove, { capture: true } as any);
       document.removeEventListener('touchend', handleTouchEnd, { capture: true } as any);
-      document.removeEventListener('click', handleClick, { capture: true } as any);
+      document.removeEventListener('click', handleClick);
       if (longPressTimer) {
         clearTimeout(longPressTimer);
       }
