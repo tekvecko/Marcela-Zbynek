@@ -28,6 +28,7 @@ interface NavigationProps {}
 
 export default function Navigation({}: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
@@ -291,6 +292,10 @@ export default function Navigation({}: NavigationProps = {}) {
         setIsContextMenuOpen(false);
         setContextMenuPosition(null);
       }
+      // Zavřít user menu při kliknutí mimo něj
+      if (isUserMenuOpen && !(e.target as Element)?.closest('[data-user-menu]')) {
+        setIsUserMenuOpen(false);
+      }
     };
 
     // Use capture phase for faster response
@@ -481,7 +486,7 @@ export default function Navigation({}: NavigationProps = {}) {
             </div>
 
             {/* Enhanced User Menu */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <AnimatePresence mode="wait">
                 {!user ? (
                   <motion.div
@@ -540,10 +545,10 @@ export default function Navigation({}: NavigationProps = {}) {
                     transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                     className="relative"
                   >
-                    <div className="flex items-center space-x-3">
-                      {/* User Avatar/Profile Button */}
-                      <motion.a
-                        href="/profile"
+                    {/* Dropdown menu */}
+                    <div className="relative" data-user-menu>
+                      <motion.button
+                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                         className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
                         whileHover={{ scale: 1.05, y: -1 }}
                         whileTap={{ scale: 0.98 }}
@@ -581,8 +586,15 @@ export default function Navigation({}: NavigationProps = {}) {
                           <span className="text-sm font-medium text-charcoal leading-none">
                             {user?.firstName || user?.email?.split('@')[0]}
                           </span>
-                          <span className="text-xs text-charcoal/60 leading-none mt-0.5">
-                            Profil & úroveň
+                          <span className="text-xs text-charcoal/60 leading-none mt-0.5 flex items-center">
+                            Menu 
+                            <motion.span 
+                              className="ml-1"
+                              animate={{ rotate: isUserMenuOpen ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              ▼
+                            </motion.span>
                           </span>
                         </div>
 
@@ -596,40 +608,93 @@ export default function Navigation({}: NavigationProps = {}) {
                             {userLevel?.level || 1}
                           </span>
                         </motion.div>
-                      </motion.a>
-
-                      {/* Logout Button */}
-                      <motion.button
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
-                        className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200/50 transition-all duration-300 group relative"
-                        whileHover={{ scale: 1.1, rotate: [0, -3, 3, 0] }}
-                        whileTap={{ scale: 0.9 }}
-                        style={{
-                          boxShadow: '0 2px 8px rgba(220, 38, 38, 0.1)'
-                        }}
-                      >
-                        {/* Hover background effect */}
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-400/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        
-                        <motion.span 
-                          className="text-lg relative z-10"
-                          animate={isLoggingOut ? { rotate: 360 } : {}}
-                          transition={{ duration: 1, repeat: isLoggingOut ? Infinity : 0 }}
-                        >
-                          {isLoggingOut ? '⏳' : '🚪'}
-                        </motion.span>
-
-                        {/* Tooltip */}
-                        <motion.div
-                          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20"
-                          initial={{ opacity: 0, y: -5 }}
-                          whileHover={{ opacity: 1, y: 0 }}
-                        >
-                          Odhlásit se
-                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
-                        </motion.div>
                       </motion.button>
+
+                      {/* Dropdown Menu */}
+                      <AnimatePresence>
+                        {isUserMenuOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden z-50"
+                            style={{
+                              backdropFilter: 'blur(40px) saturate(180%)',
+                              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {/* Profile Link */}
+                            <motion.a
+                              href="/profile"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group"
+                              whileHover={{ x: 4 }}
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-romantic/20 flex items-center justify-center">
+                                <span className="text-sm">👤</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-charcoal">Můj profil</span>
+                                <span className="text-xs text-charcoal/60">Úroveň a statistiky</span>
+                              </div>
+                              <Star className="w-4 h-4 text-romantic ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </motion.a>
+
+                            {/* Divider */}
+                            <div className="h-px bg-romantic/10 mx-4" />
+
+                            {/* Settings (pokud máte) */}
+                            <motion.button
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                // Zde můžete přidat logiku pro nastavení
+                              }}
+                              className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group"
+                              whileHover={{ x: 4 }}
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <span className="text-sm">⚙️</span>
+                              </div>
+                              <div className="flex flex-col text-left">
+                                <span className="text-sm font-medium text-charcoal">Nastavení</span>
+                                <span className="text-xs text-charcoal/60">Předvolby aplikace</span>
+                              </div>
+                            </motion.button>
+
+                            {/* Divider */}
+                            <div className="h-px bg-red-200/50 mx-4" />
+
+                            {/* Logout Button */}
+                            <motion.button
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                handleLogout();
+                              }}
+                              disabled={isLoggingOut}
+                              className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 transition-all duration-200 group text-red-600"
+                              whileHover={{ x: 4 }}
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                                <motion.span 
+                                  className="text-sm"
+                                  animate={isLoggingOut ? { rotate: 360 } : {}}
+                                  transition={{ duration: 1, repeat: isLoggingOut ? Infinity : 0 }}
+                                >
+                                  {isLoggingOut ? '⏳' : '🚪'}
+                                </motion.span>
+                              </div>
+                              <div className="flex flex-col text-left">
+                                <span className="text-sm font-medium">
+                                  {isLoggingOut ? 'Odhlašuji...' : 'Odhlásit se'}
+                                </span>
+                                <span className="text-xs text-red-500/60">Ukončit relaci</span>
+                              </div>
+                            </motion.button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </motion.div>
                 )}
