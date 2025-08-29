@@ -36,17 +36,21 @@ Po nastavení API klíče:
    - Databázové tabulky
    - Defaultní admin účet
 
-## 4. Nastavení admin účtu
+## 4. Nastavení admin přístupu
 
-Pro přístup k admin panelu:
+### Rychlé nastavení:
+1. **Gemini API klíč** - v Secrets přidejte `GEMINI_API_KEY`
+2. **Admin účet** - v Secrets přidejte:
+   - `ADMIN_EMAIL` = váš admin email
+   - `ADMIN_PASSWORD` = bezpečné heslo
+3. **Spusťte aplikaci** - klikněte na ▶️ Run
 
-1. **Registrujte se** jako první uživatel
-2. **Otevřete Database** záložku v Replitu
-3. **Spusťte SQL dotaz**:
-   ```sql
-   UPDATE users SET "isAdmin" = true WHERE email = 'your-email@domain.com';
-   ```
-4. **Odhlaste se a přihlaste** znovu
+### A) Automatické nastavení (doporučeno):
+1. **V Secrets přidejte**:
+   - Klíč: `ADMIN_EMAIL`, Hodnota: `vasemail@example.com`
+   - Klíč: `ADMIN_PASSWORD`, Hodnota: `vase_bezpecne_heslo`
+2. **Restartujte aplikaci** - admin účet se vytvoří automaticky
+3. **Přihlaste se** s admin údaji
 
 ## 5. Test funkcionality
 

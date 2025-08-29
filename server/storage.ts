@@ -1,4 +1,3 @@
-
 import {
   users, questChallenges, uploadedPhotos, photoLikes, photoComments, questProgress, authSessions,
   userBehaviorLogs, aiLearningInsights, userAchievements, userStreaks, userLevels,
@@ -198,11 +197,9 @@ export class MemStorage implements IStorage {
     this.userStreaks = new Map();
     this.userLevels = new Map();
     this.miniGameScores = new Map();
-
-    this.initializeDefaultData();
   }
 
-  private initializeDefaultData() {
+  private generateDefaultChallenges(): void {
     // Initialize default quest challenges with variations
     const defaultChallenges: InsertQuestChallenge[] = [
       // Obřadní momenty - vysoké body
@@ -398,6 +395,51 @@ export class MemStorage implements IStorage {
     defaultChallenges.forEach(challenge => {
       this.createQuestChallenge(challenge);
     });
+  }
+
+  async initialize(): Promise<void> {
+    this.generateDefaultChallenges();
+    await this.initializeAdminAccount();
+  }
+
+  async initializeAdminAccount(): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.log("⚠️ ADMIN_EMAIL or ADMIN_PASSWORD not set in environment variables");
+      return;
+    }
+
+    try {
+      // Check if admin account already exists
+      const existingAdmin = await this.getAuthUserByEmail(adminEmail);
+
+      if (existingAdmin) {
+        console.log(`✅ Admin account already exists: ${adminEmail}`);
+        // Update admin status
+        existingAdmin.isAdmin = true;
+        return;
+      }
+
+      // Create new admin account
+      const bcrypt = await import("bcryptjs");
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+
+      const adminData: InsertAuthUser = {
+        email: adminEmail,
+        passwordHash,
+        firstName: "Admin",
+        lastName: "Account",
+      };
+
+      const admin = await this.createAuthUser(adminData);
+      admin.isAdmin = true;
+
+      console.log(`✅ Created admin account: ${adminEmail}`);
+    } catch (error) {
+      console.error("Failed to initialize admin account:", error);
+    }
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -812,12 +854,12 @@ export class MemStorage implements IStorage {
       if (challenge.unlockDate) {
         const unlockTime = new Date(challenge.unlockDate);
         isUnlocked = currentTime >= unlockTime;
-        
+
         if (!isUnlocked) {
           const timeUntilUnlock = unlockTime.getTime() - currentTime.getTime();
           const daysUntil = Math.ceil(timeUntilUnlock / (1000 * 60 * 60 * 24));
           const hoursUntil = Math.ceil(timeUntilUnlock / (1000 * 60 * 60));
-          
+
           if (daysUntil > 1) {
             unlockRequirement = `Odemkne se za ${daysUntil} dní`;
           } else if (hoursUntil > 1) {
@@ -1026,7 +1068,7 @@ export class MemStorage implements IStorage {
   // Helper to initialize memory storage if needed (e.g., for fallback)
   initializeMemoryStorage(): void {
     if (this.users.size === 0 && this.questChallenges.size === 0) {
-      this.initializeDefaultData();
+      this.initialize();
     }
   }
 }
@@ -1041,6 +1083,83 @@ export class DatabaseStorage implements IStorage {
       this.memoryFallback = new MemStorage();
     } else {
       console.log(`✅ Úspěšně připojen k databázi: ${dbName}`);
+    }
+  }
+
+  async initialize(): Promise<void> {
+    console.log("🔄 Initializing database...");
+
+    if (!db) {
+      console.log("⚠️ Database not available, using in-memory storage");
+      this.memoryFallback = new MemStorage();
+      await this.memoryFallback.initialize();
+      return;
+    }
+
+    try {
+      console.log("✅ Database initialization completed successfully");
+
+      // Initialize admin account from environment variables
+      await this.initializeAdminAccount();
+    } catch (error) {
+      console.error("Database initialization failed:", error);
+      console.log("⚠️ Switching to in-memory storage");
+      this.memoryFallback = new MemStorage();
+      await this.memoryFallback.initialize();
+    }
+  }
+
+  async initializeAdminAccount(): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.log("⚠️ ADMIN_EMAIL or ADMIN_PASSWORD not set in environment variables");
+      return;
+    }
+
+    try {
+      // Check if admin account already exists
+      const existingAdmin = await this.getAuthUserByEmail(adminEmail);
+
+      if (existingAdmin) {
+        console.log(`✅ Admin account already exists: ${adminEmail}`);
+
+        // Update admin status if not already set
+        if (!existingAdmin.isAdmin) {
+          if (db) {
+            await db.update(users)
+              .set({ isAdmin: true })
+              .where(eq(users.email, adminEmail));
+            console.log(`✅ Updated admin status for: ${adminEmail}`);
+          }
+        }
+        return;
+      }
+
+      // Create new admin account
+      const bcrypt = await import("bcryptjs");
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+
+      const adminData: InsertAuthUser = {
+        email: adminEmail,
+        passwordHash,
+        firstName: "Admin",
+        lastName: "Account",
+      };
+
+      const admin = await this.createAuthUser(adminData);
+
+      // Set admin status
+      if (db) {
+        await db.update(users)
+          .set({ isAdmin: true })
+          .where(eq(users.id, admin.id));
+      }
+
+      console.log(`✅ Created admin account: ${adminEmail}`);
+    } catch (error) {
+      console.error("Failed to initialize admin account:", error);
     }
   }
 
@@ -1552,7 +1671,7 @@ export class DatabaseStorage implements IStorage {
   }> {
     try {
       if (!db) throw new Error("Database not available");
-      
+
       // Use transaction for atomic operation
       const result = await db.transaction(async (tx) => {
         // Check if user has already liked
@@ -1664,7 +1783,7 @@ export class DatabaseStorage implements IStorage {
   async getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress> {
     try {
       if (!db) throw new Error("Database not available");
-      
+
       const [existing] = await db.select().from(questProgress)
         .where(and(eq(questProgress.questId, questId), eq(questProgress.participantName, participantName)))
         .limit(1);
@@ -1688,7 +1807,7 @@ export class DatabaseStorage implements IStorage {
   async getUnlockedChallenges(participantName: string): Promise<QuestChallenge[]> {
     try {
       if (!db) throw new Error("Database not available");
-      
+
       // Get all challenges and user progress
       const allChallenges = await db.select().from(questChallenges);
       const userProgress = await this.getQuestProgressByParticipant(participantName);
@@ -1920,7 +2039,7 @@ export class DatabaseStorage implements IStorage {
   async saveUserStreak(streak: any): Promise<void> {
     try {
       if (!db) throw new Error("Database not available");
-      
+
       const existing = await this.getUserStreak(streak.userId, streak.streakType);
       if (existing) {
         await db.update(userStreaks)
@@ -1980,7 +2099,7 @@ export class DatabaseStorage implements IStorage {
   async saveUserLevel(level: any): Promise<void> {
     try {
       if (!db) throw new Error("Database not available");
-      
+
       const existing = await this.getUserLevel(level.userId);
       if (existing) {
         await db.update(userLevels)
@@ -2016,7 +2135,7 @@ export class DatabaseStorage implements IStorage {
   initializeMemoryStorage(): void {
     if (!this.memoryFallback) {
       this.memoryFallback = new MemStorage();
-      this.memoryFallback.initializeMemoryStorage();
+      this.memoryFallback.initialize();
     }
   }
 }
@@ -2027,13 +2146,12 @@ let storage: IStorage;
 try {
   // Try to use database storage first
   storage = new DatabaseStorage();
+  storage.initialize(); // Initialize the database storage
 } catch (error) {
   console.warn('Database not available, using memory storage:', error);
   storage = new MemStorage();
   // Ensure memory storage is initialized with default data if it's the primary choice from the start
-  if (storage instanceof MemStorage) {
-    storage.initializeMemoryStorage();
-  }
+  storage.initializeMemoryStorage();
 }
 
 // Export with fallback logic
