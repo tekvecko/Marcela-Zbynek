@@ -6,8 +6,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
 import { Trophy, Star } from "lucide-react"; // Importuji Star icon for Profile link
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import AuthForm from "@/components/auth-form";
 // Placeholder for GlassButton, assuming it's imported from a UI library
 // import { GlassButton } from "@/components/ui/glass-button"; 
 // Mock GlassButton for demonstration purposes
@@ -40,9 +38,8 @@ export default function Navigation({}: NavigationProps = {}) {
   const [animationDuration, setAnimationDuration] = useState(0.3);
   const [contextMenuPosition, setContextMenuPosition] = useState<{x: number, y: number} | null>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [location] = useLocation();
-  const { user, logout, isLoggingOut, login } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
 
   // Fetch user level for navigation display
@@ -359,16 +356,6 @@ export default function Navigation({}: NavigationProps = {}) {
     }
   };
 
-  const handleLoginSuccess = (user: any, token: string) => {
-    login(user, token);
-    setIsLoginModalOpen(false);
-  };
-
-  const openLoginModal = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsLoginModalOpen(true);
-  };
-
   const LogoElement = ({ className = "w-12 h-12 sm:w-14 sm:h-14", onClick }: { className?: string; onClick?: () => void }) => (
     <motion.div className="relative">
       <motion.button
@@ -504,8 +491,8 @@ export default function Navigation({}: NavigationProps = {}) {
                     exit={{ opacity: 0, scale: 0.8, x: 20 }}
                     transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                   >
-                    <motion.button 
-                      onClick={openLoginModal}
+                    <motion.a 
+                      href="/login"
                       className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
                       whileHover={{ scale: 1.05, y: -1 }}
                       whileTap={{ scale: 0.98 }}
@@ -542,7 +529,7 @@ export default function Navigation({}: NavigationProps = {}) {
                           ease: "easeInOut"
                         }}
                       />
-                    </motion.button>
+                    </motion.a>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -886,13 +873,6 @@ export default function Navigation({}: NavigationProps = {}) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Login Modal */}
-      <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-none w-auto">
-          <AuthForm onSuccess={handleLoginSuccess} />
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -104,13 +104,42 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
-      className="relative"
-    >
-        <Card className="w-full max-w-md bg-white/95 backdrop-blur-lg border-white/40 shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Floating elements pro atmosféru */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-20 left-10 w-32 h-32 bg-romantic/10 rounded-full blur-xl"
+          animate={{
+            x: [0, 30, 0],
+            y: [0, -20, 0],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-32 right-16 w-24 h-24 bg-love/15 rounded-full blur-xl"
+          animate={{
+            x: [0, -25, 0],
+            y: [0, 15, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+      >
+        <Card className="w-full max-w-md bg-white/90 backdrop-blur-lg border-white/30 shadow-2xl relative overflow-hidden">
           {/* Dekorativní gradient overlay */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-romantic via-love to-romantic opacity-60" />
           
@@ -469,6 +498,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
             </div>
           </CardContent>
         </Card>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
