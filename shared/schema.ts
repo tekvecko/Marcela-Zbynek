@@ -38,6 +38,8 @@ export const questChallenges = pgTable("quest_challenges", {
   targetPhotos: integer("target_photos").notNull().default(1),
   points: integer("points").notNull().default(10),
   isActive: boolean("is_active").notNull().default(true),
+  unlockDate: timestamp("unlock_date"),
+  unlockOrder: integer("unlock_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
