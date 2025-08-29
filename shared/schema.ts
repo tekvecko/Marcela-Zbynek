@@ -74,6 +74,18 @@ export const uploadedPhotos = pgTable("uploaded_photos", {
   index("idx_photos_verified").on(table.isVerified),
 ]);
 
+export const photoComments = pgTable("photo_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  photoId: varchar("photo_id").notNull().references(() => uploadedPhotos.id, { onDelete: "cascade" }),
+  commenterEmail: text("commenter_email").notNull(),
+  commenterName: text("commenter_name").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_comments_photo_id").on(table.photoId),
+  index("idx_comments_created_at").on(table.createdAt),
+]);
+
 export const photoLikes = pgTable("photo_likes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   photoId: varchar("photo_id").notNull().references(() => uploadedPhotos.id),
@@ -167,6 +179,11 @@ export const insertAuthUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
   profileImageUrl: true,
   isAdmin: true,
+});
+
+export const insertPhotoCommentSchema = createInsertSchema(photoComments).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const loginSchema = z.object({
@@ -291,3 +308,5 @@ export type UserBehaviorLog = typeof userBehaviorLogs.$inferSelect;
 export type InsertUserBehaviorLog = z.infer<typeof insertUserBehaviorLogSchema>;
 export type AiLearningInsight = typeof aiLearningInsights.$inferSelect;
 export type InsertAiLearningInsight = z.infer<typeof insertAiLearningInsightSchema>;
+export type PhotoComment = typeof photoComments.$inferSelect;
+export type InsertPhotoComment = z.infer<typeof insertPhotoCommentSchema>;
