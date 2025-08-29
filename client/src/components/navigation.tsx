@@ -85,6 +85,7 @@ export default function Navigation({}: NavigationProps = {}) {
       localStorage.setItem("auth_user", JSON.stringify(data.user));
       login(data.user, token);
       setIsLoginDropdownOpen(false);
+      setIsVisible(true); // Zajistit viditelnost po přihlášení
       setLoginFormData({ email: "", password: "" });
       setLoginErrors({});
       toast({
@@ -370,6 +371,7 @@ export default function Navigation({}: NavigationProps = {}) {
       // Zavřít login dropdown při kliknutí mimo něj
       if (isLoginDropdownOpen && !target?.closest('[data-login-dropdown]')) {
         setIsLoginDropdownOpen(false);
+        setIsVisible(true); // Zajistit viditelnost po zavření
       }
     };
 
@@ -788,7 +790,10 @@ export default function Navigation({}: NavigationProps = {}) {
                               <div className="mt-4 text-center">
                                 <motion.a
                                   href="/login"
-                                  onClick={() => setIsLoginDropdownOpen(false)}
+                                  onClick={() => {
+                                    setIsLoginDropdownOpen(false);
+                                    setIsVisible(true);
+                                  }}
                                   className="text-sm text-romantic hover:text-love transition-colors"
                                   whileHover={{ scale: 1.05 }}
                                 >
