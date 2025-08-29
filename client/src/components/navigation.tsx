@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UserAvatar } from "@/components/ui/user-avatar";
 // Placeholder for GlassButton, assuming it's imported from a UI library
 // import { GlassButton } from "@/components/ui/glass-button"; 
 // Mock GlassButton for demonstration purposes
@@ -606,207 +607,10 @@ export default function Navigation({}: NavigationProps = {}) {
               })}
             </div>
 
-            {/* Enhanced User Menu */}
+            {/* Enhanced User Menu - Only for logged in users */}
             <div className="flex items-center">
               <AnimatePresence mode="wait">
-                {!user ? (
-                  <motion.div
-                    key="login"
-                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
-                    className="relative"
-                  >
-                    <div className="relative" data-login-dropdown>
-                      <motion.button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleLoginDropdownToggle();
-                        }}
-                        className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
-                        whileHover={{ scale: 1.05, y: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                          boxShadow: '0 4px 15px rgba(155, 119, 148, 0.1)'
-                        }}
-                      >
-                        {/* Gradient overlay při hover */}
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-romantic/5 to-romantic/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        
-                        <motion.div
-                          className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm"
-                          whileHover={{ rotate: [0, -10, 10, 0] }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <span className="text-xl">👤</span>
-                        </motion.div>
-                        
-                        <div className="relative flex flex-col">
-                          <span className="text-sm font-medium text-charcoal">Přihlášení</span>
-                          <span className="text-xs text-charcoal/60 hidden sm:flex items-center">
-                            Vstupte do hry
-                            <motion.span 
-                              className="ml-1"
-                              animate={{ rotate: isLoginDropdownOpen ? 180 : 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              ▼
-                            </motion.span>
-                          </span>
-                        </div>
-
-                        {/* Pulzující indikátor */}
-                        <motion.div
-                          className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-md"
-                          animate={{
-                            scale: [1, 1.3, 1],
-                            opacity: [0.8, 1, 0.8]
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-
-                      {/* Login Dropdown */}
-                      <AnimatePresence>
-                        {isLoginDropdownOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-0 top-full mt-2 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden z-50"
-                            style={{
-                              backdropFilter: 'blur(40px) saturate(180%)',
-                              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="p-6">
-                              <div className="text-center mb-6">
-                                <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
-                                <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
-                              </div>
-
-                              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="nav-email" className="text-charcoal/80 font-medium">E-mail</Label>
-                                  <div className="relative group">
-                                    <motion.div
-                                      className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
-                                      animate={{ 
-                                        scale: loginFormData.email ? 1.1 : 1,
-                                        color: loginFormData.email ? "#9b7794" : "#64748b66"
-                                      }}
-                                      transition={{ duration: 0.2 }}
-                                    >
-                                      <Mail className="h-4 w-4" />
-                                    </motion.div>
-                                    <Input
-                                      id="nav-email"
-                                      type="email"
-                                      placeholder="vas.email@example.com"
-                                      value={loginFormData.email}
-                                      onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                                      className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
-                                    />
-                                  </div>
-                                  <AnimatePresence>
-                                    {loginErrors.email && (
-                                      <motion.p 
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="text-red-500 text-sm"
-                                      >
-                                        {loginErrors.email}
-                                      </motion.p>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="nav-password" className="text-charcoal/80 font-medium">Heslo</Label>
-                                  <div className="relative group">
-                                    <motion.div
-                                      className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
-                                      animate={{ 
-                                        scale: loginFormData.password ? 1.1 : 1,
-                                        color: loginFormData.password ? "#9b7794" : "#64748b66"
-                                      }}
-                                      transition={{ duration: 0.2 }}
-                                    >
-                                      <Lock className="h-4 w-4" />
-                                    </motion.div>
-                                    <Input
-                                      id="nav-password"
-                                      type="password"
-                                      placeholder="••••••••"
-                                      value={loginFormData.password}
-                                      onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                                      className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
-                                    />
-                                  </div>
-                                  <AnimatePresence>
-                                    {loginErrors.password && (
-                                      <motion.p 
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="text-red-500 text-sm"
-                                      >
-                                        {loginErrors.password}
-                                      </motion.p>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-
-                                <motion.button
-                                  type="submit"
-                                  disabled={loginMutation.isPending}
-                                  className="w-full bg-gradient-to-r from-romantic to-love text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                >
-                                  {loginMutation.isPending && (
-                                    <motion.div
-                                      animate={{ rotate: 360 }}
-                                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                    >
-                                      <Loader2 size={18} />
-                                    </motion.div>
-                                  )}
-                                  {loginMutation.isPending ? "Přihlašování..." : "🚀 Přihlásit se"}
-                                </motion.button>
-                              </form>
-
-                              <div className="mt-4 text-center">
-                                <motion.a
-                                  href="/login"
-                                  onClick={() => {
-                                    setIsLoginDropdownOpen(false);
-                                    setIsVisible(true);
-                                  }}
-                                  className="text-sm text-romantic hover:text-love transition-colors"
-                                  whileHover={{ scale: 1.05 }}
-                                >
-                                  ✨ Nemáte účet? Registrujte se zde
-                                </motion.a>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                ) : (
+                {user && (
                   <motion.div
                     key="user-menu"
                     initial={{ opacity: 0, scale: 0.8, x: 20 }}
@@ -837,23 +641,11 @@ export default function Navigation({}: NavigationProps = {}) {
                           whileHover={{ scale: 1.1 }}
                           transition={{ duration: 0.2 }}
                         >
-                          {user?.profileImageUrl ? (
-                            <div className="relative">
-                              <img 
-                                src={user.profileImageUrl} 
-                                alt={user.firstName || 'User'} 
-                                className="w-8 h-8 rounded-full border-2 border-white/50 shadow-sm object-cover"
-                              />
-                              {/* Online status indicator */}
-                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-romantic to-romantic/80 flex items-center justify-center border-2 border-white/50 shadow-sm">
-                              <span className="text-white text-sm font-bold">
-                                {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'}
-                              </span>
-                            </div>
-                          )}
+                          <UserAvatar 
+                            user={user} 
+                            size="md" 
+                            showOnlineStatus={true}
+                          />
                         </motion.div>
                         
                         <div className="hidden sm:flex flex-col relative">
@@ -1100,15 +892,10 @@ export default function Navigation({}: NavigationProps = {}) {
                     >
                       <div className="flex items-center justify-between p-3 bg-romantic/5 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          {user?.profileImageUrl ? (
-                            <img 
-                              src={user.profileImageUrl} 
-                              alt={user.firstName || 'User'} 
-                              className="w-8 h-8 rounded-full"
-                            />
-                          ) : (
-                            <span className="text-2xl">👤</span>
-                          )}
+                          <UserAvatar 
+                            user={user} 
+                            size="md"
+                          />
                           <div className="text-sm font-medium text-gray-700">
                             {user?.firstName} {user?.lastName}
                           </div>
@@ -1148,6 +935,205 @@ export default function Navigation({}: NavigationProps = {}) {
               e.preventDefault(); // Prevent scrolling when touching overlay
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Floating Login Button - Bottom Left */}
+      <AnimatePresence>
+        {!user && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, x: -50 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: -50 }}
+            transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
+            className="fixed bottom-6 left-6 z-[9998] pointer-events-auto"
+          >
+            <div className="relative" data-login-dropdown>
+              <motion.button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleLoginDropdownToggle();
+                }}
+                className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-romantic to-love text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 relative group"
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  backdropFilter: 'blur(20px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                  boxShadow: '0 8px 32px rgba(155, 119, 148, 0.3)'
+                }}
+              >
+                {/* Gradient overlay při hover */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-love/20 to-romantic/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                <motion.div
+                  className="relative"
+                  whileHover={{ rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <span className="text-2xl">👤</span>
+                </motion.div>
+
+                {/* Pulzující indikátor */}
+                <motion.div
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full shadow-md border-2 border-white"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.8, 1, 0.8]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+
+                {/* Tooltip */}
+                <motion.div
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 bg-charcoal text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                  initial={{ opacity: 0, y: 5 }}
+                  whileHover={{ opacity: 1, y: 0 }}
+                >
+                  Přihlásit se
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-charcoal"></div>
+                </motion.div>
+              </motion.button>
+
+              {/* Login Dropdown */}
+              <AnimatePresence>
+                {isLoginDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute bottom-full left-0 mb-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden"
+                    style={{
+                      backdropFilter: 'blur(40px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="p-6">
+                      <div className="text-center mb-6">
+                        <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
+                        <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
+                      </div>
+
+                      <form onSubmit={handleLoginSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="float-email" className="text-charcoal/80 font-medium">E-mail</Label>
+                          <div className="relative group">
+                            <motion.div
+                              className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
+                              animate={{ 
+                                scale: loginFormData.email ? 1.1 : 1,
+                                color: loginFormData.email ? "#9b7794" : "#64748b66"
+                              }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </motion.div>
+                            <Input
+                              id="float-email"
+                              type="email"
+                              placeholder="vas.email@example.com"
+                              value={loginFormData.email}
+                              onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                              className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
+                            />
+                          </div>
+                          <AnimatePresence>
+                            {loginErrors.email && (
+                              <motion.p 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-red-500 text-sm"
+                              >
+                                {loginErrors.email}
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="float-password" className="text-charcoal/80 font-medium">Heslo</Label>
+                          <div className="relative group">
+                            <motion.div
+                              className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
+                              animate={{ 
+                                scale: loginFormData.password ? 1.1 : 1,
+                                color: loginFormData.password ? "#9b7794" : "#64748b66"
+                              }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Lock className="h-4 w-4" />
+                            </motion.div>
+                            <Input
+                              id="float-password"
+                              type="password"
+                              placeholder="••••••••"
+                              value={loginFormData.password}
+                              onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                              className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
+                            />
+                          </div>
+                          <AnimatePresence>
+                            {loginErrors.password && (
+                              <motion.p 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-red-500 text-sm"
+                              >
+                                {loginErrors.password}
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        <motion.button
+                          type="submit"
+                          disabled={loginMutation.isPending}
+                          className="w-full bg-gradient-to-r from-romantic to-love text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {loginMutation.isPending && (
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                              <Loader2 size={18} />
+                            </motion.div>
+                          )}
+                          {loginMutation.isPending ? "Přihlašování..." : "🚀 Přihlásit se"}
+                        </motion.button>
+                      </form>
+
+                      <div className="mt-4 text-center">
+                        <motion.a
+                          href="/login"
+                          onClick={() => {
+                            setIsLoginDropdownOpen(false);
+                            setIsVisible(true);
+                          }}
+                          className="text-sm text-romantic hover:text-love transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          ✨ Nemáte účet? Registrujte se zde
+                        </motion.a>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
