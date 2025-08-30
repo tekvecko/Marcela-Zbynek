@@ -142,16 +142,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance monitoring endpoint
   app.get('/api/performance', async (req, res) => {
     const start = Date.now();
-    
+
     try {
       // Test database response time
       const dbStart = Date.now();
       await storage.getQuestChallenges();
       const dbTime = Date.now() - dbStart;
-      
+
       // Test memory usage
       const memUsage = process.memoryUsage();
-      
+
       const performanceData = {
         serverResponseTime: Date.now() - start,
         databaseResponseTime: dbTime,
@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uptime: process.uptime(),
         timestamp: new Date().toISOString()
       };
-      
+
       res.json(performanceData);
     } catch (error) {
       res.status(500).json({ error: 'Performance check failed' });
