@@ -320,11 +320,6 @@ export default function Navigation({}: NavigationProps = {}) {
             <div className="flex items-center space-x-3">
               {user ? (
                 <div className="flex items-center space-x-3">
-                  <UserAvatar
-                    user={user}
-                    className="w-10 h-10"
-                    data-testid="nav-user-avatar"
-                  />
                   <div className="hidden md:block">
                     <div className="text-sm font-medium text-charcoal">
                       {user.firstName} {user.lastName}
@@ -401,7 +396,6 @@ export default function Navigation({}: NavigationProps = {}) {
             {user && (
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex items-center space-x-3 mb-4">
-                  <UserAvatar user={user} className="w-12 h-12" />
                   <div>
                     <div className="font-medium text-charcoal">
                       {user.firstName} {user.lastName}
