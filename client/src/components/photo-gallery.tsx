@@ -951,29 +951,36 @@ export default function PhotoGallery() {
                 </div>
 
                 {/* Photo Container - kliknutí na fotku ji nezavře */}
-                <div
-                  className={`${
-                    isFullscreen 
-                      ? 'absolute inset-0 flex items-center justify-center bg-black' 
-                      : 'min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh] flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16'
-                  }`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {isFullscreen ? (
+                {isFullscreen ? (
+                  // Fullscreen režim - kompletně přepracovaný
+                  <div 
+                    className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <img
                       src={`/api/photos/${selectedPhoto.filename}`}
                       alt={selectedPhoto.aiAnalysis || "Wedding photo"}
-                      className="max-w-[90vw] max-h-[90vh] object-contain cursor-pointer"
+                      className="max-w-full max-h-full object-contain cursor-pointer"
                       onClick={(e: React.MouseEvent) => {
                         e.stopPropagation();
                       }}
-                      onDoubleClick={() => setIsFullscreen(!isFullscreen)}
-                      style={{ 
-                        display: 'block',
-                        margin: 'auto'
+                      onDoubleClick={() => setIsFullscreen(false)}
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        maxWidth: '95vw',
+                        maxHeight: '95vh'
                       }}
                     />
-                  ) : (
+                  </div>
+                ) : (
+                  // Normální režim
+                  <div
+                    className="min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh] flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div 
                       className="cursor-pointer"
                       onClick={(e: React.MouseEvent) => {
@@ -988,8 +995,8 @@ export default function PhotoGallery() {
                         className="w-full h-full max-w-full max-h-full object-contain"
                       />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Photo Info - Now below the image or as overlay in fullscreen */}
                 {!isFullscreen && (
