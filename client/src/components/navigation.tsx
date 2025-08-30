@@ -94,7 +94,7 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Simple scroll-based navigation hiding
+  // Scroll-based navigation hiding with position tracking
   useEffect(() => {
     let previousScrollY = window.scrollY;
     let ticking = false;
@@ -123,6 +123,7 @@ export default function Navigation({}: NavigationProps = {}) {
 
     // Initialize as visible
     setIsVisible(true);
+    setLastScrollY(0);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     
@@ -384,13 +385,62 @@ export default function Navigation({}: NavigationProps = {}) {
       <AnimatePresence>
         {!user && isLoginDropdownOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed top-20 right-4 z-[10000] w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-6"
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            className="fixed z-[10000] w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 p-6"
+            style={{
+              top: `${Math.min(Math.max(80, 80 - lastScrollY * 0.1), window.innerHeight - 400)}px`,
+              right: '1rem',
+              maxHeight: `${window.innerHeight - 100}px`,
+              overflowY: 'auto'
+            }}
           >
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
+            {/* Dekorativní gradient overlay */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-romantic via-love to-romantic opacity-60 rounded-t-2xl" />
+            
+            {/* Close button */}
+            <motion.button
+              onClick={() => setIsLoginDropdownOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                <div className="w-3 h-0.5 bg-charcoal/60 rotate-45 absolute"></div>
+                <div className="w-3 h-0.5 bg-charcoal/60 -rotate-45 absolute"></div>
+              </div>
+            </motion.button>
+
+            <div className="text-center mb-6 relative">
+              <motion.div 
+                className="w-16 h-16 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+                animate={{ 
+                  rotate: [0, 5, -5, 0],
+                  scale: [1, 1.05, 1]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 10, -10, 0]
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                >
+                  <User className="text-white drop-shadow-lg" size={24} />
+                </motion.div>
+              </motion.div>
+              <h3 className="text-xl font-semibold text-charcoal mb-2 bg-gradient-to-r from-charcoal to-charcoal/80 bg-clip-text">Vítejte zpět!</h3>
               <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
             </div>
 
