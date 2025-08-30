@@ -1141,8 +1141,8 @@ export default function Navigation({}: NavigationProps = {}) {
               </AnimatePresence>
             </div>
           </motion.div>
-        </div>
-      </motion.nav>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Menu Trigger and Sheet Content */}
       {/* Mobile Navigation */}
