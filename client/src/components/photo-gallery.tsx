@@ -954,9 +954,9 @@ export default function PhotoGallery() {
                 <div
                   className={`${
                     isFullscreen 
-                      ? 'flex-1' 
-                      : 'min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh]'
-                  } flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16`}
+                      ? 'absolute inset-0 flex items-center justify-center' 
+                      : 'min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh] flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16'
+                  }`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div 
@@ -972,19 +972,16 @@ export default function PhotoGallery() {
                       alt={selectedPhoto.aiAnalysis || "Wedding photo"}
                       className={`${
                         isFullscreen
-                          ? 'max-w-full max-h-full object-contain'
+                          ? 'max-w-screen max-h-screen w-auto h-auto object-contain'
                           : 'w-full h-full max-w-full max-h-full object-contain'
                       }`}
                     />
                   </div>
                 </div>
 
-                {/* Photo Info - Now below the image */}
-                <div className={`${
-                  isFullscreen 
-                    ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent' 
-                    : 'bg-black/80 flex-shrink-0'
-                } p-3 sm:p-6`}>
+                {/* Photo Info - Now below the image or as overlay in fullscreen */}
+                {!isFullscreen && (
+                  <div className="bg-black/80 flex-shrink-0 p-3 sm:p-6">
                   <div className="text-white space-y-3 sm:space-y-4">
                     <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -1192,6 +1189,77 @@ export default function PhotoGallery() {
                       </div>
                     </div>
                   </div>
+                )}
+
+                {/* Fullscreen overlay info (hidden by default, shows on hover/tap) */}
+                {isFullscreen && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 p-4 sm:p-6">
+                    <div className="text-white space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
+                            {getProfileImage(selectedPhoto.uploaderName, users)}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
+                            <p className="text-white/80 text-sm">
+                              {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <GlassButton
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              if (!user) {
+                                toast({
+                                  title: "🔒 Přihlášení vyžadováno",
+                                  description: "Pro hodnocení fotek se musíte přihlásit.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              if (!selectedPhoto.userHasLiked && !likePhotoMutation.isPending) {
+                                likePhotoMutation.mutate({ 
+                                  photoId: selectedPhoto.id, 
+                                  buttonElement: e.currentTarget 
+                                });
+                              }
+                            }}
+                            disabled={likePhotoMutation.isPending}
+                            className={`p-2 transition-all duration-300 ${
+                              !user 
+                                ? 'text-gray-400 hover:bg-white/10 cursor-pointer' 
+                                : selectedPhoto.userHasLiked 
+                                  ? 'text-red-400 cursor-default bg-red-500/20' 
+                                  : 'text-white hover:bg-red-500/30 hover:text-red-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1">
+                              {!user ? (
+                                <Lock className="w-4 h-4" />
+                              ) : (
+                                <Heart className={`w-4 h-4 transition-all duration-300 ${
+                                  selectedPhoto.userHasLiked ? 'fill-red-400 text-red-400' : 'text-white'
+                                }`} />
+                              )}
+                              <span className="text-sm font-medium">
+                                {selectedPhoto.likes || 0}
+                              </span>
+                            </div>
+                          </GlassButton>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 </div>
             </DialogContent>
           </Dialog>
