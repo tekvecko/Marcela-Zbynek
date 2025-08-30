@@ -21,6 +21,7 @@ export default function Navigation({}: NavigationProps = {}) {
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [currentScrollY, setCurrentScrollY] = useState(0);
   const [location] = useLocation();
   const { user, logout, login } = useAuth();
   const isMobile = useIsMobile();
@@ -94,7 +95,7 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Simple scroll-based navigation hiding
+  // Scroll-based navigation hiding with position tracking
   useEffect(() => {
     let previousScrollY = window.scrollY;
     let ticking = false;
@@ -102,10 +103,10 @@ export default function Navigation({}: NavigationProps = {}) {
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
+          const scrollY = window.scrollY;
           
           // Simple logic: up = show, down = hide
-          if (currentScrollY > previousScrollY && currentScrollY > 100) {
+          if (scrollY > previousScrollY && scrollY > 100) {
             // Scrolling down
             setIsVisible(false);
           } else {
@@ -113,8 +114,9 @@ export default function Navigation({}: NavigationProps = {}) {
             setIsVisible(true);
           }
           
-          previousScrollY = currentScrollY;
-          setLastScrollY(currentScrollY);
+          previousScrollY = scrollY;
+          setLastScrollY(scrollY);
+          setCurrentScrollY(scrollY);
           ticking = false;
         });
         ticking = true;
@@ -123,6 +125,8 @@ export default function Navigation({}: NavigationProps = {}) {
 
     // Initialize as visible
     setIsVisible(true);
+    setLastScrollY(0);
+    setCurrentScrollY(window.scrollY);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     
@@ -384,50 +388,98 @@ export default function Navigation({}: NavigationProps = {}) {
       <AnimatePresence>
         {!user && isLoginDropdownOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed top-20 right-4 z-[10000] w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-6"
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            className="fixed z-[10000] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 p-6"
+            style={{
+              width: isMobile ? 'calc(100vw - 2rem)' : '320px',
+              maxWidth: isMobile ? '360px' : '320px',
+              top: `${Math.min(Math.max(currentScrollY + 20, 20), currentScrollY + window.innerHeight - Math.min(480, window.innerHeight - 40))}px`,
+              right: isMobile ? '1rem' : '1rem',
+              left: isMobile ? '1rem' : 'auto',
+              maxHeight: `${Math.min(window.innerHeight - 40, 480)}px`,
+              overflowY: 'hidden'
+            }}
           >
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
-              <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
+            {/* Dekorativní gradient overlay */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-romantic via-love to-romantic opacity-60 rounded-t-2xl" />
+            
+            {/* Close button */}
+            <motion.button
+              onClick={() => setIsLoginDropdownOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-gray-100/80 hover:bg-gray-200 transition-all duration-200 z-10 group shadow-sm border border-gray-200/50"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              data-testid="login-dropdown-close"
+            >
+              <div className="w-5 h-5 flex items-center justify-center relative">
+                <motion.div 
+                  className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
+                  style={{ transform: 'rotate(45deg)' }}
+                />
+                <motion.div 
+                  className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
+                  style={{ transform: 'rotate(-45deg)' }}
+                />
+              </div>
+            </motion.button>
+
+            <div className="text-center mb-4 relative">
+              <motion.div 
+                className="w-12 h-12 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg"
+                animate={{ 
+                  rotate: [0, 5, -5, 0],
+                  scale: [1, 1.05, 1]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <User className="text-white drop-shadow-lg" size={20} />
+              </motion.div>
+              <h3 className="text-lg font-semibold text-charcoal mb-1">Vítejte zpět!</h3>
+              <p className="text-xs text-charcoal/60">Přihlaste se ke svému účtu</p>
             </div>
 
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">E-mail</Label>
+            <form onSubmit={handleLoginSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="login-email" className="text-sm">E-mail</Label>
                 <Input
                   id="login-email"
                   type="email"
                   placeholder="vas.email@example.com"
                   value={loginFormData.email}
                   onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                  className="h-10"
                   data-testid="login-email-input"
                 />
                 {loginErrors.email && (
-                  <p className="text-red-500 text-sm">{loginErrors.email}</p>
+                  <p className="text-red-500 text-xs">{loginErrors.email}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Heslo</Label>
+              <div className="space-y-1">
+                <Label htmlFor="login-password" className="text-sm">Heslo</Label>
                 <Input
                   id="login-password"
                   type="password"
                   placeholder="Vaše heslo"
                   value={loginFormData.password}
                   onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                  className="h-10"
                   data-testid="login-password-input"
                 />
                 {loginErrors.password && (
-                  <p className="text-red-500 text-sm">{loginErrors.password}</p>
+                  <p className="text-red-500 text-xs">{loginErrors.password}</p>
                 )}
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-10"
                 disabled={loginMutation.isPending}
                 data-testid="login-submit-btn"
               >
@@ -438,11 +490,11 @@ export default function Navigation({}: NavigationProps = {}) {
               </Button>
             </form>
 
-            <div className="mt-4 text-center">
+            <div className="mt-3 text-center">
               <a
                 href="/login"
                 onClick={() => setIsLoginDropdownOpen(false)}
-                className="text-sm text-romantic hover:text-love transition-colors"
+                className="text-xs text-romantic hover:text-love transition-colors"
                 data-testid="login-register-link"
               >
                 ✨ Nemáte účet? Registrujte se zde

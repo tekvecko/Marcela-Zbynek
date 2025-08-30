@@ -1,6 +1,7 @@
 import Navigation from "@/components/navigation";
 import WeddingDetails from "@/components/wedding-details";
 import WeddingTimeline from "@/components/wedding-timeline";
+import OurStory from "@/components/our-story";
 
 export default function DetailsPage() {
 
@@ -8,6 +9,7 @@ export default function DetailsPage() {
     <div className="min-h-screen bg-cream">
       <Navigation />
       <WeddingDetails />
+      <OurStory />
       
       {/* Wedding Timeline */}
       <section className="py-16 bg-gradient-to-br from-cream via-blush to-cream">
