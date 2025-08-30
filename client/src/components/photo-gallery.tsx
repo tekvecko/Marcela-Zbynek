@@ -15,6 +15,12 @@ import OptimizedImage from "@/components/ui/optimized-image";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import GlassButton from "@/components/ui/glass-button";
 import type { UploadedPhoto } from "@shared/schema";
+
+// Extended photo type with runtime properties from server
+type ExtendedPhoto = UploadedPhoto & {
+  userHasLiked?: boolean;
+  questTitle?: string;
+};
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
 import VerificationTooltip from "@/components/ui/verification-tooltip";
@@ -43,7 +49,7 @@ const getProfileImage = (uploaderEmail: string, users?: Record<string, any>) => 
 export default function PhotoGallery() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<UploadedPhoto | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<ExtendedPhoto | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flyingHearts, setFlyingHearts] = useState<Array<{id: string, x: number, y: number}>>([]);
   const [newComment, setNewComment] = useState("");
@@ -55,7 +61,7 @@ export default function PhotoGallery() {
   // Funkce pro vytvoření animace srdíček
   const createFlyingHearts = useCallback((buttonElement: HTMLElement) => {
     const rect = buttonElement.getBoundingClientRect();
-    const hearts = [];
+    const hearts: Array<{id: string, x: number, y: number}> = [];
 
     for (let i = 0; i < 8; i++) {
       hearts.push({
@@ -103,7 +109,7 @@ export default function PhotoGallery() {
     };
   }, [selectedPhoto]);
 
-  const { data: photos = [], isLoading } = useQuery<UploadedPhoto[]>({
+  const { data: photos = [], isLoading } = useQuery<ExtendedPhoto[]>({
     queryKey: ["/api/photos"],
   });
 
@@ -142,11 +148,11 @@ export default function PhotoGallery() {
 
   // Helper to get comments for a specific photo
   const getPhotoComments = (photoId: string) => {
-    return allComments[photoId] || [];
+    return (allComments as Record<string, any[]>)[photoId] || [];
   };
 
   // Use simple display names without fetching user data (since /api/users endpoint doesn't exist)
-  const users = {};
+  const users: Record<string, any> = {};
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -232,10 +238,12 @@ export default function PhotoGallery() {
       const previousPhotos = queryClient.getQueryData(["/api/photos"]);
 
       // Optimistically update - okamžitě aktualizuj UI podle aktuálního stavu
-      queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
+      queryClient.setQueryData(["/api/photos"], (oldData: ExtendedPhoto[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(photo => {
           if (photo.id === photoId) {
+            // For optimistic updates, we'll just increment/decrement likes
+            // The actual userHasLiked state will be handled by the server
             const currentlyLiked = photo.userHasLiked;
             return { 
               ...photo, 
@@ -270,14 +278,14 @@ export default function PhotoGallery() {
       });
 
       // Aktualizuj data s API odpovědí
-      queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
+      queryClient.setQueryData(["/api/photos"], (oldData: ExtendedPhoto[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(photo => 
           photo.id === photoId 
             ? { 
                 ...photo, 
-                likes: data.likes !== undefined ? data.likes : photo.likes, // Použij hodnotu z API
-                userHasLiked: data.userHasLiked !== undefined ? data.userHasLiked : true
+                likes: data.likes !== undefined ? data.likes : photo.likes,
+                userHasLiked: data.userHasLiked !== undefined ? data.userHasLiked : !photo.userHasLiked
               }
             : photo
         );
@@ -288,7 +296,7 @@ export default function PhotoGallery() {
         setSelectedPhoto(prev => prev ? {
           ...prev,
           likes: data.likes !== undefined ? data.likes : prev.likes,
-          userHasLiked: data.userHasLiked !== undefined ? data.userHasLiked : true
+          userHasLiked: data.userHasLiked !== undefined ? data.userHasLiked : prev.userHasLiked
         } : null);
       }
     },
@@ -303,7 +311,7 @@ export default function PhotoGallery() {
       // Vrátit zpět selectedPhoto při chybě
       if (selectedPhoto && selectedPhoto.id === photoId) {
         // Najdi původní stav z rollback dat
-        const originalPhotos = context?.previousPhotos as UploadedPhoto[] | undefined;
+        const originalPhotos = context?.previousPhotos as ExtendedPhoto[] | undefined;
         const originalPhoto = originalPhotos?.find(p => p.id === photoId);
         if (originalPhoto) {
           setSelectedPhoto(prev => prev ? {
@@ -951,20 +959,24 @@ export default function PhotoGallery() {
                   } flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <OptimizedImage
-                    src={`/api/photos/${selectedPhoto.filename}`}
-                    alt={selectedPhoto.aiAnalysis || "Wedding photo"}
-                    className={`${
-                      isFullscreen
-                        ? 'max-w-full max-h-full object-contain cursor-pointer'
-                        : 'w-full h-full max-w-full max-h-full object-contain cursor-pointer'
-                    }`}
-                    onClick={(e) => {
+                  <div 
+                    className="cursor-pointer"
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       // Dvojklik na fotku přepne fullscreen
                     }}
                     onDoubleClick={() => setIsFullscreen(!isFullscreen)}
-                  />
+                  >
+                    <OptimizedImage
+                      src={`/api/photos/${selectedPhoto.filename}`}
+                      alt={selectedPhoto.aiAnalysis || "Wedding photo"}
+                      className={`${
+                        isFullscreen
+                          ? 'max-w-full max-h-full object-contain'
+                          : 'w-full h-full max-w-full max-h-full object-contain'
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 {/* Photo Info - Now below the image */}
@@ -1101,7 +1113,7 @@ export default function PhotoGallery() {
                     <div className="bg-black/50 rounded-lg p-3 sm:p-4 border border-white/10">
                       <h4 className="font-medium mb-3 flex items-center text-sm sm:text-base">
                         <MessageCircle className="mr-2" size={16} />
-                        Komentáře ({comments.length})
+                        Komentáře ({(comments as any[]).length})
                       </h4>
 
                       {/* Add Comment Form */}
@@ -1144,8 +1156,8 @@ export default function PhotoGallery() {
                       )}
 
                       {/* Comments List */}
-                      {comments.length > 0 ? (
-                          comments.map((comment: any) => (
+                      {(comments as any[]).length > 0 ? (
+                          (comments as any[]).map((comment: any) => (
                             <div key={comment.id} className="bg-white/10 rounded-lg p-3">
                               <div className="flex items-start gap-2">
                                 <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">

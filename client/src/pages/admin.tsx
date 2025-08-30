@@ -89,7 +89,7 @@ export default function AdminPage() {
   // Mutations
   const createChallengeMutation = useMutation({
     mutationFn: (data: ChallengeFormData) =>
-      apiRequest("/api/admin/challenges", { method: "POST", body: data }),
+      apiRequest("/api/admin/challenges", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
       toast({ title: "Úspěch", description: "Výzva byla vytvořena" });
@@ -100,7 +100,7 @@ export default function AdminPage() {
 
   const updateChallengeMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: ChallengeFormData }) =>
-      apiRequest(`/api/admin/challenges/${id}`, { method: "PUT", body: data }),
+      apiRequest(`/api/admin/challenges/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
       toast({ title: "Úspěch", description: "Výzva byla aktualizována" });
@@ -130,7 +130,7 @@ export default function AdminPage() {
 
   const togglePhotoVerificationMutation = useMutation({
     mutationFn: ({ id, isVerified }: { id: string; isVerified: boolean }) =>
-      apiRequest(`/api/admin/photos/${id}/verify`, { method: "POST", body: { isVerified } }),
+      apiRequest(`/api/admin/photos/${id}/verify`, { method: "POST", body: JSON.stringify({ isVerified }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       toast({ title: "Úspěch", description: "Stav ověření byl změněn" });
@@ -139,7 +139,7 @@ export default function AdminPage() {
 
   const bulkDeletePhotosMutation = useMutation({
     mutationFn: (photoIds: string[]) =>
-      apiRequest("/api/admin/photos/bulk-delete", { method: "POST", body: { photoIds } }),
+      apiRequest("/api/admin/photos/bulk-delete", { method: "POST", body: JSON.stringify({ photoIds }) }),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       setSelectedPhotos([]);
@@ -159,7 +159,7 @@ export default function AdminPage() {
 
   const bulkDeleteChallengesMutation = useMutation({
     mutationFn: (challengeIds: string[]) =>
-      apiRequest("/api/admin/challenges/bulk-delete", { method: "POST", body: { challengeIds } }),
+      apiRequest("/api/admin/challenges/bulk-delete", { method: "POST", body: JSON.stringify({ challengeIds }) }),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
       setSelectedChallenges([]);
@@ -198,7 +198,7 @@ export default function AdminPage() {
 
   const bulkVerifyPhotosMutation = useMutation({
     mutationFn: (photoIds: string[]) =>
-      apiRequest("/api/admin/photos/bulk-verify", { method: "POST", body: { photoIds } }),
+      apiRequest("/api/admin/photos/bulk-verify", { method: "POST", body: JSON.stringify({ photoIds }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       setSelectedPhotos([]);
