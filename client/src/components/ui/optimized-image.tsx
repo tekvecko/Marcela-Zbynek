@@ -51,7 +51,7 @@ export default function OptimizedImage({
   };
 
   return (
-    <div ref={imgRef} className={cn("relative overflow-hidden", className)}>
+    <div ref={imgRef} className="relative overflow-hidden w-full h-full">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <LoadingSpinner size="md" className="text-gray-400" />
@@ -65,9 +65,12 @@ export default function OptimizedImage({
           onLoad={handleLoad}
           onError={handleError}
           className={cn(
-            "w-full h-full object-cover transition-all duration-300",
+            "w-full h-full transition-all duration-300",
+            // Použij object-cover jako výchozí, ale umožni override přes className
+            className?.includes('object-') ? '' : 'object-cover',
             isLoading ? "opacity-0" : "opacity-100",
-            blur && isLoading ? "blur-sm" : "blur-0"
+            blur && isLoading ? "blur-sm" : "blur-0",
+            className
           )}
           loading="lazy"
         />
