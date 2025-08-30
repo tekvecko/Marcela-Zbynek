@@ -20,7 +20,6 @@ import { CoupleFactsGame } from "@/components/mini-games/couple-facts-game";
 import { ReactionSpeedGame } from "@/components/mini-games/reaction-speed-game";
 import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
-import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 
 interface MiniGame {
   id: string;
@@ -55,7 +54,6 @@ export default function MiniGamePlay() {
   const [, params] = useRoute("/mini-games/:gameId");
   const gameId = params?.gameId;
   const queryClient = useQueryClient();
-  const { startOnboarding } = useOnboardingContext();
 
   const [gameState, setGameState] = useState<"playing" | "finished" | "loading">("loading");
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
@@ -145,7 +143,7 @@ export default function MiniGamePlay() {
   if (gameLoading || !game) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-        <Navigation onStartTutorial={startOnboarding} />
+        <Navigation />
         <div className="max-w-4xl mx-auto pt-24">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-romantic"></div>
@@ -158,7 +156,7 @@ export default function MiniGamePlay() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-      <Navigation onStartTutorial={startOnboarding} />
+      <Navigation />
       <div className="max-w-4xl mx-auto space-y-6 pt-24">
 
         {/* Header */}

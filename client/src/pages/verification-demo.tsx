@@ -7,7 +7,6 @@ import GlassButton from "@/components/ui/glass-button";
 import { useLocation } from "wouter";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
-import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 
 // Sample verification data for demonstration
 const sampleVerifications = [
@@ -52,11 +51,10 @@ const sampleVerifications = [
 export default function VerificationDemoPage() {
   const [, setLocation] = useLocation();
   const [selectedDemo, setSelectedDemo] = useState<number | null>(null);
-  const { startOnboarding } = useOnboardingContext();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love">
-      <Navigation onStartTutorial={startOnboarding} />
+      <Navigation />
       <div className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
         <div className="mb-8">
