@@ -68,11 +68,7 @@ interface UserPhoto {
   };
 }
 
-interface PhotoQuestProps {
-  categoryFilter?: 'all' | 'high-priority' | 'completed' | 'available';
-}
-
-export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) {
+export default function PhotoQuest() {
   const [, setLocation] = useLocation();
   const [challenges, setChallenges] = useState<QuestChallenge[]>([]);
   const [challengesLoading, setChallengesLoading] = useState(true);
@@ -191,7 +187,7 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
               const userPhoto = questPhotos.find((photo: UserPhoto) => 
                 photo.uploaderName === quest.participantName && photo.isVerified
               );
-
+              
               if (userPhoto) {
                 photoMap.set(quest.questId, userPhoto);
               }
@@ -236,12 +232,6 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
     }
   };
 
-  // Create a map for quick progress lookup
-  const progressMap = userProgress.reduce((acc, progress) => {
-    acc[progress.questId] = progress;
-    return acc;
-  }, {} as Record<string, QuestProgressData>);
-
   if (challengesLoading || progressLoading || photosLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -250,38 +240,7 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
     );
   }
 
-  // Filter and sort challenges based on category
-  const getFilteredChallenges = () => {
-    const activeChallenges = challenges?.filter((challenge: any) => challenge.isActive) || [];
-
-    switch (categoryFilter) {
-      case 'high-priority':
-        return activeChallenges.filter((c: any) => c.points >= 20);
-      case 'completed':
-        return activeChallenges.filter((c: any) => progressMap[c.id]?.isCompleted);
-      case 'available':
-        return activeChallenges.filter((c: any) => !progressMap[c.id]?.isCompleted);
-      default:
-        return activeChallenges;
-    }
-  };
-
-  const filteredChallenges = getFilteredChallenges();
-
-  const sortedChallenges = [...filteredChallenges].sort((a, b) => {
-    const aCompleted = progressMap[a.id]?.isCompleted || false;
-    const bCompleted = progressMap[b.id]?.isCompleted || false;
-
-    // Show uncompleted challenges first
-    if (aCompleted !== bCompleted) {
-      return aCompleted ? 1 : -1;
-    }
-
-    // Then sort by points (highest first)
-    return b.points - a.points;
-  });
-
-  // Separate challenges into categories based on the overall challenges list for display counts
+  // Separate challenges into categories
   const completedChallenges = challenges.filter(challenge => isQuestCompleted(challenge.id));
   const availableChallenges = challenges.filter(challenge => 
     !isQuestCompleted(challenge.id) && (challenge as any).isUnlocked !== false
@@ -289,7 +248,6 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
   const lockedChallenges = challenges.filter(challenge => 
     !isQuestCompleted(challenge.id) && (challenge as any).isUnlocked === false
   );
-
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-cream via-blush to-romantic/10">
@@ -313,16 +271,6 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
         </div>
       </div>
 
-      {/* Filter Buttons */}
-      <div className="px-4 sm:px-8 pb-8 max-w-6xl mx-auto">
-        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-          <GlassButton onClick={() => setLocation('/photo-quest')} active={categoryFilter === 'all'}>Všechny</GlassButton>
-          <GlassButton onClick={() => setLocation('/photo-quest?categoryFilter=high-priority')} active={categoryFilter === 'high-priority'}>Prioritní</GlassButton>
-          <GlassButton onClick={() => setLocation('/photo-quest?categoryFilter=completed')} active={categoryFilter === 'completed'}>Dokončené</GlassButton>
-          <GlassButton onClick={() => setLocation('/photo-quest?categoryFilter=available')} active={categoryFilter === 'available'}>Dostupné</GlassButton>
-        </div>
-      </div>
-
       {/* Challenge List Header */}
       <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between text-charcoal/60 text-sm font-medium">
@@ -339,72 +287,57 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
       {/* Quest Challenges */}
       <div className="space-y-12">
 
-        {/* Filtered Challenges Grid */}
+        {/* Available Challenges Grid */}
         <div className="px-4 sm:px-8 pb-8 max-w-6xl mx-auto">
           {/* Available Challenges */}
           <div className="grid gap-4">
-            {sortedChallenges.map((challenge, index) => {
+            {availableChallenges.map((challenge, index) => {
               const Icon = getQuestIcon(challenge.title);
-              const isCompleted = progressMap[challenge.id]?.isCompleted;
-              const isLocked = (challenge as any).isUnlocked === false;
 
               return (
                 <div
                   key={challenge.id}
-                  className={`group relative bg-white/80 backdrop-blur-sm rounded-2xl p-4 hover:shadow-lg transition-all cursor-pointer border
-                    ${isCompleted ? 'border-romantic/30 hover:from-romantic/30 hover:to-love/30 from-romantic/20 to-love/20' : 
-                                  isLocked ? 'border-charcoal/20 cursor-not-allowed opacity-60 bg-gray-100/80' : 
-                                  'border-romantic/20 hover:bg-white/90'}
-                  `}
-                  onClick={() => handleQuestClick(challenge.id, !isLocked)}
+                  className="group bg-white/80 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 hover:shadow-lg transition-all cursor-pointer border border-romantic/20"
+                  onClick={() => handleQuestClick(challenge.id, true)}
                   data-testid={`challenge-card-${challenge.id}`}
                 >
                   <div className="flex items-center gap-4">
                     {/* Challenge Icon */}
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md
-                      ${isCompleted ? 'bg-gradient-to-br from-romantic to-love' : 
-                                    isLocked ? 'bg-gradient-to-br from-charcoal/40 to-charcoal/60' : 
-                                    'bg-gradient-to-br from-romantic to-love'}
-                    `}>
-                      {isLocked ? <Lock className="text-white" size={20} /> : <Icon className="text-white" size={20} />}
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-romantic to-love flex items-center justify-center flex-shrink-0 shadow-md">
+                      <Icon className="text-white" size={20} />
                     </div>
 
                     {/* Challenge Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className={`font-display font-semibold text-lg
-                        ${isCompleted ? 'text-charcoal group-hover:text-romantic' : 
-                                      isLocked ? 'text-charcoal/70' : 
-                                      'text-charcoal group-hover:text-romantic'}
-                        transition-colors
-                      `}>
+                      <h3 className="text-charcoal font-display font-semibold text-lg group-hover:text-romantic transition-colors">
                         {challenge.title}
                       </h3>
-                      <p className={`text-sm mt-1 ${isLocked ? 'text-charcoal/50' : 'text-charcoal/60'}`}>
-                        {isLocked ? (challenge as any).unlockRequirement || 'Čeká na odemčení' : challenge.description}
+                      <p className="text-charcoal/60 text-sm mt-1">
+                        {challenge.description}
                       </p>
                     </div>
 
                     {/* Challenge Stats */}
                     <div className="hidden md:flex items-center gap-6 text-sm">
                       <div className="text-center">
-                        <div className={`px-3 py-1 rounded-full text-xs font-medium
-                          ${isCompleted ? 'bg-romantic/20 text-romantic' : 
-                                        isLocked ? 'bg-charcoal/10 text-charcoal/50' : 
-                                        challenge.isActive ? 'bg-romantic/20 text-romantic' : 'bg-charcoal/20 text-charcoal/60'
-                          }`}>
-                          {isCompleted ? 'Splněno' : isLocked ? 'Uzamčeno' : challenge.isActive ? 'Aktivní' : 'Neaktivní'}
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          challenge.isActive 
+                            ? 'bg-romantic/20 text-romantic' 
+                            : 'bg-charcoal/20 text-charcoal/60'
+                        }`}>
+                          {challenge.isActive ? 'Aktivní' : 'Neaktivní'}
                         </div>
                       </div>
-
+                      
                       <div className="text-center">
-                        <div className={`text-lg font-bold ${isCompleted ? 'text-romantic' : isLocked ? 'text-charcoal/50' : 'text-romantic'}`}>+{challenge.points}</div>
+                        <div className="text-lg font-bold text-romantic">+{challenge.points}</div>
                         <div className="text-xs text-charcoal/60">bodů</div>
                       </div>
                     </div>
 
                     {/* Mobile stats */}
                     <div className="md:hidden text-right">
-                      <div className={`text-lg font-bold ${isCompleted ? 'text-romantic' : isLocked ? 'text-charcoal/50' : 'text-romantic'}`}>+{challenge.points}</div>
+                      <div className="text-lg font-bold text-romantic">+{challenge.points}</div>
                     </div>
                   </div>
                 </div>
@@ -412,17 +345,129 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
             })}
           </div>
 
-          {sortedChallenges.length === 0 && (
-            <div className="text-center py-12 px-8">
-              <p className="text-charcoal/60 text-lg">
-                {categoryFilter === 'completed' ? 'Žádné výzvy ještě nebyly dokončeny.' :
-                 categoryFilter === 'available' ? 'Žádné dostupné výzvy nejsou k dispozici.' :
-                 categoryFilter === 'high-priority' ? 'Žádné prioritní výzvy nenalezeny.' :
-                 'Žádné výzvy nenalezeny.'}
-              </p>
-            </div>
+          {/* Locked Challenges Section */}
+          {lockedChallenges.length > 0 && (
+            <>
+              <div className="py-8">
+                <h3 className="text-charcoal text-2xl font-display font-bold mb-6 flex items-center gap-3">
+                  <Lock className="text-charcoal/60" size={24} />
+                  Uzamčené výzvy
+                </h3>
+              </div>
+              
+              <div className="grid gap-4 mb-8">
+                {lockedChallenges.map((challenge, index) => {
+                  const Icon = getQuestIcon(challenge.title);
+                  const unlockRequirement = (challenge as any).unlockRequirement || 'Čeká na odemčení';
+
+                  return (
+                    <div
+                      key={challenge.id}
+                      className="group bg-gray-100/80 backdrop-blur-sm rounded-2xl p-4 border border-charcoal/20 cursor-not-allowed opacity-60"
+                      data-testid={`locked-challenge-${challenge.id}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Locked Icon */}
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-charcoal/40 to-charcoal/60 flex items-center justify-center flex-shrink-0 shadow-md">
+                          <Lock className="text-white" size={20} />
+                        </div>
+
+                        {/* Challenge Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-charcoal/70 font-display font-semibold text-lg">
+                            {challenge.title}
+                          </h3>
+                          <p className="text-charcoal/50 text-sm mt-1">
+                            {unlockRequirement}
+                          </p>
+                        </div>
+
+                        {/* Challenge Stats */}
+                        <div className="hidden md:flex items-center gap-6 text-sm">
+                          <div className="text-center">
+                            <div className="px-3 py-1 rounded-full text-xs font-medium bg-charcoal/10 text-charcoal/50">
+                              Uzamčeno
+                            </div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-charcoal/50">+{challenge.points}</div>
+                            <div className="text-xs text-charcoal/40">bodů</div>
+                          </div>
+                        </div>
+
+                        {/* Mobile stats */}
+                        <div className="md:hidden text-right">
+                          <div className="text-lg font-bold text-charcoal/50">+{challenge.points}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Completed Challenges Section */}
+          {completedChallenges.length > 0 && (
+            <>
+              <div className="py-8">
+                <h3 className="text-charcoal text-2xl font-display font-bold mb-6 flex items-center gap-3">
+                  <CheckCircle className="text-romantic" size={24} />
+                  Dokončené výzvy
+                </h3>
+              </div>
+              
+              <div className="grid gap-4">
+                {completedChallenges.map((challenge, index) => {
+                  const Icon = getQuestIcon(challenge.title);
+                  const completedPhoto = completedChallengePhotos.get(challenge.id);
+
+                  return (
+                    <div
+                      key={challenge.id}
+                      className="group bg-gradient-to-r from-romantic/20 to-love/20 backdrop-blur-sm rounded-2xl p-4 hover:from-romantic/30 hover:to-love/30 hover:shadow-lg transition-all cursor-pointer border border-romantic/30"
+                      onClick={() => handleQuestClick(challenge.id, true)}
+                      data-testid={`completed-challenge-${challenge.id}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Success Icon */}
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-romantic to-love flex items-center justify-center flex-shrink-0 shadow-md">
+                          <CheckCircle className="text-white" size={20} />
+                        </div>
+
+                        {/* Challenge Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-charcoal font-display font-semibold text-lg">
+                            {challenge.title}
+                          </h3>
+                          <p className="text-charcoal/70 text-sm mt-1">
+                            Splněno {completedPhoto?.analysisResult && `• AI skóre: ${Math.round(completedPhoto.analysisResult.confidence * 100)}%`}
+                          </p>
+                        </div>
+
+                        {/* Points Earned */}
+                        <div className="text-center">
+                          <div className="flex items-center gap-2">
+                            <Star className="text-gold" size={20} fill="currentColor" />
+                            <span className="text-lg font-bold text-romantic">+{challenge.points}</span>
+                          </div>
+                          <div className="text-xs text-charcoal/60">získáno</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
+
+        {challenges.length === 0 && !challengesLoading && (
+          <div className="text-center py-12 px-8">
+            <p className="text-charcoal/60 text-lg">Žádné výzvy nenalezeny. Zkuste obnovit stránku.</p>
+          </div>
+        )}
       </div>
 
       {/* Wedding-style Leaderboard */}
@@ -433,7 +478,7 @@ export default function PhotoQuest({ categoryFilter = 'all' }: PhotoQuestProps) 
               <Crown className="text-gold" size={24} />
               Nejlepší svatební fotografové
             </h2>
-
+            
             <div className="space-y-3">
               {leaderboard.slice(0, 10).map((entry, index) => (
                 <div

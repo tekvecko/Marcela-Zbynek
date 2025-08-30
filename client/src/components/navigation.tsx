@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../logoMZ.png";
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut, Camera, Images, Home, Heart, Gamepad2 } from "lucide-react";
+import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -27,21 +27,15 @@ export default function Navigation({}: NavigationProps = {}) {
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  // Prioritní struktura navigace - hlavní funkce nahoře
-  const primaryItems = [
-    { path: "/photo-quest", label: "Fotovýzvy", icon: Camera, priority: 1 },
-    { path: "/gallery", label: "Galerie", icon: Images, priority: 1 },
-    { path: "/leaderboards", label: "Žebříček", icon: Trophy, priority: 1 },
+  // Navigation items - simplified
+  const navigationItems = [
+    { href: '/', label: 'Domů', icon: '🏠', exact: true },
+    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true },
+    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true },
+    { href: '/details', label: 'Detaily', icon: '💒', exact: true },
+    { href: '/profile', label: 'Profil', icon: '⭐', exact: true },
+    ...(user?.isAdmin ? [{ href: '/admin', label: 'Admin', icon: '⚙️', exact: true }] : [])
   ];
-
-  const secondaryItems = [
-    { path: "/", label: "Domů", icon: Home, priority: 2 },
-    { path: "/details", label: "Svatba", icon: Heart, priority: 2 },
-    { path: "/mini-games", label: "Hry", icon: Gamepad2, priority: 2 },
-  ];
-
-  const navigationItems = [...primaryItems, ...secondaryItems];
-
 
   // Login form state
   const [loginFormData, setLoginFormData] = useState({
@@ -110,7 +104,7 @@ export default function Navigation({}: NavigationProps = {}) {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollY = window.scrollY;
-
+          
           // Simple logic: up = show, down = hide
           if (scrollY > previousScrollY && scrollY > 100) {
             // Scrolling down
@@ -119,7 +113,7 @@ export default function Navigation({}: NavigationProps = {}) {
             // Scrolling up or at top
             setIsVisible(true);
           }
-
+          
           previousScrollY = scrollY;
           setLastScrollY(scrollY);
           setCurrentScrollY(scrollY);
@@ -135,7 +129,7 @@ export default function Navigation({}: NavigationProps = {}) {
     setCurrentScrollY(window.scrollY);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-
+    
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -209,7 +203,7 @@ export default function Navigation({}: NavigationProps = {}) {
           imageRendering: 'crisp-edges'
         }}
       />
-
+      
       <motion.div
         className="absolute -top-1 -right-1 w-3 h-3 bg-romantic rounded-full shadow-lg"
         animate={{
@@ -265,23 +259,21 @@ export default function Navigation({}: NavigationProps = {}) {
                   </SheetHeader>
 
                   <div className="mt-6 space-y-2">
-                    {navigationItems.map(({ path, label, icon: IconComponent }) => {
-                      const isActive = location.startsWith(path);
+                    {navigationItems.map(({ href, label, icon, exact }) => {
+                      const isActive = exact ? location === href : location.startsWith(href);
                       return (
                         <a
-                          key={path}
-                          href={path}
+                          key={href}
+                          href={href}
                           onClick={() => setIsMenuOpen(false)}
                           className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                             isActive
                               ? 'bg-romantic text-white'
                               : 'text-charcoal hover:bg-romantic/10'
                           }`}
-                          data-testid={`mobile-nav-${path.replace('/', '') || 'home'}`}
+                          data-testid={`mobile-nav-${href.replace('/', '') || 'home'}`}
                         >
-                          <span className="text-lg">
-                            <IconComponent size={20} />
-                          </span>
+                          <span className="text-lg">{icon}</span>
                           <span className="font-medium">{label}</span>
                         </a>
                       );
@@ -326,7 +318,7 @@ export default function Navigation({}: NavigationProps = {}) {
                   </div>
                 </SheetContent>
               </Sheet>
-
+              
               <LogoElement className="w-12 h-12" />
               <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
                 M&Z
@@ -335,12 +327,12 @@ export default function Navigation({}: NavigationProps = {}) {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map(({ path, label, icon: IconComponent, exact }) => {
-                const isActive = exact ? location === path : location.startsWith(path);
+              {navigationItems.map(({ href, label, icon, exact }) => {
+                const isActive = exact ? location === href : location.startsWith(href);
                 return (
                   <motion.a
-                    key={path}
-                    href={path}
+                    key={href}
+                    href={href}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'bg-romantic text-white shadow-lg'
@@ -348,11 +340,9 @@ export default function Navigation({}: NavigationProps = {}) {
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    data-testid={`nav-${path.replace('/', '') || 'home'}`}
+                    data-testid={`nav-${href.replace('/', '') || 'home'}`}
                   >
-                    <span>
-                      <IconComponent size={16} />
-                    </span>
+                    <span>{icon}</span>
                     <span>{label}</span>
                   </motion.a>
                 );
@@ -414,7 +404,7 @@ export default function Navigation({}: NavigationProps = {}) {
           >
             {/* Dekorativní gradient overlay */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-romantic via-love to-romantic opacity-60 rounded-t-2xl" />
-
+            
             {/* Close button */}
             <motion.button
               onClick={() => setIsLoginDropdownOpen(false)}
@@ -424,11 +414,11 @@ export default function Navigation({}: NavigationProps = {}) {
               data-testid="login-dropdown-close"
             >
               <div className="w-5 h-5 flex items-center justify-center relative">
-                <motion.div
+                <motion.div 
                   className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(45deg)' }}
                 />
-                <motion.div
+                <motion.div 
                   className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(-45deg)' }}
                 />
@@ -436,13 +426,13 @@ export default function Navigation({}: NavigationProps = {}) {
             </motion.button>
 
             <div className="text-center mb-4 relative">
-              <motion.div
+              <motion.div 
                 className="w-12 h-12 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-                animate={{
+                animate={{ 
                   rotate: [0, 5, -5, 0],
                   scale: [1, 1.05, 1]
                 }}
-                transition={{
+                transition={{ 
                   duration: 2,
                   repeat: Infinity,
                   ease: "easeInOut"
