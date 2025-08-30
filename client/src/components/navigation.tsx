@@ -276,27 +276,42 @@ export default function Navigation({}: NavigationProps = {}) {
                     })}
                   </div>
 
-                  {user && (
-                    <div className="mt-8 pt-6 border-t border-gray-200">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div>
-                          <div className="font-medium text-charcoal">
-                            {user.firstName} {user.lastName}
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    {user ? (
+                      <>
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div>
+                            <div className="font-medium text-charcoal">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-charcoal/60">{user.email}</div>
                           </div>
-                          <div className="text-sm text-charcoal/60">{user.email}</div>
                         </div>
-                      </div>
+                        <Button
+                          onClick={handleLogout}
+                          variant="outline"
+                          className="w-full"
+                          data-testid="mobile-nav-logout"
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Odhlásit se
+                        </Button>
+                      </>
+                    ) : (
                       <Button
-                        onClick={handleLogout}
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsLoginDropdownOpen(true);
+                        }}
                         variant="outline"
                         className="w-full"
-                        data-testid="mobile-nav-logout"
+                        data-testid="mobile-nav-login"
                       >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Odhlásit se
+                        <Lock className="h-4 w-4 mr-2" />
+                        Přihlásit se
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </SheetContent>
               </Sheet>
               
