@@ -94,82 +94,98 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Mobile-optimized hide-on-scroll functionality
+  // Enhanced touch and scroll navigation hiding
   useEffect(() => {
-    let previousScrollY = 0;
-    let scrollTimeout: NodeJS.Timeout;
+    let previousScrollY = window.scrollY;
+    let touchStartY = 0;
+    let touchStartTime = 0;
     let isScrolling = false;
+    let scrollTimeout: NodeJS.Timeout;
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      isScrolling = true;
       
-      // Clear any existing timeout
+      // Clear timeout
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
 
-      // Always show at the very top
+      // Always show at top
       if (currentScrollY <= 20) {
         setIsVisible(true);
         previousScrollY = currentScrollY;
         return;
       }
 
-      // Calculate scroll direction with minimum threshold for mobile
-      const scrollDifference = Math.abs(currentScrollY - previousScrollY);
+      // Calculate direction
+      const scrollDelta = currentScrollY - previousScrollY;
       
-      // Only react to meaningful scroll movements (helps with mobile touch)
-      if (scrollDifference > 5) {
-        const scrollDirection = currentScrollY > previousScrollY ? 'down' : 'up';
-        
-        // Show immediately when scrolling up
-        if (scrollDirection === 'up') {
+      // Only act on significant scroll changes
+      if (Math.abs(scrollDelta) > 3) {
+        if (scrollDelta < 0) {
+          // Scrolling up - show immediately
           setIsVisible(true);
-        }
-        // Hide when scrolling down with delay
-        else if (scrollDirection === 'down' && currentScrollY > 60) {
+        } else if (scrollDelta > 0 && currentScrollY > 80) {
+          // Scrolling down - hide with delay
           scrollTimeout = setTimeout(() => {
-            if (isScrolling) {
-              setIsVisible(false);
-            }
-          }, 100);
+            setIsVisible(false);
+          }, 150);
         }
-
         previousScrollY = currentScrollY;
       }
       
       setLastScrollY(currentScrollY);
-      
-      // Reset scrolling flag after delay
-      setTimeout(() => {
-        isScrolling = false;
-      }, 100);
     };
 
-    // Handle touch events for mobile
-    const handleTouchStart = () => {
+    // Touch event handlers for mobile swipe detection
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
       isScrolling = true;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isScrolling) return;
+      
+      const currentY = e.touches[0].clientY;
+      const deltaY = touchStartY - currentY;
+      const currentTime = Date.now();
+      const timeElapsed = currentTime - touchStartTime;
+      
+      // Calculate swipe velocity
+      const velocity = Math.abs(deltaY) / timeElapsed;
+      
+      // Only act on fast, deliberate swipes
+      if (Math.abs(deltaY) > 30 && velocity > 0.1) {
+        if (deltaY > 0) {
+          // Swiping up (content going down) - hide navigation
+          setIsVisible(false);
+        } else {
+          // Swiping down (content going up) - show navigation
+          setIsVisible(true);
+        }
+      }
     };
 
     const handleTouchEnd = () => {
       setTimeout(() => {
         isScrolling = false;
-      }, 200);
+      }, 100);
     };
 
     // Initialize
-    previousScrollY = window.scrollY;
     setIsVisible(true);
 
-    // Add both scroll and touch listeners for mobile compatibility
+    // Add all event listeners
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
     window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
