@@ -110,20 +110,13 @@ export default function Navigation({}: NavigationProps = {}) {
         clearTimeout(scrollTimeout);
       }
 
-      // Always show at top
-      if (currentScrollY <= 20) {
-        setIsVisible(true);
-        previousScrollY = currentScrollY;
-        return;
-      }
-
       // Calculate direction
       const scrollDelta = currentScrollY - previousScrollY;
       
       // Only act on significant scroll changes
       if (Math.abs(scrollDelta) > 3) {
         if (scrollDelta < 0) {
-          // Scrolling up - show immediately
+          // Scrolling up - show immediately at ANY position
           setIsVisible(true);
         } else if (scrollDelta > 0 && currentScrollY > 80) {
           // Scrolling down - hide with delay
