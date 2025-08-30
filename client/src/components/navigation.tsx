@@ -94,95 +94,40 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Enhanced touch and scroll navigation hiding
+  // Simple scroll-based navigation hiding
   useEffect(() => {
     let previousScrollY = window.scrollY;
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    let isScrolling = false;
-    let scrollTimeout: NodeJS.Timeout;
+    let ticking = false;
 
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Clear timeout
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-
-      // Calculate direction
-      const scrollDelta = currentScrollY - previousScrollY;
-      
-      // Only act on significant scroll changes
-      if (Math.abs(scrollDelta) > 3) {
-        if (scrollDelta < 0) {
-          // Scrolling up - show immediately at ANY position
-          setIsVisible(true);
-        } else if (scrollDelta > 0 && currentScrollY > 80) {
-          // Scrolling down - hide with delay
-          scrollTimeout = setTimeout(() => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          // Simple logic: up = show, down = hide
+          if (currentScrollY > previousScrollY && currentScrollY > 100) {
+            // Scrolling down
             setIsVisible(false);
-          }, 150);
-        }
-        previousScrollY = currentScrollY;
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    // Touch event handlers for mobile swipe detection
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-      touchStartTime = Date.now();
-      isScrolling = true;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isScrolling) return;
-      
-      const currentY = e.touches[0].clientY;
-      const deltaY = touchStartY - currentY;
-      const currentTime = Date.now();
-      const timeElapsed = currentTime - touchStartTime;
-      
-      // Calculate swipe velocity
-      const velocity = Math.abs(deltaY) / timeElapsed;
-      
-      // Only act on fast, deliberate swipes
-      if (Math.abs(deltaY) > 30 && velocity > 0.1) {
-        if (deltaY > 0) {
-          // Swiping up (content going down) - hide navigation
-          setIsVisible(false);
-        } else {
-          // Swiping down (content going up) - show navigation
-          setIsVisible(true);
-        }
+          } else {
+            // Scrolling up or at top
+            setIsVisible(true);
+          }
+          
+          previousScrollY = currentScrollY;
+          setLastScrollY(currentScrollY);
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    const handleTouchEnd = () => {
-      setTimeout(() => {
-        isScrolling = false;
-      }, 100);
-    };
-
-    // Initialize
+    // Initialize as visible
     setIsVisible(true);
 
-    // Add all event listeners
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
     };
   }, []);
 
@@ -274,20 +219,17 @@ export default function Navigation({}: NavigationProps = {}) {
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="fixed top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto"
-        initial={{ y: -100, opacity: 0 }}
+        className="sticky top-0 z-50 w-full"
         animate={{
-          y: isVisible ? 0 : -100,
-          opacity: isVisible ? 1 : 0
+          y: isVisible ? 0 : -100
         }}
         transition={{
           type: "spring",
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8
+          stiffness: 400,
+          damping: 25
         }}
       >
-        <div className="bg-white/85 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200">
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-6 py-4">
             {/* Logo */}
