@@ -34,6 +34,8 @@ export default function Navigation({}: NavigationProps = {}) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [lastActivity, setLastActivity] = useState(Date.now());
   const [location] = useLocation();
   const { user, logout, login, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
@@ -98,6 +100,64 @@ export default function Navigation({}: NavigationProps = {}) {
     { href: "/leaderboards", label: "Žebříčky", icon: "🏆", exact: false },
     { href: "/admin", label: "Admin", icon: "⚙️", exact: false, adminOnly: true },
   ];
+
+  // Auto-hide logic
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollingDown = currentScrollY > lastScrollY;
+      const scrollThreshold = 10;
+      
+      if (Math.abs(currentScrollY - lastScrollY) > scrollThreshold) {
+        setIsVisible(!scrollingDown || currentScrollY < 100);
+        setLastScrollY(currentScrollY);
+      }
+      
+      setLastActivity(Date.now());
+    };
+
+    const handleMouseMove = () => {
+      setLastActivity(Date.now());
+      setIsVisible(true);
+    };
+
+    const handleActivity = () => {
+      setLastActivity(Date.now());
+      setIsVisible(true);
+    };
+
+    const checkActivity = () => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivity;
+      
+      // Hide after 3 seconds of inactivity, but not if menus are open
+      if (timeSinceLastActivity > 3000 && !isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen) {
+        setIsVisible(false);
+      }
+    };
+
+    // Activity event listeners
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+
+    // Check activity every 500ms
+    const activityInterval = setInterval(checkActivity, 500);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      clearInterval(activityInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [lastScrollY, lastActivity, isMenuOpen, isUserMenuOpen, isLoginDropdownOpen]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const handleUserMenuToggle = () => setIsUserMenuOpen(!isUserMenuOpen);
