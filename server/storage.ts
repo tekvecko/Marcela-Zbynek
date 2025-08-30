@@ -1725,6 +1725,35 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Photo comments operations
+  async getPhotoComments(photoId: string): Promise<PhotoComment[]> {
+    try {
+      if (!db) throw new Error("Database not available");
+      const comments = await db.select().from(photoComments)
+        .where(eq(photoComments.photoId, photoId))
+        .orderBy(desc(photoComments.createdAt));
+      return comments;
+    } catch (error) {
+      console.error("Failed to get photo comments:", error);
+      return [];
+    }
+  }
+
+  async addPhotoComment(comment: InsertPhotoComment): Promise<PhotoComment> {
+    try {
+      if (!db) throw new Error("Database not available");
+      const [createdComment] = await db.insert(photoComments).values({
+        ...comment,
+        id: randomUUID(),
+        createdAt: new Date(),
+      }).returning();
+      return createdComment;
+    } catch (error) {
+      console.error("Failed to add photo comment:", error);
+      throw error;
+    }
+  }
+
   async getQuestProgress(): Promise<QuestProgress[]> {
     try {
       if (!db) throw new Error("Database not available");
