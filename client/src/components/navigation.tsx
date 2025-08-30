@@ -265,8 +265,8 @@ export default function Navigation({}: NavigationProps = {}) {
                   </SheetHeader>
 
                   <div className="mt-6 space-y-2">
-                    {navigationItems.map(({ path, label, icon, exact }) => {
-                      const isActive = exact ? location === path : location.startsWith(path);
+                    {navigationItems.map(({ path, label, icon: IconComponent }) => {
+                      const isActive = location.startsWith(path);
                       return (
                         <a
                           key={path}
@@ -279,7 +279,9 @@ export default function Navigation({}: NavigationProps = {}) {
                           }`}
                           data-testid={`mobile-nav-${path.replace('/', '') || 'home'}`}
                         >
-                          <span className="text-lg">{icon}</span>
+                          <span className="text-lg">
+                            <IconComponent size={20} />
+                          </span>
                           <span className="font-medium">{label}</span>
                         </a>
                       );
@@ -333,7 +335,7 @@ export default function Navigation({}: NavigationProps = {}) {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map(({ path, label, icon, exact }) => {
+              {navigationItems.map(({ path, label, icon: IconComponent, exact }) => {
                 const isActive = exact ? location === path : location.startsWith(path);
                 return (
                   <motion.a
@@ -348,7 +350,9 @@ export default function Navigation({}: NavigationProps = {}) {
                     whileTap={{ scale: 0.95 }}
                     data-testid={`nav-${path.replace('/', '') || 'home'}`}
                   >
-                    <span>{icon}</span>
+                    <span>
+                      <IconComponent size={16} />
+                    </span>
                     <span>{label}</span>
                   </motion.a>
                 );
@@ -420,11 +424,11 @@ export default function Navigation({}: NavigationProps = {}) {
               data-testid="login-dropdown-close"
             >
               <div className="w-5 h-5 flex items-center justify-center relative">
-                <motion.div 
+                <motion.div
                   className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(45deg)' }}
                 />
-                <motion.div 
+                <motion.div
                   className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(-45deg)' }}
                 />
@@ -432,13 +436,13 @@ export default function Navigation({}: NavigationProps = {}) {
             </motion.button>
 
             <div className="text-center mb-4 relative">
-              <motion.div 
+              <motion.div
                 className="w-12 h-12 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-                animate={{ 
+                animate={{
                   rotate: [0, 5, -5, 0],
                   scale: [1, 1.05, 1]
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
                   ease: "easeInOut"

@@ -980,14 +980,14 @@ export default function PhotoGallery() {
               aria-describedby="photo-description"
             >
               {/* Hidden accessibility elements */}
-              <DialogTitle className="sr-only">
-                Fotka od {getDisplayName(selectedPhoto.uploaderName, users)}
-              </DialogTitle>
-              <DialogDescription>
-                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName, users)} dne {
-                  new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')
-                }
-              </DialogDescription>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold text-charcoal">
+                  {selectedPhoto.uploaderName}
+                </DialogTitle>
+                <DialogDescription>
+                  Zobrazení detailu fotografie a možnosti interakce
+                </DialogDescription>
+              </DialogHeader>
                 <div className="relative h-full flex flex-col">
                 {/* Top Controls */}
                 <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex justify-between items-center">
