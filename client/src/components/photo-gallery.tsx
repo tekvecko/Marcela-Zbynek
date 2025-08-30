@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -56,7 +56,7 @@ export default function PhotoGallery() {
   const createFlyingHearts = useCallback((buttonElement: HTMLElement) => {
     const rect = buttonElement.getBoundingClientRect();
     const hearts = [];
-    
+
     for (let i = 0; i < 8; i++) {
       hearts.push({
         id: `heart-${Date.now()}-${i}`,
@@ -64,9 +64,9 @@ export default function PhotoGallery() {
         y: rect.top + rect.height / 2,
       });
     }
-    
+
     setFlyingHearts(prev => [...prev, ...hearts]);
-    
+
     // Odstranění srdíček po animaci
     setTimeout(() => {
       setFlyingHearts(prev => prev.filter(heart => !hearts.some(h => h.id === heart.id)));
@@ -118,7 +118,7 @@ export default function PhotoGallery() {
     queryKey: ["/api/photos/all-comments"],
     queryFn: async () => {
       const commentsMap: Record<string, any[]> = {};
-      
+
       // Fetch comments for each photo
       for (const photo of photos) {
         try {
@@ -133,7 +133,7 @@ export default function PhotoGallery() {
           commentsMap[photo.id] = [];
         }
       }
-      
+
       return commentsMap;
     },
     enabled: photos.length > 0,
@@ -214,12 +214,12 @@ export default function PhotoGallery() {
       if (!user) {
         throw new Error("Pro hodnocení fotek se musíte přihlásit");
       }
-      
+
       // Okamžitě spusť animaci srdíček
       if (buttonElement) {
         createFlyingHearts(buttonElement);
       }
-      
+
       return await apiRequest(`/api/photos/${photoId}/like`, {
         method: 'POST'
       });
@@ -227,10 +227,10 @@ export default function PhotoGallery() {
     onMutate: async ({ photoId }) => {
       // Zruš všechny pending queries pro fotky
       await queryClient.cancelQueries({ queryKey: ["/api/photos"] });
-      
+
       // Ulož předchozí stav pro možný rollback
       const previousPhotos = queryClient.getQueryData(["/api/photos"]);
-      
+
       // Optimistically update - okamžitě aktualizuj UI podle aktuálního stavu
       queryClient.setQueryData(["/api/photos"], (oldData: UploadedPhoto[] | undefined) => {
         if (!oldData) return oldData;
@@ -259,7 +259,7 @@ export default function PhotoGallery() {
           };
         });
       }
-      
+
       return { previousPhotos };
     },
     onSuccess: (data, { photoId }) => {
@@ -294,7 +294,7 @@ export default function PhotoGallery() {
     },
     onError: (error: any, { photoId }, context) => {
       console.error('Like error:', error);
-      
+
       // Rollback k předchozímu stavu
       if (context?.previousPhotos) {
         queryClient.setQueryData(["/api/photos"], context.previousPhotos);
@@ -313,7 +313,7 @@ export default function PhotoGallery() {
           } : null);
         }
       }
-      
+
       if (!user) {
         toast({
           title: "🔒 Přihlášení vyžadováno",
@@ -334,7 +334,7 @@ export default function PhotoGallery() {
       }
 
       const errorMessage = error.message || error.toString();
-      
+
       if (errorMessage.includes("already liked")) {
         toast({
           title: "⚠️ Už jste hlasovali",
@@ -360,24 +360,35 @@ export default function PhotoGallery() {
   // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async ({ photoId, content }: { photoId: string; content: string }) => {
-      return apiRequest(`/api/photos/${photoId}/comments`, {
+      const response = await fetch(`/api/photos/${photoId}/comments`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
         body: JSON.stringify({ content }),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add comment');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
+      setNewComment('');
+      // Invalidate both the specific photo comments and all comments
+      queryClient.invalidateQueries({ queryKey: ["/api/photos/all-comments"] });
       toast({
-        title: "💬 Komentář přidán",
+        title: "✅ Komentář přidán",
         description: "Váš komentář byl úspěšně přidán.",
       });
-      setNewComment("");
-      queryClient.invalidateQueries({ queryKey: ["/api/photos", selectedPhoto?.id, "comments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/photos/all-comments"] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "❌ Chyba při přidávání komentáře",
-        description: error.message || "Nepodařilo se přidat komentář. Zkuste to prosím znovu.",
+        title: "❌ Chyba",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -387,9 +398,9 @@ export default function PhotoGallery() {
   const handleShare = (photo: UploadedPhoto, platform: string) => {
     const photoUrl = `${window.location.origin}/uploads/${photo.filename}`;
     const text = `Podívejte se na tuto krásnou svatební fotku od ${getDisplayName(photo.uploaderName, users)}!`;
-    
+
     let shareUrl = '';
-    
+
     switch (platform) {
       case 'facebook':
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(photoUrl)}`;
@@ -420,7 +431,7 @@ export default function PhotoGallery() {
           return;
         }
     }
-    
+
     window.open(shareUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -437,7 +448,7 @@ export default function PhotoGallery() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast({
         title: "📥 Fotka stažena",
         description: "Fotka byla úspěšně stažena.",
@@ -674,7 +685,7 @@ export default function PhotoGallery() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* AI Verification Badge */}
                     {(photo.isVerified || (photo.verificationScore && photo.verificationScore > 0)) && (
                       <VerificationTooltip
@@ -684,7 +695,7 @@ export default function PhotoGallery() {
                         size="sm"
                       />
                     )}
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -747,7 +758,7 @@ export default function PhotoGallery() {
                         <Heart className={`${photo.userHasLiked ? 'fill-current' : ''}`} size={20} />
                         <span className="font-medium">Líbí se mi</span>
                       </button>
-                      
+
                       <button 
                         onClick={() => setSelectedPhoto(photo)}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
@@ -757,7 +768,7 @@ export default function PhotoGallery() {
                           Komentář ({getPhotoComments(photo.id).length})
                         </span>
                       </button>
-                      
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
@@ -786,7 +797,7 @@ export default function PhotoGallery() {
                       </DropdownMenu>
                     </div>
                   </div>
-                  
+
                   {/* Like Count */}
                   {(photo.likes && photo.likes > 0) && (
                     <div className="flex items-center gap-1 mb-2">
@@ -798,7 +809,7 @@ export default function PhotoGallery() {
                       </span>
                     </div>
                   )}
-                  
+
                   {/* AI Analysis */}
                   {photo.aiAnalysis && (
                     <p className="text-sm text-gray-600 mt-2 italic">
@@ -835,7 +846,7 @@ export default function PhotoGallery() {
                             </div>
                           </div>
                         ))}
-                        
+
                         {getPhotoComments(photo.id).length > 2 && (
                           <button
                             onClick={() => setSelectedPhoto(photo)}
@@ -901,11 +912,12 @@ export default function PhotoGallery() {
               <DialogTitle className="sr-only">
                 Fotka od {getDisplayName(selectedPhoto.uploaderName, users)}
               </DialogTitle>
-              <div id="photo-description" className="sr-only">
-                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName, users)} dne {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')}
-                {selectedPhoto.aiAnalysis && `. AI popis: ${selectedPhoto.aiAnalysis}`}
-              </div>
-              <div className="relative h-full flex flex-col">
+              <DialogDescription>
+                Detail fotky nahrané {getDisplayName(selectedPhoto.uploaderName, users)} dne {
+                  new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')
+                }
+              </DialogDescription>
+                <div className="relative h-full flex flex-col">
                 {/* Top Controls */}
                 <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 flex justify-between items-center">
                   <GlassButton
@@ -1091,7 +1103,7 @@ export default function PhotoGallery() {
                         <MessageCircle className="mr-2" size={16} />
                         Komentáře ({comments.length})
                       </h4>
-                      
+
                       {/* Add Comment Form */}
                       {user ? (
                         <div className="mb-4">
@@ -1132,16 +1144,7 @@ export default function PhotoGallery() {
                       )}
 
                       {/* Comments List */}
-                      <div className="space-y-3 max-h-40 overflow-y-auto">
-                        {commentsLoading ? (
-                          <div className="flex justify-center py-4">
-                            <LoadingSpinner size="sm" />
-                          </div>
-                        ) : comments.length === 0 ? (
-                          <p className="text-white/60 text-sm text-center py-4">
-                            Zatím zde nejsou žádné komentáře
-                          </p>
-                        ) : (
+                      {comments.length > 0 ? (
                           comments.map((comment: any) => (
                             <div key={comment.id} className="bg-white/10 rounded-lg p-3">
                               <div className="flex items-start gap-2">
@@ -1169,6 +1172,10 @@ export default function PhotoGallery() {
                               </div>
                             </div>
                           ))
+                        ) : (
+                          <p className="text-white/60 text-sm text-center py-4">
+                            Zatím zde nejsou žádné komentáře
+                          </p>
                         )}
                       </div>
                     </div>
