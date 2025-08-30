@@ -232,12 +232,75 @@ export default function Navigation({}: NavigationProps = {}) {
         <div className="bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200">
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-6 py-4">
-            {/* Logo */}
+            {/* Logo and Mobile Menu */}
             <div className="flex items-center space-x-4">
-              <LogoElement
-                className="w-12 h-12"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              />
+              {/* Mobile Menu Button */}
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="lg:hidden p-2"
+                    data-testid="nav-mobile-trigger"
+                  >
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 bg-white/95 backdrop-blur-md">
+                  <SheetHeader>
+                    <SheetTitle className="text-charcoal flex items-center gap-2">
+                      <Sparkles className="text-blush" size={20} />
+                      Svatební menu
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <div className="mt-6 space-y-2">
+                    {navigationItems.map(({ href, label, icon, exact }) => {
+                      const isActive = exact ? location === href : location.startsWith(href);
+                      return (
+                        <a
+                          key={href}
+                          href={href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                            isActive
+                              ? 'bg-romantic text-white'
+                              : 'text-charcoal hover:bg-romantic/10'
+                          }`}
+                          data-testid={`mobile-nav-${href.replace('/', '') || 'home'}`}
+                        >
+                          <span className="text-lg">{icon}</span>
+                          <span className="font-medium">{label}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+
+                  {user && (
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div>
+                          <div className="font-medium text-charcoal">
+                            {user.firstName} {user.lastName}
+                          </div>
+                          <div className="text-sm text-charcoal/60">{user.email}</div>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        className="w-full"
+                        data-testid="mobile-nav-logout"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Odhlásit se
+                      </Button>
+                    </div>
+                  )}
+                </SheetContent>
+              </Sheet>
+              
+              <LogoElement className="w-12 h-12" />
               <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
                 M&Z
               </div>
@@ -301,73 +364,6 @@ export default function Navigation({}: NavigationProps = {}) {
         </div>
       </motion.nav>
 
-      {/* Mobile Navigation */}
-      <div className="lg:hidden">
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="fixed top-6 left-6 z-[10000] lg:hidden"
-              data-testid="nav-mobile-trigger"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-80 bg-white/95 backdrop-blur-md">
-            <SheetHeader>
-              <SheetTitle className="text-charcoal flex items-center gap-2">
-                <Sparkles className="text-blush" size={20} />
-                Svatební menu
-              </SheetTitle>
-            </SheetHeader>
-
-            <div className="mt-6 space-y-2">
-              {navigationItems.map(({ href, label, icon, exact }) => {
-                const isActive = exact ? location === href : location.startsWith(href);
-                return (
-                  <a
-                    key={href}
-                    href={href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-romantic text-white'
-                        : 'text-charcoal hover:bg-romantic/10'
-                    }`}
-                    data-testid={`mobile-nav-${href.replace('/', '') || 'home'}`}
-                  >
-                    <span className="text-lg">{icon}</span>
-                    <span className="font-medium">{label}</span>
-                  </a>
-                );
-              })}
-            </div>
-
-            {user && (
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div>
-                    <div className="font-medium text-charcoal">
-                      {user.firstName} {user.lastName}
-                    </div>
-                    <div className="text-sm text-charcoal/60">{user.email}</div>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  className="w-full"
-                  data-testid="mobile-nav-logout"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Odhlásit se
-                </Button>
-              </div>
-            )}
-          </SheetContent>
-        </Sheet>
-      </div>
 
       {/* Login Dropdown for non-authenticated users */}
       <AnimatePresence>
