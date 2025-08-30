@@ -10,6 +10,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -145,6 +146,9 @@ export default function VerificationTooltip({
             <Sparkles className="text-blue-500" size={20} />
             AI Analýza fotografie
           </DialogTitle>
+          <DialogDescription>
+            Detailní analýza fotografie provedená umělou inteligencí včetně hodnocení kvality a relevance.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
