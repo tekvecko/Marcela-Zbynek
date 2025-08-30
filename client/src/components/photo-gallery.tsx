@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn, MessageCircle, Share, MoreHorizontal, Globe, ChevronDown } from "lucide-react";
+import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn, MessageCircle, Share, MoreHorizontal, Globe, ChevronDown, Send, Download, Flag, Facebook, Twitter, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -44,6 +46,8 @@ export default function PhotoGallery() {
   const [selectedPhoto, setSelectedPhoto] = useState<UploadedPhoto | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flyingHearts, setFlyingHearts] = useState<Array<{id: string, x: number, y: number}>>([]);
+  const [newComment, setNewComment] = useState("");
+  const [showComments, setShowComments] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
@@ -101,6 +105,12 @@ export default function PhotoGallery() {
 
   const { data: photos = [], isLoading } = useQuery<UploadedPhoto[]>({
     queryKey: ["/api/photos"],
+  });
+
+  // Get comments for selected photo
+  const { data: comments = [], isLoading: commentsLoading } = useQuery({
+    queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
+    enabled: !!selectedPhoto?.id,
   });
 
   // Use simple display names without fetching user data (since /api/users endpoint doesn't exist)
@@ -314,6 +324,99 @@ export default function PhotoGallery() {
       }
     },
   });
+
+  // Add comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: async ({ photoId, content }: { photoId: string; content: string }) => {
+      return apiRequest(`/api/photos/${photoId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "💬 Komentář přidán",
+        description: "Váš komentář byl úspěšně přidán.",
+      });
+      setNewComment("");
+      queryClient.invalidateQueries({ queryKey: ["/api/photos", selectedPhoto?.id, "comments"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Chyba při přidávání komentáře",
+        description: error.message || "Nepodařilo se přidat komentář. Zkuste to prosím znovu.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Share photo functionality
+  const handleShare = (photo: UploadedPhoto, platform: string) => {
+    const photoUrl = `${window.location.origin}/uploads/${photo.filename}`;
+    const text = `Podívejte se na tuto krásnou svatební fotku od ${getDisplayName(photo.uploaderName, users)}!`;
+    
+    let shareUrl = '';
+    
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(photoUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(photoUrl)}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + photoUrl)}`;
+        break;
+      default:
+        // Native sharing if available
+        if (navigator.share) {
+          navigator.share({
+            title: 'Svatební fotka',
+            text: text,
+            url: photoUrl,
+          });
+          return;
+        } else {
+          // Fallback to copying to clipboard
+          navigator.clipboard.writeText(photoUrl).then(() => {
+            toast({
+              title: "📋 Odkaz zkopírován",
+              description: "Odkaz na fotku byl zkopírován do schránky.",
+            });
+          });
+          return;
+        }
+    }
+    
+    window.open(shareUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Download photo
+  const handleDownload = async (photo: UploadedPhoto) => {
+    try {
+      const response = await fetch(`/uploads/${photo.filename}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = photo.originalName || photo.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "📥 Fotka stažena",
+        description: "Fotka byla úspěšně stažena.",
+      });
+    } catch (error) {
+      toast({
+        title: "❌ Chyba při stahování",
+        description: "Nepodařilo se stáhnout fotku. Zkuste to prosím znovu.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -549,9 +652,23 @@ export default function PhotoGallery() {
                       />
                     )}
                     
-                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                      <MoreHorizontal size={20} className="text-gray-500" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                          <MoreHorizontal size={20} className="text-gray-500" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleDownload(photo)}>
+                          <Download size={16} className="mr-2" />
+                          Stáhnout fotku
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Flag size={16} className="mr-2" />
+                          Nahlásit fotku
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -598,15 +715,40 @@ export default function PhotoGallery() {
                         <span className="font-medium">Líbí se mi</span>
                       </button>
                       
-                      <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                      <button 
+                        onClick={() => setSelectedPhoto(photo)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                      >
                         <MessageCircle size={20} />
                         <span className="font-medium">Komentář</span>
                       </button>
                       
-                      <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
-                        <Share size={20} />
-                        <span className="font-medium">Sdílet</span>
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                            <Share size={20} />
+                            <span className="font-medium">Sdílet</span>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => handleShare(photo, 'facebook')}>
+                            <Facebook size={16} className="mr-2 text-blue-600" />
+                            Facebook
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShare(photo, 'twitter')}>
+                            <Twitter size={16} className="mr-2 text-blue-400" />
+                            Twitter
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShare(photo, 'whatsapp')}>
+                            <MessageSquare size={16} className="mr-2 text-green-600" />
+                            WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShare(photo, 'copy')}>
+                            <Share size={16} className="mr-2" />
+                            Zkopírovat odkaz
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                   
@@ -865,6 +1007,94 @@ export default function PhotoGallery() {
                         <p className="text-white/90 leading-relaxed text-xs sm:text-sm">{selectedPhoto.aiAnalysis}</p>
                       </div>
                     )}
+
+                    {/* Comments Section */}
+                    <div className="bg-black/50 rounded-lg p-3 sm:p-4 border border-white/10">
+                      <h4 className="font-medium mb-3 flex items-center text-sm sm:text-base">
+                        <MessageCircle className="mr-2" size={16} />
+                        Komentáře ({comments.length})
+                      </h4>
+                      
+                      {/* Add Comment Form */}
+                      {user ? (
+                        <div className="mb-4">
+                          <div className="flex gap-2">
+                            <Textarea
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              placeholder="Napište komentář..."
+                              className="flex-1 min-h-[60px] resize-none bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                              disabled={addCommentMutation.isPending}
+                            />
+                            <GlassButton
+                              onClick={() => {
+                                if (newComment.trim() && selectedPhoto) {
+                                  addCommentMutation.mutate({
+                                    photoId: selectedPhoto.id,
+                                    content: newComment.trim()
+                                  });
+                                }
+                              }}
+                              disabled={!newComment.trim() || addCommentMutation.isPending}
+                              variant="primary"
+                              size="sm"
+                              className="self-end"
+                            >
+                              {addCommentMutation.isPending ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <Send size={16} />
+                              )}
+                            </GlassButton>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-4 p-3 bg-white/10 rounded-lg text-center">
+                          <p className="text-white/80 text-sm">Přihlaste se pro přidání komentáře</p>
+                        </div>
+                      )}
+
+                      {/* Comments List */}
+                      <div className="space-y-3 max-h-40 overflow-y-auto">
+                        {commentsLoading ? (
+                          <div className="flex justify-center py-4">
+                            <LoadingSpinner size="sm" />
+                          </div>
+                        ) : comments.length === 0 ? (
+                          <p className="text-white/60 text-sm text-center py-4">
+                            Zatím zde nejsou žádné komentáře
+                          </p>
+                        ) : (
+                          comments.map((comment: any) => (
+                            <div key={comment.id} className="bg-white/10 rounded-lg p-3">
+                              <div className="flex items-start gap-2">
+                                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">
+                                  {comment.commenterName?.charAt(0)?.toUpperCase() || '?'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-white font-medium text-sm">
+                                      {comment.commenterName}
+                                    </span>
+                                    <span className="text-white/60 text-xs">
+                                      {new Date(comment.createdAt).toLocaleDateString('cs-CZ', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
+                                  </div>
+                                  <p className="text-white/90 text-sm leading-relaxed">
+                                    {comment.content}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
