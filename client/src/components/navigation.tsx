@@ -94,7 +94,7 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Clean hide-on-scroll functionality
+  // Clean hide-on-scroll functionality - show on any upward scroll
   useEffect(() => {
     let ticking = false;
 
@@ -103,12 +103,16 @@ export default function Navigation({}: NavigationProps = {}) {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           
-          // Show nav at top or when scrolling up
+          // Always show when at top
           if (currentScrollY <= 50) {
             setIsVisible(true);
-          } else if (currentScrollY < lastScrollY) {
+          } 
+          // Show navigation whenever user scrolls up (anywhere on page)
+          else if (currentScrollY < lastScrollY) {
             setIsVisible(true);
-          } else if (currentScrollY > lastScrollY && currentScrollY > 150) {
+          } 
+          // Hide only when scrolling down and past a certain threshold
+          else if (currentScrollY > lastScrollY && currentScrollY > 100) {
             setIsVisible(false);
           }
           
