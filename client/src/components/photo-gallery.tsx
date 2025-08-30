@@ -954,13 +954,17 @@ export default function PhotoGallery() {
                 <div
                   className={`${
                     isFullscreen 
-                      ? 'absolute inset-0 flex items-center justify-center' 
+                      ? 'absolute inset-0 flex items-center justify-center bg-black' 
                       : 'min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh] flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16'
                   }`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div 
-                    className="cursor-pointer"
+                    className={`cursor-pointer ${
+                      isFullscreen 
+                        ? 'w-full h-full flex items-center justify-center' 
+                        : ''
+                    }`}
                     onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       // Dvojklik na fotku přepne fullscreen
@@ -972,7 +976,7 @@ export default function PhotoGallery() {
                       alt={selectedPhoto.aiAnalysis || "Wedding photo"}
                       className={`${
                         isFullscreen
-                          ? 'max-w-screen max-h-screen w-auto h-auto object-contain'
+                          ? 'max-w-full max-h-full w-auto h-auto object-contain'
                           : 'w-full h-full max-w-full max-h-full object-contain'
                       }`}
                     />
