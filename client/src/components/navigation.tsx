@@ -21,6 +21,7 @@ export default function Navigation({}: NavigationProps = {}) {
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [currentScrollY, setCurrentScrollY] = useState(0);
   const [location] = useLocation();
   const { user, logout, login } = useAuth();
   const isMobile = useIsMobile();
@@ -102,10 +103,10 @@ export default function Navigation({}: NavigationProps = {}) {
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
+          const scrollY = window.scrollY;
           
           // Simple logic: up = show, down = hide
-          if (currentScrollY > previousScrollY && currentScrollY > 100) {
+          if (scrollY > previousScrollY && scrollY > 100) {
             // Scrolling down
             setIsVisible(false);
           } else {
@@ -113,8 +114,9 @@ export default function Navigation({}: NavigationProps = {}) {
             setIsVisible(true);
           }
           
-          previousScrollY = currentScrollY;
-          setLastScrollY(currentScrollY);
+          previousScrollY = scrollY;
+          setLastScrollY(scrollY);
+          setCurrentScrollY(scrollY);
           ticking = false;
         });
         ticking = true;
@@ -124,6 +126,7 @@ export default function Navigation({}: NavigationProps = {}) {
     // Initialize as visible
     setIsVisible(true);
     setLastScrollY(0);
+    setCurrentScrollY(window.scrollY);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     
@@ -390,9 +393,9 @@ export default function Navigation({}: NavigationProps = {}) {
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             className="fixed z-[10000] w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 p-6"
             style={{
-              top: `${Math.min(Math.max(80, 80 - lastScrollY * 0.1), window.innerHeight - 400)}px`,
+              top: `${Math.min(Math.max(currentScrollY + 80, 20), currentScrollY + window.innerHeight - 420)}px`,
               right: '1rem',
-              maxHeight: `${window.innerHeight - 100}px`,
+              maxHeight: `${Math.min(400, window.innerHeight - 40)}px`,
               overflowY: 'auto'
             }}
           >
