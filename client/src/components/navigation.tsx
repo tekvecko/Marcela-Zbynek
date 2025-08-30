@@ -1,62 +1,40 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut } from "lucide-react"; // Importuji Star icon for Profile link
+import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut } from "lucide-react";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"; // Import Sheet components
-import { Button } from "@/components/ui/button"; // Import Button component
-
-// Placeholder for GlassButton, assuming it's imported from a UI library
-// import { GlassButton } from "@/components/ui/glass-button";
-// Mock GlassButton for demonstration purposes
-const GlassButton = ({ children, variant, size, className, ...props }) => (
-  <button className={`glass-button ${className}`} {...props}>
-    {children}
-  </button>
-);
-// Placeholder for Link, assuming it's imported from a routing library
-// import Link from 'next/link'; // Or your preferred routing library
-// Mock Link for demonstration purposes
-const Link = ({ href, children, ...props }) => (
-  <a href={href} {...props}>
-    {children}
-  </a>
-);
-
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 interface NavigationProps {}
 
 export default function Navigation({}: NavigationProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [isMounted, setIsMounted] = useState(false);
-  const [viewportWidth, setViewportWidth] = useState(0);
-  const [devicePerformance, setDevicePerformance] = useState<'high' | 'medium' | 'low'>('high');
-  const [userInteractionPattern, setUserInteractionPattern] = useState<'touch' | 'mouse' | 'hybrid'>('mouse');
-  const [scrollVelocity, setScrollVelocity] = useState(0);
-  const [animationDuration, setAnimationDuration] = useState(0.3);
-  const [contextMenuPosition, setContextMenuPosition] = useState<{x: number, y: number} | null>(null);
-  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { user, logout, login, isLoggingOut } = useAuth();
+  const { user, logout, login } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  // Mock notification and achievement counts for demonstration
-  const unreadNotifications = 7;
-  const unreadAchievements = 1;
+  // Navigation items - simplified
+  const navigationItems = [
+    { href: '/', label: 'Domů', icon: '🏠', exact: true },
+    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true },
+    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true },
+    { href: '/details', label: 'Detaily', icon: '💒', exact: true },
+    { href: '/profile', label: 'Profil', icon: '⭐', exact: true },
+    ...(user?.isAdmin ? [{ href: '/admin', label: 'Admin', icon: '⚙️', exact: true }] : [])
+  ];
 
   // Login form state
   const [loginFormData, setLoginFormData] = useState({
@@ -93,7 +71,6 @@ export default function Navigation({}: NavigationProps = {}) {
       localStorage.setItem("auth_user", JSON.stringify(data.user));
       login(data.user, token);
       setIsLoginDropdownOpen(false);
-      setIsVisible(true); // Zajistit viditelnost po přihlášení
       setLoginFormData({ email: "", password: "" });
       setLoginErrors({});
       toast({
@@ -114,336 +91,52 @@ export default function Navigation({}: NavigationProps = {}) {
   const { data: userLevel } = useQuery({
     queryKey: ["/api/user/level"],
     enabled: !!user,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
   });
 
-  // Enhanced adaptive viewport detection
-  const viewportBreakpoint = useMemo(() => {
-    if (viewportWidth < 475) return 'xs';
-    if (viewportWidth < 640) return 'sm';
-    if (viewportWidth < 768) return 'md';
-    if (viewportWidth < 1024) return 'lg';
-    if (viewportWidth < 1280) return 'xl';
-    return '2xl';
-  }, [viewportWidth]);
-
-  // Navigation items with priority and adaptive behavior
-  const navigationItems = useMemo(() => [
-    { href: '/', label: 'Domů', icon: '🏠', exact: true, priority: 1, essential: true },
-    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true, priority: 2, essential: true },
-    { href: '/mini-games', label: 'Mini-hry', icon: '🎮', exact: false, priority: 3, essential: false },
-    { href: '/leaderboards', label: 'Žebříčky', icon: '🏆', exact: true, priority: 4, essential: false },
-    { href: '/profile', label: 'Profil', icon: '⭐', exact: true, priority: 4, essential: true }, // Added Profile Link
-    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true, priority: 2, essential: true },
-    { href: '/details', label: 'Detaily', icon: '💒', exact: true, priority: 3, essential: false },
-    { href: '/admin', label: 'Admin', icon: '⚙️', exact: true, priority: 5, essential: false }
-  ], []);
-
-  // Smart navigation item filtering based on viewport and context
-  const visibleNavigationItems = useMemo(() => {
-    const maxItems = {
-      'xs': 2, 'sm': 3, 'md': 4, 'lg': 6, 'xl': 7, '2xl': 7
-    }[viewportBreakpoint];
-
-    let filteredItems = navigationItems
-      .filter(item => item.href !== '/admin' || user?.isAdmin)
-      .sort((a, b) => a.priority - b.priority);
-
-    // Always include essential items and current page
-    const essentialItems = filteredItems.filter(item =>
-      item.essential || location === item.href ||
-      (!item.exact && location.startsWith(item.href))
-    );
-
-    if (essentialItems.length >= maxItems) {
-      return essentialItems.slice(0, maxItems);
-    }
-
-    // Fill remaining slots with non-essential items
-    const remainingSlots = maxItems - essentialItems.length;
-    const nonEssentialItems = filteredItems
-      .filter(item => !essentialItems.includes(item))
-      .slice(0, remainingSlots);
-
-    return [...essentialItems, ...nonEssentialItems];
-  }, [navigationItems, viewportBreakpoint, user?.isAdmin, location]);
-
-  // Adaptive animation configurations based on device performance
-  const animationConfig = useMemo(() => {
-    const baseConfig = {
-      high: {
-        type: "spring" as const,
-        stiffness: 400,
-        damping: 28,
-        mass: 0.6,
-        bounce: 0.15,
-        duration: 0.3
-      },
-      medium: {
-        type: "spring" as const,
-        stiffness: 300,
-        damping: 35,
-        mass: 0.8,
-        bounce: 0.1,
-        duration: 0.4
-      },
-      low: {
-        type: "tween" as const,
-        duration: 0.5,
-        ease: "easeInOut" as const
-      }
-    };
-
-    return baseConfig[devicePerformance];
-  }, [devicePerformance]);
-
-  // Ensure component is mounted
+  // Clean hide-on-scroll functionality
   useEffect(() => {
-    setIsMounted(true);
-    setIsVisible(true); // Vždy zobrazit navigaci po načtení
-  }, []);
-
-  // Smooth scroll handling with debouncing to prevent flickering
-  useEffect(() => {
-    let localLastScrollY = 0;
-    let scrollTimeout: NodeJS.Timeout;
-    let scrollVelocity = 0;
-    let lastScrollTime = 0;
+    let ticking = false;
 
     const handleScroll = () => {
-      // Skip scroll handling when any menu is open to prevent conflicts
-      if (isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) {
-        return;
-      }
-
-      const currentScrollY = window.scrollY;
-      const currentTime = Date.now();
-      const scrollDelta = currentScrollY - localLastScrollY;
-      const timeDelta = currentTime - lastScrollTime;
-
-      // Calculate scroll velocity
-      scrollVelocity = timeDelta > 0 ? Math.abs(scrollDelta) / timeDelta : 0;
-
-      // Clear existing timeout
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-
-      // Always show at the top
-      if (currentScrollY <= 10) {
-        setIsVisible(true);
-        localLastScrollY = currentScrollY;
-        lastScrollTime = currentTime;
-        return;
-      }
-
-      // Require more significant scroll movement to trigger changes
-      const threshold = scrollVelocity > 0.5 ? 15 : 25; // Dynamic threshold based on velocity
-
-      if (Math.abs(scrollDelta) > threshold) {
-        if (scrollDelta > 0) {
-          // Scrolling down - hide with delay to prevent flickering
-          scrollTimeout = setTimeout(() => {
-            if (window.scrollY > 10 && !isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen) {
-              setIsVisible(false);
-            }
-          }, 100);
-        } else {
-          // Scrolling up - show immediately
-          setIsVisible(true);
-        }
-
-        localLastScrollY = currentScrollY;
-      }
-
-      lastScrollTime = currentTime;
-    };
-
-    // Throttled scroll listening to reduce frequency
-    let ticking = false;
-    const throttledScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          handleScroll();
+          const currentScrollY = window.scrollY;
+          
+          // Show nav at top or when scrolling up
+          if (currentScrollY <= 50) {
+            setIsVisible(true);
+          } else if (currentScrollY < lastScrollY) {
+            setIsVisible(true);
+          } else if (currentScrollY > lastScrollY && currentScrollY > 150) {
+            setIsVisible(false);
+          }
+          
+          setLastScrollY(currentScrollY);
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    // Only add scroll listener when all menus are closed
-    if (!isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen) {
-      window.addEventListener('scroll', throttledScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  // Handle login form input changes
+  const handleLoginInputChange = (field: string, value: string) => {
+    setLoginFormData(prev => ({ ...prev, [field]: value }));
+    if (loginErrors[field]) {
+      setLoginErrors(prev => ({ ...prev, [field]: "" }));
     }
-
-    return () => {
-      window.removeEventListener('scroll', throttledScroll);
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-    };
-  }, [isMenuOpen, isUserMenuOpen, isLoginDropdownOpen, isVisible]);
-
-  // Ultra-responsive gesture handling
-  useEffect(() => {
-    let touchStartY = 0;
-    let touchStartX = 0;
-    let touchStartTime = 0;
-    let longPressTimer: NodeJS.Timeout;
-    let isDragging = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      touchStartY = touch.clientY;
-      touchStartX = touch.clientX;
-      touchStartTime = Date.now();
-      isDragging = false;
-
-      // Shorter long press for faster response
-      longPressTimer = setTimeout(() => {
-        if (!isDragging) {
-          setContextMenuPosition({ x: touch.clientX, y: touch.clientY });
-          setIsContextMenuOpen(true);
-          if (navigator.vibrate) {
-            navigator.vibrate(30); // Shorter vibration
-          }
-        }
-      }, 300); // Reduced from 500ms to 300ms
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      const deltaY = touch.clientY - touchStartY;
-      const deltaX = touch.clientX - touchStartX;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-      if (distance > 5) {
-        isDragging = true;
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-        }
-      }
-
-      // Much more sensitive gesture detection
-      if (distance > 15 && Math.abs(deltaY) > Math.abs(deltaX) * 0.7) {
-        const deltaTime = Date.now() - touchStartTime;
-
-        // Instant response for fast gestures
-        if (deltaTime < 500 && Math.abs(deltaY) > 20) {
-          e.preventDefault();
-          if (deltaY > 0) {
-            // Swipe down - show navigation
-            setIsVisible(true);
-            setIsMenuOpen(false);
-          } else {
-            // Swipe up - hide navigation
-            setIsVisible(false);
-            setIsMenuOpen(false);
-          }
-          // Reset touch tracking
-          touchStartY = touch.clientY;
-          touchStartTime = Date.now();
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      isDragging = false;
-      if (longPressTimer) {
-        clearTimeout(longPressTimer);
-      }
-    };
-
-    const handleClick = (e: MouseEvent) => {
-      // Nezasahovat do klikání na interaktivní elementy
-      const target = e.target as Element;
-      if (target && (
-        target.closest('button') ||
-        target.closest('a') ||
-        target.closest('[role="button"]') ||
-        target.closest('input') ||
-        target.closest('textarea') ||
-        target.closest('select')
-      )) {
-        return;
-      }
-
-      if (isContextMenuOpen) {
-        setIsContextMenuOpen(false);
-        setContextMenuPosition(null);
-      }
-      // Zavřít user menu při kliknutí mimo něj
-      if (isUserMenuOpen && !target?.closest('[data-user-menu]')) {
-        setIsUserMenuOpen(false);
-      }
-      // Zavřít login dropdown při kliknutí mimo něj
-      if (isLoginDropdownOpen && !target?.closest('[data-login-dropdown]')) {
-        setIsLoginDropdownOpen(false);
-        setIsVisible(true); // Zajistit viditelnost po zavření
-      }
-    };
-
-    // Use capture phase for faster response on touch events only
-    document.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
-    document.addEventListener('touchend', handleTouchEnd, { passive: true, capture: true });
-    // Click event bez capture aby se nespouštěl dříve než onClick handlery tlačítek
-    document.addEventListener('click', handleClick, { passive: true });
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart, { capture: true } as any);
-      document.removeEventListener('touchmove', handleTouchMove, { capture: true } as any);
-      document.removeEventListener('touchend', handleTouchEnd, { capture: true } as any);
-      document.removeEventListener('click', handleClick);
-      if (longPressTimer) {
-        clearTimeout(longPressTimer);
-      }
-    };
-  }, [isContextMenuOpen]);
-
-  // Cleanup body scroll lock on unmount or menu close
-  useEffect(() => {
-    return () => {
-      // Always restore scrolling when component unmounts
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
-  }, []);
-
-  // Handle body scroll lock when menu state changes
-  useEffect(() => {
-    if (isMenuOpen) {
-      // Store current scroll position
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-    } else {
-      // Restore scroll position
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
-    }
-  }, [isMenuOpen]);
-
-  const handleLogout = async () => {
-    await logout();
-    setIsMenuOpen(false);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // Handle login form submission
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginErrors({});
-
     try {
-      loginSchema.parse(loginFormData);
-      loginMutation.mutate(loginFormData);
+      const validatedData = loginSchema.parse(loginFormData);
+      await loginMutation.mutateAsync(validatedData);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -457,722 +150,171 @@ export default function Navigation({}: NavigationProps = {}) {
     }
   };
 
-  const handleLoginInputChange = (field: string, value: string) => {
-    setLoginFormData((prev) => ({ ...prev, [field]: value }));
-    if (loginErrors[field]) {
-      setLoginErrors((prev) => ({ ...prev, [field]: "" }));
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsMenuOpen(false);
+      toast({
+        title: "Odhlášení úspěšné",
+        description: "Byly jste úspěšně odhlášeni.",
+      });
+    } catch (error) {
+      toast({
+        title: "Chyba při odhlášení",
+        description: "Došlo k chybě při odhlášení.",
+        variant: "destructive",
+      });
     }
   };
 
-  const toggleMenu = () => {
-    const newState = !isMenuOpen;
-    setIsMenuOpen(newState);
-
-    // When opening menu, ensure panel is visible and stable
-    if (newState) {
-      setIsVisible(true);
-    }
-  };
-
-  // Handler pro uživatelské menu - zajistí viditelnost navigace
-  const handleUserMenuToggle = () => {
-    setIsUserMenuOpen(!isUserMenuOpen);
-    if (!isUserMenuOpen) {
-      setIsVisible(true);
-    }
-  };
-
-  // Handler pro login dropdown - zajistí viditelnost navigace
+  // Toggle login dropdown
   const handleLoginDropdownToggle = () => {
     setIsLoginDropdownOpen(!isLoginDropdownOpen);
-    if (!isLoginDropdownOpen) {
-      setIsVisible(true);
-    }
   };
 
-  const LogoElement = ({ className = "w-12 h-12 sm:w-14 sm:h-14", onClick }: { className?: string; onClick?: () => void }) => (
-    <motion.div className="relative">
-      <motion.button
-        onClick={onClick}
-        className={`${className} logo-toggle-button focus:outline-none focus:ring-4 focus:ring-romantic/30 rounded-xl relative group`}
-        data-testid="logo-menu-toggle"
-        whileHover={{ scale: 1.15 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+  // Logo element component
+  const LogoElement = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
+    <motion.button
+      className={`group relative ${className} cursor-pointer hover:scale-105 transition-transform duration-200`}
+      onClick={onClick}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      data-testid="nav-logo"
+    >
+      <img
+        src={logoImage}
+        alt="M&Z Wedding Logo"
+        className="w-full h-full object-contain filter drop-shadow-lg group-hover:drop-shadow-xl transition-all duration-300"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          border: '2px solid rgba(255, 255, 255, 0.2)',
-          padding: '6px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+          objectFit: 'contain',
+          imageRendering: 'crisp-edges'
         }}
-      >
-        <img
-          src={logoImage}
-          alt="M&Z Logo - Menu Toggle"
-          className={`w-full h-full transition-all duration-300 ${isMenuOpen ? 'logo-animate' : 'logo-static'}`}
-          style={{
-            backgroundColor: 'transparent',
-            objectFit: 'contain',
-            imageRendering: 'crisp-edges'
-          }}
-        />
-
-        {/* Vizuální indikátor pro kliknutí */}
-        <motion.div
-          className="absolute -top-1 -right-1 w-3 h-3 bg-romantic rounded-full shadow-lg"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.7, 1, 0.7]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-
-        {/* Tooltip indikátor */}
-        <motion.div
-          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-romantic text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-          initial={{ opacity: 0, y: -5 }}
-          whileHover={{ opacity: 1, y: 0 }}
-        >
-          Klikni pro menu
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-romantic"></div>
-        </motion.div>
-      </motion.button>
-    </motion.div>
+      />
+      
+      <motion.div
+        className="absolute -top-1 -right-1 w-3 h-3 bg-romantic rounded-full shadow-lg"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.7, 1, 0.7]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+    </motion.button>
   );
 
   return (
     <>
       {/* Modern Floating Navigation */}
       <motion.nav
-        className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
+        className="fixed top-4 left-4 right-4 z-[9999] max-w-6xl mx-auto"
         initial={{ y: -100, opacity: 0 }}
         animate={{
-          y: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 0 : -100,
-          opacity: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 1 : 0
+          y: isVisible ? 0 : -100,
+          opacity: isVisible ? 1 : 0
         }}
         transition={{
           type: "spring",
-          stiffness: 700,
-          damping: 40,
-          mass: 0.4,
-          velocity: isVisible ? 0 : -50
+          stiffness: 300,
+          damping: 30,
+          mass: 0.8
         }}
-
       >
-        <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden pointer-events-auto" style={{
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
-          position: 'relative',
-          zIndex: 10000
-        }}>
+        <div className="bg-white/85 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 overflow-hidden">
           {/* Main Navigation Bar */}
-          <div className="flex items-center justify-between px-3 sm:px-5 md:px-7 py-3 sm:py-4">
-            {/* Logo as Menu Toggle */}
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* Logo */}
             <div className="flex items-center space-x-4">
               <LogoElement
-                className="w-12 h-12 sm:w-14 sm:h-14"
-                onClick={toggleMenu}
+                className="w-12 h-12"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
               />
-              <div className="font-dancing text-3xl sm:text-4xl text-romantic font-bold hidden sm:block">
+              <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
                 M&Z
               </div>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map(({ href, label, icon, exact }, index) => {
+              {navigationItems.map(({ href, label, icon, exact }) => {
                 const isActive = exact ? location === href : location.startsWith(href);
-                if (href === '/admin' && !user?.isAdmin) return null;
                 return (
-                  <motion.div key={href} className="relative">
-                    <a
-                      href={href}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200 ${
-                        isActive
-                          ? 'bg-romantic/10 text-romantic'
-                          : 'hover:bg-romantic/5 text-gray-700'
-                      }`}
-                      data-testid={`nav-link-${href.replace('/', '') || 'home'}`}
-                    >
-                      <span className="text-lg">{icon}</span>
-                      <span className="font-medium text-sm">{label}</span>
-                    </a>
-                    {isActive && (
-                      <motion.div
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-romantic rounded-full"
-                        layoutId="desktopActiveTab"
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                  </motion.div>
+                  <motion.a
+                    key={href}
+                    href={href}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-romantic text-white shadow-lg'
+                        : 'text-charcoal hover:bg-romantic/10 hover:text-romantic'
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    data-testid={`nav-${href.replace('/', '') || 'home'}`}
+                  >
+                    <span>{icon}</span>
+                    <span>{label}</span>
+                  </motion.a>
                 );
               })}
             </div>
 
-            {/* Enhanced User Menu - Only for logged in users */}
-            <div className="flex items-center">
-              <AnimatePresence mode="wait">
-                {user && (
-                  <motion.div
-                    key="user-menu"
-                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
-                    className="relative"
-                  >
-                    {/* Dropdown menu */}
-                    <div className="relative" data-user-menu>
-                      <motion.button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleUserMenuToggle();
-                        }}
-                        className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-romantic/10 to-romantic/15 hover:from-romantic/20 hover:to-romantic/25 border border-romantic/20 transition-all duration-300 relative group"
-                        whileHover={{ scale: 1.05, y: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                          boxShadow: '0 4px 15px rgba(155, 119, 148, 0.1)'
-                        }}
-                      >
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-romantic/5 to-romantic/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                        <motion.div
-                          className="relative"
-                          whileHover={{ scale: 1.1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <UserAvatar
-                            user={user}
-                            size="md"
-                            showOnlineStatus={true}
-                          />
-                        </motion.div>
-
-                        <div className="hidden sm:flex flex-col relative">
-                          <span className="text-sm font-medium text-charcoal leading-none">
-                            {user?.firstName || user?.email?.split('@')[0]}
-                          </span>
-                          <span className="text-xs text-charcoal/60 leading-none mt-0.5 flex items-center">
-                            Menu
-                            <motion.span
-                              className="ml-1"
-                              animate={{ rotate: isUserMenuOpen ? 180 : 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              ▼
-                            </motion.span>
-                          </span>
-                        </div>
-
-                        {/* Level badge */}
-                        <motion.div
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-gold to-yellow-400 rounded-full flex items-center justify-center border-2 border-white shadow-lg"
-                          whileHover={{ scale: 1.2, rotate: [0, -5, 5, 0] }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <span className="text-xs font-bold text-white">
-                            {userLevel?.level || 1}
-                          </span>
-                        </motion.div>
-                      </motion.button>
-
-                      {/* Dropdown Menu */}
-                      <AnimatePresence>
-                        {isUserMenuOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden z-50"
-                            style={{
-                              backdropFilter: 'blur(40px) saturate(180%)',
-                              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {/* Profile Link */}
-                            <motion.button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setIsUserMenuOpen(false);
-                                window.location.href = '/profile';
-                              }}
-                              className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group text-left"
-                              whileHover={{ x: 4 }}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-romantic/20 flex items-center justify-center">
-                                <span className="text-sm">👤</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium text-charcoal">Můj profil</span>
-                                <span className="text-xs text-charcoal/60">Úroveň a statistiky</span>
-                              </div>
-                              <Star className="w-4 h-4 text-romantic ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </motion.button>
-
-                            {/* Divider */}
-                            <div className="h-px bg-romantic/10 mx-4" />
-
-                            {/* Settings (pokud máte) */}
-                            <motion.button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setIsUserMenuOpen(false);
-                                // Zde můžete přidat logiku pro nastavení
-                              }}
-                              className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-romantic/10 transition-all duration-200 group"
-                              whileHover={{ x: 4 }}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                                <span className="text-sm">⚙️</span>
-                              </div>
-                              <div className="flex flex-col text-left">
-                                <span className="text-sm font-medium text-charcoal">Nastavení</span>
-                                <span className="text-xs text-charcoal/60">Předvolby aplikace</span>
-                              </div>
-                            </motion.button>
-
-                            {/* Divider */}
-                            <div className="h-px bg-red-200/50 mx-4" />
-
-                            {/* Logout Button */}
-                            <motion.button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setIsUserMenuOpen(false);
-                                handleLogout();
-                              }}
-                              disabled={isLoggingOut}
-                              className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 transition-all duration-200 group text-red-600"
-                              whileHover={{ x: 4 }}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                                <motion.span
-                                  className="text-sm"
-                                  animate={isLoggingOut ? { rotate: 360 } : {}}
-                                  transition={{ duration: 1, repeat: isLoggingOut ? Infinity : 0 }}
-                                >
-                                  {isLoggingOut ? '⏳' : '🚪'}
-                                </motion.span>
-                              </div>
-                              <div className="flex flex-col text-left">
-                                <span className="text-sm font-medium">
-                                  {isLoggingOut ? 'Odhlašuji...' : 'Odhlásit se'}
-                                </span>
-                                <span className="text-xs text-red-500/60">Ukončit relaci</span>
-                              </div>
-                            </motion.button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+            {/* User Section */}
+            <div className="flex items-center space-x-3">
+              {user ? (
+                <div className="flex items-center space-x-3">
+                  <UserAvatar
+                    user={user}
+                    className="w-10 h-10"
+                    data-testid="nav-user-avatar"
+                  />
+                  <div className="hidden md:block">
+                    <div className="text-sm font-medium text-charcoal">
+                      {user.firstName} {user.lastName}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+                  <motion.button
+                    onClick={handleLogout}
+                    className="p-2 rounded-full hover:bg-red-100 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    data-testid="nav-logout-btn"
+                  >
+                    <LogOut className="h-5 w-5 text-red-500" />
+                  </motion.button>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => setIsLoginDropdownOpen(!isLoginDropdownOpen)}
+                  variant="outline"
+                  size="sm"
+                  data-testid="nav-login-btn"
+                >
+                  Přihlásit se
+                </Button>
+              )}
             </div>
           </div>
-
-          {/* Mobile Navigation Menu - 60fps optimized */}
-          <AnimatePresence mode="wait">
-            {isMenuOpen && (
-              <motion.div
-                initial={{
-                  height: 0,
-                  opacity: 0,
-                  scaleY: 0,
-                  transformOrigin: "top"
-                }}
-                animate={{
-                  height: "auto",
-                  opacity: 1,
-                  scaleY: 1,
-                  transformOrigin: "top"
-                }}
-                exit={{
-                  height: 0,
-                  opacity: 0,
-                  scaleY: 0,
-                  transformOrigin: "top"
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 600,
-                  damping: 40,
-                  mass: 0.8,
-                  velocity: 2,
-                  duration: 0.4,
-                  opacity: { duration: 0.2 }
-                }}
-                className="lg:hidden border-t border-white/20 bg-white/70 backdrop-blur-3xl overflow-hidden will-change-transform"
-                style={{
-                  backdropFilter: 'blur(40px) saturate(150%)',
-                  WebkitBackdropFilter: 'blur(40px) saturate(150%)',
-                  transform: 'translateZ(0)', // Force hardware acceleration
-                  willChange: 'transform, opacity, height'
-                }}
-              >
-                <div className="p-3 sm:p-5">
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
-                    {navigationItems.map(({ href, label, icon, exact }, index) => {
-                      const isActive = exact ? location === href : location.startsWith(href);
-                      if (href === '/admin' && !user?.isAdmin) return null;
-                      return (
-                        <motion.div
-                          key={href}
-                          initial={{
-                            opacity: 0,
-                            y: 24,
-                            scale: 0.9,
-                            rotateX: -15
-                          }}
-                          animate={{
-                            opacity: 1,
-                            y: 0,
-                            scale: 1,
-                            rotateX: 0,
-                            transition: {
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 25,
-                              mass: 0.6,
-                              delay: index * 0.08,
-                              duration: 0.5
-                            }
-                          }}
-                          exit={{
-                            opacity: 0,
-                            y: -20,
-                            scale: 0.8,
-                            rotateX: 15,
-                            transition: { duration: 0.2 }
-                          }}
-                          className="will-change-transform"
-                          style={{
-                            transform: 'translateZ(0)',
-                            willChange: 'transform, opacity'
-                          }}
-                        >
-                          <a
-                            href={href}
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                            }}
-                            className={`flex flex-col items-center space-y-1 sm:space-y-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 ${
-                              isActive
-                                ? 'bg-romantic/10 shadow-sm text-romantic'
-                                : 'hover:bg-romantic/5 text-gray-700'
-                            }`}
-                          >
-                            <span className="text-xl sm:text-2xl">{icon}</span>
-                            <span className="text-xs font-medium text-center leading-tight">{label}</span>
-                            {isActive && (
-                              <motion.div
-                                className="w-4 h-0.5 bg-romantic rounded-full"
-                                layoutId="mobileActiveTab"
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              />
-                            )}
-                          </a>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Mobile User Section */}
-                  {user && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="mt-4 pt-4 border-t border-romantic/10"
-                    >
-                      <div className="flex items-center justify-between p-3 bg-romantic/5 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <UserAvatar
-                            user={user}
-                            size="md"
-                          />
-                          <div className="text-sm font-medium text-gray-700">
-                            {user?.firstName} {user?.lastName}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </motion.nav>
 
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden pointer-events-auto"
-            data-menu-open="true"
-            style={{
-              touchAction: 'none', // Prevent touch scrolling on overlay
-              WebkitTouchCallout: 'none',
-              WebkitUserSelect: 'none',
-              userSelect: 'none'
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsMenuOpen(false);
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault(); // Prevent scrolling when touching overlay
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Floating Login Button - Bottom Left */}
-      <AnimatePresence>
-        {!user && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, x: -50 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: -50 }}
-            transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
-            className="fixed bottom-6 left-6 z-[9998] pointer-events-auto"
-          >
-            <div className="relative" data-login-dropdown>
-              <motion.button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleLoginDropdownToggle();
-                }}
-                className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-romantic to-love text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 relative group"
-                whileHover={{ scale: 1.1, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                  boxShadow: '0 8px 32px rgba(155, 119, 148, 0.3)'
-                }}
-              >
-                {/* Gradient overlay při hover */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-love/20 to-romantic/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <motion.div
-                  className="relative"
-                  whileHover={{ rotate: [0, -10, 10, 0] }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <span className="text-2xl">👤</span>
-                </motion.div>
-
-                {/* Pulzující indikátor */}
-                <motion.div
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full shadow-md border-2 border-white"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.8, 1, 0.8]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-
-                {/* Tooltip */}
-                <motion.div
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 bg-charcoal text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-                  initial={{ opacity: 0, y: 5 }}
-                  whileHover={{ opacity: 1, y: 0 }}
-                >
-                  Přihlásit se
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-charcoal"></div>
-                </motion.div>
-              </motion.button>
-
-              {/* Login Dropdown */}
-              <AnimatePresence>
-                {isLoginDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute bottom-full left-0 mb-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden"
-                    style={{
-                      backdropFilter: 'blur(40px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-6">
-                      <div className="text-center mb-6">
-                        <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
-                        <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
-                      </div>
-
-                      <form onSubmit={handleLoginSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="float-email" className="text-charcoal/80 font-medium">E-mail</Label>
-                          <div className="relative group">
-                            <motion.div
-                              className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
-                              animate={{
-                                scale: loginFormData.email ? 1.1 : 1,
-                                color: loginFormData.email ? "#9b7794" : "#64748b66"
-                              }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </motion.div>
-                            <Input
-                              id="float-email"
-                              type="email"
-                              placeholder="vas.email@example.com"
-                              value={loginFormData.email}
-                              onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                              className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
-                            />
-                          </div>
-                          <AnimatePresence>
-                            {loginErrors.email && (
-                              <motion.p
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
-                                className="text-red-500 text-sm"
-                              >
-                                {loginErrors.email}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="float-password" className="text-charcoal/80 font-medium">Heslo</Label>
-                          <div className="relative group">
-                            <motion.div
-                              className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
-                              animate={{
-                                scale: loginFormData.password ? 1.1 : 1,
-                                color: loginFormData.password ? "#9b7794" : "#64748b66"
-                              }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Lock className="h-4 w-4" />
-                            </motion.div>
-                            <Input
-                              id="float-password"
-                              type="password"
-                              placeholder="••••••••"
-                              value={loginFormData.password}
-                              onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                              className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
-                            />
-                          </div>
-                          <AnimatePresence>
-                            {loginErrors.password && (
-                              <motion.p
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
-                                className="text-red-500 text-sm"
-                              >
-                                {loginErrors.password}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <motion.button
-                          type="submit"
-                          disabled={loginMutation.isPending}
-                          className="w-full bg-gradient-to-r from-romantic to-love text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          {loginMutation.isPending && (
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                              <Loader2 size={18} />
-                            </motion.div>
-                          )}
-                          {loginMutation.isPending ? "Přihlašování..." : "🚀 Přihlásit se"}
-                        </motion.button>
-                      </form>
-
-                      <div className="mt-4 text-center">
-                        <motion.a
-                          href="/login"
-                          onClick={() => {
-                            setIsLoginDropdownOpen(false);
-                            setIsVisible(true);
-                          }}
-                          className="text-sm text-romantic hover:text-love transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          ✨ Nemáte účet? Registrujte se zde
-                        </motion.a>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Mobile Menu Trigger and Sheet Content */}
       {/* Mobile Navigation */}
-      <div className="md:hidden">
-        <Sheet>
+      <div className="lg:hidden">
+        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="relative p-2 hover:bg-white/10 transition-all duration-200">
-              <div className="relative">
-                <Menu className="h-6 w-6 text-charcoal" />
-
-                {/* Notification badges */}
-                <div className="absolute -top-2 -right-2 flex gap-1">
-                  {unreadNotifications > 0 && (
-                    <div className="h-5 w-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-lg animate-pulse">
-                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                    </div>
-                  )}
-                  {unreadAchievements > 0 && (
-                    <div className="h-5 w-5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-lg animate-pulse">
-                      {unreadAchievements > 9 ? '9+' : unreadAchievements}
-                    </div>
-                  )}
-                </div>
-
-                {/* Online indicator */}
-                <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-              </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="fixed top-6 left-6 z-[10000] lg:hidden"
+              data-testid="nav-mobile-trigger"
+            >
+              <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-80 bg-white/95 backdrop-blur-md border-l border-white/20">
+          <SheetContent side="left" className="w-80 bg-white/95 backdrop-blur-md">
             <SheetHeader>
               <SheetTitle className="text-charcoal flex items-center gap-2">
                 <Sparkles className="text-blush" size={20} />
@@ -1180,405 +322,121 @@ export default function Navigation({}: NavigationProps = {}) {
               </SheetTitle>
             </SheetHeader>
 
-            <div className="mt-6 space-y-4">
-              {/* Enhanced Notifications Section */}
-              {(unreadNotifications > 0 || unreadAchievements > 0) && (
-                <div className="space-y-3">
-                  {unreadNotifications > 0 && (
-                    <div className="p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg border border-pink-200/50 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-2 w-2 bg-pink-500 rounded-full animate-pulse"></div>
-                        <h3 className="font-medium text-charcoal text-sm">
-                          Nová oznámení
-                        </h3>
-                        <span className="ml-auto bg-pink-500 text-white text-xs px-2 py-1 rounded-full">
-                          {unreadNotifications}
-                        </span>
-                      </div>
-                      <p className="text-xs text-charcoal/70">
-                        Máte {unreadNotifications} nepřečtených zpráv
-                      </p>
-                    </div>
-                  )}
-
-                  {unreadAchievements > 0 && (
-                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200/50 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Trophy size={14} className="text-amber-600" />
-                        <h3 className="font-medium text-charcoal text-sm">
-                          Nové úspěchy
-                        </h3>
-                        <span className="ml-auto bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
-                          {unreadAchievements}
-                        </span>
-                      </div>
-                      <p className="text-xs text-charcoal/70">
-                        Odemkli jste {unreadAchievements} nových ocenění
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Navigation Links */}
-              <div className="flex flex-col gap-2">
-                {navigationItems.map(({ href, label, icon, exact }, index) => {
-                  const isActive = exact ? location === href : location.startsWith(href);
-                  if (href === '/admin' && !user?.isAdmin) return null;
-                  return (
-                    <motion.div
-                      key={href}
-                      initial={{ opacity: 0, y: 24, scale: 0.9, rotateX: -15 }}
-                      animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0, transition: { type: "spring", stiffness: 400, damping: 25, mass: 0.6, delay: index * 0.08, duration: 0.5 } }}
-                      exit={{ opacity: 0, y: -20, scale: 0.8, rotateX: 15, transition: { duration: 0.2 } }}
-                      className="will-change-transform"
-                      style={{ transform: 'translateZ(0)', willChange: 'transform, opacity' }}
-                    >
-                      <a
-                        href={href}
-                        onClick={() => {
-                          setIsMenuOpen(false); // Close the mobile menu after clicking a link
-                        }}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
-                            : 'hover:bg-gradient-to-r hover:from-pink-50 hover:to-rose-50 text-gray-700'
-                        }`}
-                      >
-                        <span className={`text-xl ${isActive ? 'text-white' : 'text-romantic'}`}>{icon}</span>
-                        <span className="font-medium text-sm">{label}</span>
-                        {isActive && (
-                          <motion.div
-                            className="w-4 h-0.5 bg-white rounded-full ml-auto"
-                            layoutId="mobileActiveTab"
-                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                          />
-                        )}
-                      </a>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* User Info and Logout */}
-              {user && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mt-auto pt-6 border-t border-romantic/10"
-                >
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl shadow-sm">
-                    <div className="flex items-center space-x-3">
-                      <UserAvatar user={user} size="md" />
-                      <div className="text-sm font-medium text-gray-700">
-                        {user?.firstName} {user?.lastName}
-                      </div>
-                    </div>
-                    <motion.button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="p-2 rounded-full hover:bg-red-100 transition-colors"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <LogOut className="h-5 w-5 text-red-500" />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
+            <div className="mt-6 space-y-2">
+              {navigationItems.map(({ href, label, icon, exact }) => {
+                const isActive = exact ? location === href : location.startsWith(href);
+                return (
+                  <a
+                    key={href}
+                    href={href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-romantic text-white'
+                        : 'text-charcoal hover:bg-romantic/10'
+                    }`}
+                    data-testid={`mobile-nav-${href.replace('/', '') || 'home'}`}
+                  >
+                    <span className="text-lg">{icon}</span>
+                    <span className="font-medium">{label}</span>
+                  </a>
+                );
+              })}
             </div>
+
+            {user && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="flex items-center space-x-3 mb-4">
+                  <UserAvatar user={user} className="w-12 h-12" />
+                  <div>
+                    <div className="font-medium text-charcoal">
+                      {user.firstName} {user.lastName}
+                    </div>
+                    <div className="text-sm text-charcoal/60">{user.email}</div>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="w-full"
+                  data-testid="mobile-nav-logout"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Odhlásit se
+                </Button>
+              </div>
+            )}
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Mobile Menu Overlay (for closing the menu when clicking outside) */}
+      {/* Login Dropdown for non-authenticated users */}
       <AnimatePresence>
-        {isMenuOpen && (
+        {!user && isLoginDropdownOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] md:hidden pointer-events-auto"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsMenuOpen(false); // Close the menu when clicking the overlay
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault(); // Prevent scrolling when touching overlay
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Floating Login Button - Bottom Left */}
-      <AnimatePresence>
-        {!user && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, x: -50 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: -50 }}
-            transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
-            className="fixed bottom-6 left-6 z-[9998] pointer-events-auto"
-          >
-            <div className="relative" data-login-dropdown>
-              <motion.button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleLoginDropdownToggle();
-                }}
-                className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-romantic to-love text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 relative group"
-                whileHover={{ scale: 1.1, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                  boxShadow: '0 8px 32px rgba(155, 119, 148, 0.3)'
-                }}
-              >
-                {/* Gradient overlay při hover */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-love/20 to-romantic/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <motion.div
-                  className="relative"
-                  whileHover={{ rotate: [0, -10, 10, 0] }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <span className="text-2xl">👤</span>
-                </motion.div>
-
-                {/* Pulzující indikátor */}
-                <motion.div
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full shadow-md border-2 border-white"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.8, 1, 0.8]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-
-                {/* Tooltip */}
-                <motion.div
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 bg-charcoal text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-                  initial={{ opacity: 0, y: 5 }}
-                  whileHover={{ opacity: 1, y: 0 }}
-                >
-                  Přihlásit se
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-charcoal"></div>
-                </motion.div>
-              </motion.button>
-
-              {/* Login Dropdown */}
-              <AnimatePresence>
-                {isLoginDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute bottom-full left-0 mb-4 w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden"
-                    style={{
-                      backdropFilter: 'blur(40px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-6">
-                      <div className="text-center mb-6">
-                        <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
-                        <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
-                      </div>
-
-                      <form onSubmit={handleLoginSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="float-email" className="text-charcoal/80 font-medium">E-mail</Label>
-                          <div className="relative group">
-                            <motion.div
-                              className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
-                              animate={{
-                                scale: loginFormData.email ? 1.1 : 1,
-                                color: loginFormData.email ? "#9b7794" : "#64748b66"
-                              }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </motion.div>
-                            <Input
-                              id="float-email"
-                              type="email"
-                              placeholder="vas.email@example.com"
-                              value={loginFormData.email}
-                              onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                              className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
-                            />
-                          </div>
-                          <AnimatePresence>
-                            {loginErrors.email && (
-                              <motion.p
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
-                                className="text-red-500 text-sm"
-                              >
-                                {loginErrors.email}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="float-password" className="text-charcoal/80 font-medium">Heslo</Label>
-                          <div className="relative group">
-                            <motion.div
-                              className="absolute left-3 top-3 h-4 w-4 text-charcoal/40 z-10"
-                              animate={{
-                                scale: loginFormData.password ? 1.1 : 1,
-                                color: loginFormData.password ? "#9b7794" : "#64748b66"
-                              }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Lock className="h-4 w-4" />
-                            </motion.div>
-                            <Input
-                              id="float-password"
-                              type="password"
-                              placeholder="••••••••"
-                              value={loginFormData.password}
-                              onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                              className="pl-10 pr-4 py-3 transition-all duration-300 focus:ring-4 focus:ring-romantic/20 border-2 border-gray-200/50 focus:border-romantic/50 bg-white/70 backdrop-blur-sm hover:bg-white/80"
-                            />
-                          </div>
-                          <AnimatePresence>
-                            {loginErrors.password && (
-                              <motion.p
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
-                                className="text-red-500 text-sm"
-                              >
-                                {loginErrors.password}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <motion.button
-                          type="submit"
-                          disabled={loginMutation.isPending}
-                          className="w-full bg-gradient-to-r from-romantic to-love text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          {loginMutation.isPending && (
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                              <Loader2 size={18} />
-                            </motion.div>
-                          )}
-                          {loginMutation.isPending ? "Přihlašování..." : "🚀 Přihlásit se"}
-                        </motion.button>
-                      </form>
-
-                      <div className="mt-4 text-center">
-                        <motion.a
-                          href="/login"
-                          onClick={() => {
-                            setIsLoginDropdownOpen(false);
-                            setIsVisible(true);
-                          }}
-                          className="text-sm text-romantic hover:text-love transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          ✨ Nemáte účet? Registrujte se zde
-                        </motion.a>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Context Menu - appears on long press anywhere on page */}
-      <AnimatePresence>
-        {isContextMenuOpen && contextMenuPosition && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            className="fixed z-[10000] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 overflow-hidden"
-            style={{
-              left: Math.min(contextMenuPosition.x, window.innerWidth - 200),
-              top: Math.min(contextMenuPosition.y, window.innerHeight - 300),
-              backdropFilter: 'blur(40px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            }}
-            data-testid="context-menu"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed top-20 right-4 z-[10000] w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-6"
           >
-            <div className="p-3">
-              <div className="text-xs font-medium text-gray-500 mb-2 px-2">Rychlá navigace</div>
-              <div className="grid grid-cols-2 gap-2">
-                {visibleNavigationItems.slice(0, 6).map(({ href, label, icon, exact }) => {
-                  const isActive = exact ? location === href : location.startsWith(href);
-                  if (href === '/admin' && !user?.isAdmin) return null;
-                  return (
-                    <motion.a
-                      key={href}
-                      href={href}
-                      onClick={() => {
-                        setIsContextMenuOpen(false);
-                        setContextMenuPosition(null);
-                      }}
-                      className={`flex flex-col items-center space-y-1 p-3 rounded-xl transition-all ${
-                        isActive
-                          ? 'bg-romantic/10 text-romantic'
-                          : 'hover:bg-romantic/5 text-gray-700'
-                      }`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      data-testid={`context-nav-${href.replace('/', '') || 'home'}`}
-                    >
-                      <span className="text-lg">{icon}</span>
-                      <span className="text-xs font-medium text-center">{label}</span>
-                    </motion.a>
-                  );
-                })}
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-charcoal mb-2">Vítejte zpět!</h3>
+              <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
+            </div>
+
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email">E-mail</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  placeholder="vas.email@example.com"
+                  value={loginFormData.email}
+                  onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                  data-testid="login-email-input"
+                />
+                {loginErrors.email && (
+                  <p className="text-red-500 text-sm">{loginErrors.email}</p>
+                )}
               </div>
 
-              <div className="mt-3 pt-3 border-t border-romantic/10">
-                <motion.button
-                  onClick={() => {
-                    setIsVisible(!isVisible);
-                    setIsContextMenuOpen(false);
-                    setContextMenuPosition(null);
-                  }}
-                  className="w-full flex items-center justify-center space-x-2 p-2 rounded-xl bg-romantic/10 hover:bg-romantic/20 transition-all"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  data-testid="context-toggle-nav"
-                >
-                  <span className="text-sm">{isVisible ? '🙈' : '👁️'}</span>
-                  <span className="text-sm font-medium">
-                    {isVisible ? 'Skrýt panel' : 'Zobrazit panel'}
-                  </span>
-                </motion.button>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Heslo</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  placeholder="Vaše heslo"
+                  value={loginFormData.password}
+                  onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                  data-testid="login-password-input"
+                />
+                {loginErrors.password && (
+                  <p className="text-red-500 text-sm">{loginErrors.password}</p>
+                )}
               </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loginMutation.isPending}
+                data-testid="login-submit-btn"
+              >
+                {loginMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {loginMutation.isPending ? "Přihlašování..." : "Přihlásit se"}
+              </Button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <a
+                href="/login"
+                onClick={() => setIsLoginDropdownOpen(false)}
+                className="text-sm text-romantic hover:text-love transition-colors"
+                data-testid="login-register-link"
+              >
+                ✨ Nemáte účet? Registrujte se zde
+              </a>
             </div>
           </motion.div>
         )}
