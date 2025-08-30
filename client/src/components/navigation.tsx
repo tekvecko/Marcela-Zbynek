@@ -408,18 +408,18 @@ export default function Navigation({}: NavigationProps = {}) {
             {/* Close button */}
             <motion.button
               onClick={() => setIsLoginDropdownOpen(false)}
-              className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition-colors z-10 group"
+              className="absolute top-3 right-3 p-2 rounded-full bg-gray-100/80 hover:bg-gray-200 transition-all duration-200 z-10 group shadow-sm border border-gray-200/50"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               data-testid="login-dropdown-close"
             >
               <div className="w-5 h-5 flex items-center justify-center relative">
                 <motion.div 
-                  className="w-4 h-0.5 bg-charcoal/60 group-hover:bg-charcoal absolute"
+                  className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(45deg)' }}
                 />
                 <motion.div 
-                  className="w-4 h-0.5 bg-charcoal/60 group-hover:bg-charcoal absolute"
+                  className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(-45deg)' }}
                 />
               </div>
