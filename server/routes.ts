@@ -442,7 +442,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           setTimeout(() => {
             delete process.env.SIMULATE_AI_OUTAGE;
           }, duration || 30000);
-          break;tion || 30000);
           break;
 
         case 'storage':
