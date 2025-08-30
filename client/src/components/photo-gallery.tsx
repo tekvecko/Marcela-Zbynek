@@ -113,6 +113,38 @@ export default function PhotoGallery() {
     enabled: !!selectedPhoto?.id,
   });
 
+  // Get all comments for all photos
+  const { data: allComments = {} } = useQuery({
+    queryKey: ["/api/photos/all-comments"],
+    queryFn: async () => {
+      const commentsMap: Record<string, any[]> = {};
+      
+      // Fetch comments for each photo
+      for (const photo of photos) {
+        try {
+          const response = await fetch(`/api/photos/${photo.id}/comments`);
+          if (response.ok) {
+            const comments = await response.json();
+            commentsMap[photo.id] = comments;
+          } else {
+            commentsMap[photo.id] = [];
+          }
+        } catch (error) {
+          commentsMap[photo.id] = [];
+        }
+      }
+      
+      return commentsMap;
+    },
+    enabled: photos.length > 0,
+    staleTime: 30 * 1000,
+  });
+
+  // Helper to get comments for a specific photo
+  const getPhotoComments = (photoId: string) => {
+    return allComments[photoId] || [];
+  };
+
   // Use simple display names without fetching user data (since /api/users endpoint doesn't exist)
   const users = {};
 
@@ -340,6 +372,7 @@ export default function PhotoGallery() {
       });
       setNewComment("");
       queryClient.invalidateQueries({ queryKey: ["/api/photos", selectedPhoto?.id, "comments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/photos/all-comments"] });
     },
     onError: (error: any) => {
       toast({
@@ -720,7 +753,9 @@ export default function PhotoGallery() {
                         className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
                       >
                         <MessageCircle size={20} />
-                        <span className="font-medium">Komentář</span>
+                        <span className="font-medium">
+                          Komentář ({getPhotoComments(photo.id).length})
+                        </span>
                       </button>
                       
                       <DropdownMenu>
@@ -769,6 +804,48 @@ export default function PhotoGallery() {
                     <p className="text-sm text-gray-600 mt-2 italic">
                       AI: {photo.aiAnalysis}
                     </p>
+                  )}
+
+                  {/* Comments Section */}
+                  {getPhotoComments(photo.id).length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <div className="space-y-3">
+                        {getPhotoComments(photo.id).slice(0, 2).map((comment: any) => (
+                          <div key={comment.id} className="flex items-start gap-2">
+                            <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
+                              {comment.commenterName?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-gray-900 font-medium text-sm">
+                                  {comment.commenterName}
+                                </span>
+                                <span className="text-gray-500 text-xs">
+                                  {new Date(comment.createdAt).toLocaleDateString('cs-CZ', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-gray-700 text-sm leading-relaxed">
+                                {comment.content}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {getPhotoComments(photo.id).length > 2 && (
+                          <button
+                            onClick={() => setSelectedPhoto(photo)}
+                            className="text-gray-500 text-sm hover:text-gray-700 transition-colors"
+                          >
+                            Zobrazit všech {getPhotoComments(photo.id).length} komentářů...
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </Card>
