@@ -97,6 +97,7 @@ export default function Navigation({}: NavigationProps = {}) {
   // Clean hide-on-scroll functionality - show on any upward scroll
   useEffect(() => {
     let ticking = false;
+    let prevScrollY = window.scrollY;
 
     const handleScroll = () => {
       if (!ticking) {
@@ -108,14 +109,15 @@ export default function Navigation({}: NavigationProps = {}) {
             setIsVisible(true);
           } 
           // Show navigation whenever user scrolls up (anywhere on page)
-          else if (currentScrollY < lastScrollY) {
+          else if (currentScrollY < prevScrollY) {
             setIsVisible(true);
           } 
           // Hide only when scrolling down and past a certain threshold
-          else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+          else if (currentScrollY > prevScrollY && currentScrollY > 100) {
             setIsVisible(false);
           }
           
+          prevScrollY = currentScrollY;
           setLastScrollY(currentScrollY);
           ticking = false;
         });
@@ -123,9 +125,13 @@ export default function Navigation({}: NavigationProps = {}) {
       }
     };
 
+    // Set initial scroll position
+    prevScrollY = window.scrollY;
+    setLastScrollY(window.scrollY);
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []); // Remove lastScrollY dependency to prevent unnecessary re-renders
 
   // Handle login form input changes
   const handleLoginInputChange = (field: string, value: string) => {
