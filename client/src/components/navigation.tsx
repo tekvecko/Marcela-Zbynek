@@ -94,13 +94,15 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Simplified and more reliable hide-on-scroll functionality
+  // Mobile-optimized hide-on-scroll functionality
   useEffect(() => {
     let previousScrollY = 0;
     let scrollTimeout: NodeJS.Timeout;
+    let isScrolling = false;
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      isScrolling = true;
       
       // Clear any existing timeout
       if (scrollTimeout) {
@@ -108,38 +110,67 @@ export default function Navigation({}: NavigationProps = {}) {
       }
 
       // Always show at the very top
-      if (currentScrollY <= 10) {
+      if (currentScrollY <= 20) {
         setIsVisible(true);
         previousScrollY = currentScrollY;
         return;
       }
 
-      // Calculate scroll direction
-      const scrollDirection = currentScrollY > previousScrollY ? 'down' : 'up';
+      // Calculate scroll direction with minimum threshold for mobile
+      const scrollDifference = Math.abs(currentScrollY - previousScrollY);
       
-      // Show immediately when scrolling up
-      if (scrollDirection === 'up') {
-        setIsVisible(true);
-      }
-      // Hide when scrolling down after a small delay
-      else if (scrollDirection === 'down' && currentScrollY > 80) {
-        scrollTimeout = setTimeout(() => {
-          setIsVisible(false);
-        }, 150);
-      }
+      // Only react to meaningful scroll movements (helps with mobile touch)
+      if (scrollDifference > 5) {
+        const scrollDirection = currentScrollY > previousScrollY ? 'down' : 'up';
+        
+        // Show immediately when scrolling up
+        if (scrollDirection === 'up') {
+          setIsVisible(true);
+        }
+        // Hide when scrolling down with delay
+        else if (scrollDirection === 'down' && currentScrollY > 60) {
+          scrollTimeout = setTimeout(() => {
+            if (isScrolling) {
+              setIsVisible(false);
+            }
+          }, 100);
+        }
 
-      previousScrollY = currentScrollY;
+        previousScrollY = currentScrollY;
+      }
+      
       setLastScrollY(currentScrollY);
+      
+      // Reset scrolling flag after delay
+      setTimeout(() => {
+        isScrolling = false;
+      }, 100);
+    };
+
+    // Handle touch events for mobile
+    const handleTouchStart = () => {
+      isScrolling = true;
+    };
+
+    const handleTouchEnd = () => {
+      setTimeout(() => {
+        isScrolling = false;
+      }, 200);
     };
 
     // Initialize
     previousScrollY = window.scrollY;
     setIsVisible(true);
 
+    // Add both scroll and touch listeners for mobile compatibility
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
