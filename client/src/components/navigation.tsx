@@ -34,8 +34,6 @@ export default function Navigation({}: NavigationProps = {}) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [lastActivity, setLastActivity] = useState(Date.now());
   const [location] = useLocation();
   const { user, logout, login, isLoggingOut } = useAuth();
   const isMobile = useIsMobile();
@@ -100,90 +98,6 @@ export default function Navigation({}: NavigationProps = {}) {
     { href: "/leaderboards", label: "Žebříčky", icon: "🏆", exact: false },
     { href: "/admin", label: "Admin", icon: "⚙️", exact: false, adminOnly: true },
   ];
-
-  // Plynulejší auto-hide logika
-  useEffect(() => {
-    let hideTimeoutId: NodeJS.Timeout;
-    let scrollTimeoutId: NodeJS.Timeout;
-    
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollingDown = currentScrollY > lastScrollY;
-      
-      // Okamžitě zobrazit při scroll nahoru nebo blízko horní části
-      if (currentScrollY < 50 || !scrollingDown) {
-        setIsVisible(true);
-        setLastActivity(Date.now());
-      }
-      
-      // Plynulejší skrývání při scrollu dolů s malým zpožděním
-      if (scrollingDown && Math.abs(currentScrollY - lastScrollY) > 3) {
-        clearTimeout(scrollTimeoutId);
-        scrollTimeoutId = setTimeout(() => {
-          if (window.scrollY > 100 && !isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen) {
-            setIsVisible(false);
-          }
-        }, 200);
-      }
-      
-      if (Math.abs(currentScrollY - lastScrollY) > 3) {
-        setLastScrollY(currentScrollY);
-      }
-      setLastActivity(Date.now());
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const mouseY = e.clientY;
-      const fastMovement = Math.abs(e.movementX) > 1 || Math.abs(e.movementY) > 1;
-      
-      if (mouseY < 120 || fastMovement) {
-        setIsVisible(true);
-        setLastActivity(Date.now());
-      }
-    };
-
-    const handleActivity = () => {
-      setLastActivity(Date.now());
-      setIsVisible(true);
-    };
-
-    // Event listeners
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('keydown', handleActivity, { passive: true });
-    window.addEventListener('click', handleActivity, { passive: true });
-    window.addEventListener('touchstart', handleActivity, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('click', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      clearTimeout(hideTimeoutId);
-      clearTimeout(scrollTimeoutId);
-    };
-  }, [lastScrollY, isMenuOpen, isUserMenuOpen, isLoginDropdownOpen]);
-
-  // Samostatný useEffect pro skrývání po nečinnosti
-  useEffect(() => {
-    let hideTimeoutId: NodeJS.Timeout;
-    
-    const scheduleHide = () => {
-      clearTimeout(hideTimeoutId);
-      hideTimeoutId = setTimeout(() => {
-        if (!isMenuOpen && !isUserMenuOpen && !isLoginDropdownOpen && window.scrollY > 100) {
-          setIsVisible(false);
-        }
-      }, 2500);
-    };
-
-    scheduleHide();
-
-    return () => {
-      clearTimeout(hideTimeoutId);
-    };
-  }, [lastActivity, isMenuOpen, isUserMenuOpen, isLoginDropdownOpen]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const handleUserMenuToggle = () => setIsUserMenuOpen(!isUserMenuOpen);
@@ -263,19 +177,15 @@ export default function Navigation({}: NavigationProps = {}) {
         className="sticky top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[9999] max-w-6xl mx-auto pointer-events-none"
         initial={{ y: -100, opacity: 0 }}
         animate={{
-          y: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 0 : -120,
-          opacity: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 1 : 0,
-          scale: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 1 : 0.95
+          y: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 0 : -100,
+          opacity: (isVisible || isMenuOpen || isUserMenuOpen || isLoginDropdownOpen) ? 1 : 0
         }}
         transition={{
           type: "spring",
-          stiffness: 400,
-          damping: 35,
-          mass: 0.8,
-          bounce: 0.1
-        }}
-        style={{
-          willChange: 'transform, opacity'
+          stiffness: 700,
+          damping: 40,
+          mass: 0.4,
+          velocity: isVisible ? 0 : -50
         }}
       >
         <div className="bg-white/85 backdrop-blur-3xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden pointer-events-auto">
