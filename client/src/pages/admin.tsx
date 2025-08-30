@@ -24,7 +24,6 @@ import { cs } from "date-fns/locale";
 import { Link } from "wouter";
 import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared/schema";
 import Navigation from "@/components/navigation";
-import { useOnboardingContext } from "@/components/onboarding/onboarding-context";
 import { BehaviorAnalytics, AiInsightsDisplay, DynamicAiRecommendations } from "@/components/behavior-analytics";
 import SystemStatus from "@/components/system-status";
 
@@ -347,11 +346,10 @@ export default function AdminPage() {
     uniqueUploaders: new Set(photos.map(p => p.uploaderName)).size,
   };
 
-  const { startOnboarding } = useOnboardingContext();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <Navigation onStartTutorial={startOnboarding} />
+      <Navigation />
       <div className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
