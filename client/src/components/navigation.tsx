@@ -391,12 +391,15 @@ export default function Navigation({}: NavigationProps = {}) {
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            className="fixed z-[10000] w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 p-6"
+            className="fixed z-[10000] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 p-6"
             style={{
-              top: `${Math.min(Math.max(currentScrollY + 80, 20), currentScrollY + window.innerHeight - 420)}px`,
-              right: '1rem',
-              maxHeight: `${Math.min(400, window.innerHeight - 40)}px`,
-              overflowY: 'auto'
+              width: isMobile ? 'calc(100vw - 2rem)' : '320px',
+              maxWidth: isMobile ? '360px' : '320px',
+              top: `${Math.min(Math.max(currentScrollY + 20, 20), currentScrollY + window.innerHeight - Math.min(480, window.innerHeight - 40))}px`,
+              right: isMobile ? '1rem' : '1rem',
+              left: isMobile ? '1rem' : 'auto',
+              maxHeight: `${Math.min(window.innerHeight - 40, 480)}px`,
+              overflowY: 'hidden'
             }}
           >
             {/* Dekorativní gradient overlay */}
@@ -405,19 +408,26 @@ export default function Navigation({}: NavigationProps = {}) {
             {/* Close button */}
             <motion.button
               onClick={() => setIsLoginDropdownOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+              className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition-colors z-10 group"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              data-testid="login-dropdown-close"
             >
-              <div className="w-5 h-5 flex items-center justify-center">
-                <div className="w-3 h-0.5 bg-charcoal/60 rotate-45 absolute"></div>
-                <div className="w-3 h-0.5 bg-charcoal/60 -rotate-45 absolute"></div>
+              <div className="w-5 h-5 flex items-center justify-center relative">
+                <motion.div 
+                  className="w-4 h-0.5 bg-charcoal/60 group-hover:bg-charcoal absolute"
+                  style={{ transform: 'rotate(45deg)' }}
+                />
+                <motion.div 
+                  className="w-4 h-0.5 bg-charcoal/60 group-hover:bg-charcoal absolute"
+                  style={{ transform: 'rotate(-45deg)' }}
+                />
               </div>
             </motion.button>
 
-            <div className="text-center mb-6 relative">
+            <div className="text-center mb-4 relative">
               <motion.div 
-                className="w-16 h-16 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+                className="w-12 h-12 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg"
                 animate={{ 
                   rotate: [0, 5, -5, 0],
                   scale: [1, 1.05, 1]
@@ -428,59 +438,48 @@ export default function Navigation({}: NavigationProps = {}) {
                   ease: "easeInOut"
                 }}
               >
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    rotate: [0, 10, -10, 0]
-                  }}
-                  transition={{ 
-                    duration: 1.5, 
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5
-                  }}
-                >
-                  <User className="text-white drop-shadow-lg" size={24} />
-                </motion.div>
+                <User className="text-white drop-shadow-lg" size={20} />
               </motion.div>
-              <h3 className="text-xl font-semibold text-charcoal mb-2 bg-gradient-to-r from-charcoal to-charcoal/80 bg-clip-text">Vítejte zpět!</h3>
-              <p className="text-sm text-charcoal/60">Přihlaste se ke svému účtu</p>
+              <h3 className="text-lg font-semibold text-charcoal mb-1">Vítejte zpět!</h3>
+              <p className="text-xs text-charcoal/60">Přihlaste se ke svému účtu</p>
             </div>
 
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">E-mail</Label>
+            <form onSubmit={handleLoginSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="login-email" className="text-sm">E-mail</Label>
                 <Input
                   id="login-email"
                   type="email"
                   placeholder="vas.email@example.com"
                   value={loginFormData.email}
                   onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                  className="h-10"
                   data-testid="login-email-input"
                 />
                 {loginErrors.email && (
-                  <p className="text-red-500 text-sm">{loginErrors.email}</p>
+                  <p className="text-red-500 text-xs">{loginErrors.email}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Heslo</Label>
+              <div className="space-y-1">
+                <Label htmlFor="login-password" className="text-sm">Heslo</Label>
                 <Input
                   id="login-password"
                   type="password"
                   placeholder="Vaše heslo"
                   value={loginFormData.password}
                   onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                  className="h-10"
                   data-testid="login-password-input"
                 />
                 {loginErrors.password && (
-                  <p className="text-red-500 text-sm">{loginErrors.password}</p>
+                  <p className="text-red-500 text-xs">{loginErrors.password}</p>
                 )}
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-10"
                 disabled={loginMutation.isPending}
                 data-testid="login-submit-btn"
               >
@@ -491,11 +490,11 @@ export default function Navigation({}: NavigationProps = {}) {
               </Button>
             </form>
 
-            <div className="mt-4 text-center">
+            <div className="mt-3 text-center">
               <a
                 href="/login"
                 onClick={() => setIsLoginDropdownOpen(false)}
-                className="text-sm text-romantic hover:text-love transition-colors"
+                className="text-xs text-romantic hover:text-love transition-colors"
                 data-testid="login-register-link"
               >
                 ✨ Nemáte účet? Registrujte se zde
