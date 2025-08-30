@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../d18446b8-210d-40ff-b726-2f5614f30ab8_removalai_preview.png";
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell } from "lucide-react"; // Importuji Star icon for Profile link
+import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut } from "lucide-react"; // Importuji Star icon for Profile link
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
