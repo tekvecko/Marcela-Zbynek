@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn, MessageCircle, Share, MoreHorizontal, Globe, ChevronDown, Send, Download, Flag, Facebook, Twitter, MessageSquare } from "lucide-react";
+import { Upload, Heart, Camera, Images, Maximize2, Minimize2, X, Lock, LogIn, MessageCircle, Share, MoreHorizontal, Globe, ChevronDown, Send, Download, Flag, Facebook, Twitter, MessageSquare, Search, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,10 @@ export default function PhotoGallery() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
+
+  // State for search and sorting
+  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'quest'>('recent');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Funkce pro vytvoření animace srdíček
   const createFlyingHearts = useCallback((buttonElement: HTMLElement) => {
@@ -511,6 +515,35 @@ export default function PhotoGallery() {
     uploadPhotoMutation.mutate(formData);
   };
 
+  // Sorting and filtering logic
+  const getSortedAndFilteredPhotos = () => {
+    let filtered = photos || [];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(photo => 
+        photo.uploaderName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        photo.aiAnalysis?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'popular':
+        return [...filtered].sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      case 'quest':
+        return [...filtered].sort((a, b) => {
+          if (a.questId && !b.questId) return -1;
+          if (!a.questId && b.questId) return 1;
+          return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+        });
+      default: // 'recent'
+        return [...filtered].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    }
+  };
+
+  const sortedPhotos = getSortedAndFilteredPhotos();
+
   if (isLoading) {
     return (
       <section id="gallery" className="py-20 bg-white">
@@ -537,6 +570,36 @@ export default function PhotoGallery() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4">
+
+        {/* Search and Sort Controls */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-pink-100 max-w-2xl mx-auto mt-6 mb-8">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <input
+                type="text"
+                placeholder="Hledat podle jména nebo popisu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 px-4 py-2 border border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 bg-white/80"
+              />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-4 py-2 border border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 bg-white/80"
+              >
+                <option value="recent">Nejnovější</option>
+                <option value="popular">Nejoblíbenější</option>
+                <option value="quest">Fotovýzvy první</option>
+              </select>
+            </div>
+
+            <div className="flex justify-center gap-4 text-sm text-gray-600">
+              <span>📊 Celkem: {photos?.length || 0} fotek</span>
+              <span>🔍 Zobrazeno: {sortedPhotos.length} fotek</span>
+              <span>❤️ Celkem lajků: {photos?.reduce((sum, p) => sum + (p.likes || 0), 0) || 0}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Facebook-style Create Post */}
         <Card className="bg-white rounded-lg shadow-sm mb-4 mt-4">
@@ -658,7 +721,7 @@ export default function PhotoGallery() {
           </div>
         ) : (
           <div className="space-y-4 pb-8">
-            {photos.map((photo) => (
+            {sortedPhotos?.map((photo) => (
               <Card key={photo.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Post Header */}
                 <div className="p-4 border-b border-gray-100">

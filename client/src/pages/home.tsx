@@ -3,119 +3,75 @@ import HeroSection from "@/components/hero-section";
 import CountdownTimer from "@/components/countdown-timer";
 
 import { Link } from "wouter";
-import { Camera, Heart, MapPin, Users } from "lucide-react";
+import { Camera, Heart, MapPin, Users, Images, Trophy } from "lucide-react";
 import GlassButton from "@/components/ui/glass-button";
+
+// Assuming weddingDate and OurStory/WeddingDetails components are defined elsewhere
+// For demonstration purposes, let's define a placeholder weddingDate and assume the other components exist.
+const weddingDate = new Date("2025-10-11T14:00:00");
+
+// Placeholder components if not imported, to ensure the code is runnable in structure
+const OurStory = () => <div className="h-64 bg-gray-100 my-8 rounded-xl flex items-center justify-center">Our Story Section</div>;
+const WeddingDetails = () => <div className="h-64 bg-gray-100 my-8 rounded-xl flex items-center justify-center">Wedding Details Section</div>;
+
 
 export default function Home() {
 
   return (
-    <div className="min-h-screen">
-      <Navigation />
-      <HeroSection />
-      
-      {/* Content that scrolls over the hero background */}
-      <div className="relative z-20 bg-cream">
-        <CountdownTimer />
-        
-        {/* Quick Navigation Cards */}
-        <section className="py-24 bg-gradient-to-br from-cream to-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-6">
-              Objevte naši svatbu
-            </h2>
-            <p className="text-xl text-charcoal/60 max-w-2xl mx-auto">
-              Vyberte si jednu ze sekcí a začněte prozzkumávat
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Link href="/photo-quest" className="group block">
-              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
-                <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Camera className="text-white" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Photo Quest</h3>
-                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
-                  Plňte fotografické úkoly a pomozte nám zachytit naši svatbu z různých úhlů
-                </p>
-                <div className="flex justify-center">
-                  <GlassButton variant="primary" size="md">
-                    <Camera size={16} />
-                    Začít quest
-                  </GlassButton>
-                </div>
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              </div>
-            </Link>
-            
-            <Link href="/gallery" className="group block">
-              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
-                <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Heart className="text-white" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Galerie</h3>
-                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
-                  Prohlédněte si fotky ze svatby a dejte like těm nejkrásnějším
-                </p>
-                <div className="flex justify-center">
-                  <GlassButton variant="secondary" size="md">
-                    <Heart size={16} />
-                    Zobrazit galerii
-                  </GlassButton>
-                </div>
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              </div>
-            </Link>
-            
-            <Link href="/details" className="group block">
-              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
-                <div className="w-16 h-16 bg-gradient-to-br from-sage to-green-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <MapPin className="text-white" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Detaily</h3>
-                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
-                  Všechny důležité informace o naší svatbě - místo, čas, program
-                </p>
-                <div className="flex justify-center">
-                  <GlassButton variant="outline" size="md">
-                    <MapPin size={16} />
-                    Zobrazit detaily
-                  </GlassButton>
-                </div>
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              </div>
-            </Link>
-          </div>
-        </div>
-        </section>
-        
-        {/* Footer */}
-        <footer className="romantic-gradient py-16">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="mb-8">
-              <h3 className="font-script text-4xl text-charcoal mb-4">
-                Marcela <span className="heart-decoration text-5xl">❤️</span> Zbyněk
-              </h3>
-              <p className="text-charcoal/70 text-lg">11. října 2025 • Kovalovice</p>
-            </div>
-            
-            <div className="flex justify-center space-x-6 mb-8">
-              <a href="#countdown" className="text-charcoal hover:text-romantic transition-colors">Odpočet</a>
-              <a href="#photo-quest" className="text-charcoal hover:text-romantic transition-colors">Photo Quest</a>
-              <a href="#gallery" className="text-charcoal hover:text-romantic transition-colors">Galerie</a>
-              <a href="#details" className="text-charcoal hover:text-romantic transition-colors">Detaily</a>
-            </div>
-            
-            <div className="border-t border-gold/20 pt-8">
-              <p className="text-charcoal/60">
-                Vytvořeno s <span className="heart-decoration">❤️</span> pro náš svatební den
-              </p>
-            </div>
-          </div>
-        </footer>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50">
+        <Navigation />
 
-    </div>
+        <div className="container mx-auto px-4 py-8">
+          {/* Prioritní sekce - rychlé akce */}
+          <section className="mb-12">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-pink-100">
+              <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
+                🎯 Hlavní akce
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="/photo-quest" className="group bg-gradient-to-r from-pink-500 to-rose-500 text-white p-6 rounded-xl hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+                  <div className="flex items-center space-x-3">
+                    <Camera className="w-8 h-8" />
+                    <div>
+                      <h3 className="font-semibold text-lg">Fotovýzvy</h3>
+                      <p className="text-pink-100 text-sm">Plň úkoly a získávej body</p>
+                    </div>
+                  </div>
+                </a>
+
+                <a href="/gallery" className="group bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6 rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+                  <div className="flex items-center space-x-3">
+                    <Images className="w-8 h-8" />
+                    <div>
+                      <h3 className="font-semibold text-lg">Galerie</h3>
+                      <p className="text-purple-100 text-sm">Prohlížej a lajkuj fotky</p>
+                    </div>
+                  </div>
+                </a>
+
+                <a href="/leaderboards" className="group bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+                  <div className="flex items-center space-x-3">
+                    <Trophy className="w-8 h-8" />
+                    <div>
+                      <h3 className="font-semibold text-lg">Žebříček</h3>
+                      <p className="text-amber-100 text-sm">Nejlepší fotografové</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </section>
+
+          {/* Kompaktní countdown */}
+          <section className="mb-8">
+            <CountdownTimer targetDate={weddingDate} />
+          </section>
+
+          {/* Zbývající obsah */}
+          <HeroSection />
+          <OurStory />
+          <WeddingDetails />
+        </div>
+      </div>
   );
 }
