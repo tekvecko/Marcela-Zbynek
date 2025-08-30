@@ -94,7 +94,7 @@ export default function MiniGames() {
       <div className="max-w-6xl mx-auto space-y-12 p-4 md:p-8 pt-20 md:pt-24">
         
         {/* Hero Section */}
-        <OnboardingHighlight step="mini-games" className="relative">
+        <div className="relative">
           <div className="text-center space-y-6">
             <div className="w-24 h-24 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
               <GamepadIcon className="text-white drop-shadow-lg" size={32} />
@@ -118,7 +118,7 @@ export default function MiniGames() {
               Zobrazit galerii fotek
             </GlassButton>
           </div>
-        </OnboardingHighlight>
+        </div>
 
         {/* How to Play */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-white/30">
