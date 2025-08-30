@@ -954,33 +954,41 @@ export default function PhotoGallery() {
                 <div
                   className={`${
                     isFullscreen 
-                      ? 'absolute inset-0 flex items-center justify-center bg-black p-4' 
+                      ? 'absolute inset-0 flex items-center justify-center bg-black' 
                       : 'min-h-0 flex-1 max-h-[60vh] sm:max-h-[70vh] flex items-center justify-center p-2 sm:p-4 pt-12 sm:pt-16'
                   }`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div 
-                    className={`cursor-pointer ${
-                      isFullscreen 
-                        ? 'flex items-center justify-center w-full h-full' 
-                        : ''
-                    }`}
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      // Dvojklik na fotku přepne fullscreen
-                    }}
-                    onDoubleClick={() => setIsFullscreen(!isFullscreen)}
-                  >
-                    <OptimizedImage
+                  {isFullscreen ? (
+                    <img
                       src={`/api/photos/${selectedPhoto.filename}`}
                       alt={selectedPhoto.aiAnalysis || "Wedding photo"}
-                      className={`${
-                        isFullscreen
-                          ? 'max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] w-auto h-auto object-contain'
-                          : 'w-full h-full max-w-full max-h-full object-contain'
-                      }`}
+                      className="max-w-[90vw] max-h-[90vh] object-contain cursor-pointer"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                      }}
+                      onDoubleClick={() => setIsFullscreen(!isFullscreen)}
+                      style={{ 
+                        display: 'block',
+                        margin: 'auto'
+                      }}
                     />
-                  </div>
+                  ) : (
+                    <div 
+                      className="cursor-pointer"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        // Dvojklik na fotku přepne fullscreen
+                      }}
+                      onDoubleClick={() => setIsFullscreen(!isFullscreen)}
+                    >
+                      <OptimizedImage
+                        src={`/api/photos/${selectedPhoto.filename}`}
+                        alt={selectedPhoto.aiAnalysis || "Wedding photo"}
+                        className="w-full h-full max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Photo Info - Now below the image or as overlay in fullscreen */}
