@@ -94,44 +94,57 @@ export default function Navigation({}: NavigationProps = {}) {
     staleTime: 30 * 1000,
   });
 
-  // Clean hide-on-scroll functionality - show on any upward scroll
+  // Simplified and more reliable hide-on-scroll functionality
   useEffect(() => {
-    let ticking = false;
-    let prevScrollY = window.scrollY;
+    let previousScrollY = 0;
+    let scrollTimeout: NodeJS.Timeout;
 
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          
-          // Always show when at top
-          if (currentScrollY <= 50) {
-            setIsVisible(true);
-          } 
-          // Show navigation whenever user scrolls up (anywhere on page)
-          else if (currentScrollY < prevScrollY) {
-            setIsVisible(true);
-          } 
-          // Hide only when scrolling down and past a certain threshold
-          else if (currentScrollY > prevScrollY && currentScrollY > 100) {
-            setIsVisible(false);
-          }
-          
-          prevScrollY = currentScrollY;
-          setLastScrollY(currentScrollY);
-          ticking = false;
-        });
-        ticking = true;
+      const currentScrollY = window.scrollY;
+      
+      // Clear any existing timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
       }
+
+      // Always show at the very top
+      if (currentScrollY <= 10) {
+        setIsVisible(true);
+        previousScrollY = currentScrollY;
+        return;
+      }
+
+      // Calculate scroll direction
+      const scrollDirection = currentScrollY > previousScrollY ? 'down' : 'up';
+      
+      // Show immediately when scrolling up
+      if (scrollDirection === 'up') {
+        setIsVisible(true);
+      }
+      // Hide when scrolling down after a small delay
+      else if (scrollDirection === 'down' && currentScrollY > 80) {
+        scrollTimeout = setTimeout(() => {
+          setIsVisible(false);
+        }, 150);
+      }
+
+      previousScrollY = currentScrollY;
+      setLastScrollY(currentScrollY);
     };
 
-    // Set initial scroll position
-    prevScrollY = window.scrollY;
-    setLastScrollY(window.scrollY);
+    // Initialize
+    previousScrollY = window.scrollY;
+    setIsVisible(true);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []); // Remove lastScrollY dependency to prevent unnecessary re-renders
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    };
+  }, []);
 
   // Handle login form input changes
   const handleLoginInputChange = (field: string, value: string) => {
