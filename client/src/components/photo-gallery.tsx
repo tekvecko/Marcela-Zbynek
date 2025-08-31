@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import OptimizedImage from "@/components/ui/optimized-image";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import GlassButton from "@/components/ui/glass-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { UploadedPhoto } from "@shared/schema";
 
 // Extended photo type with runtime properties from server
@@ -908,7 +909,8 @@ export default function PhotoGallery() {
                 isFullscreen
                   ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
                   : 'max-w-5xl w-[95vw] md:w-[90vw] lg:w-[85vw] h-[95vh] md:max-h-[95vh] p-0'
-              } bg-black/95 border-none transition-all duration-300 overflow-hidden`}
+              } bg-black/95 border-none transition-all duration-500 ease-in-out transform overflow-hidden
+              animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-4`}
               onInteractOutside={(e) => {
                 // Zavřít dialog při kliknutí mimo obsah
                 setSelectedPhoto(null);
@@ -925,7 +927,8 @@ export default function PhotoGallery() {
                   new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')
                 }
               </DialogDescription>
-                <div className="relative h-full flex flex-col overflow-hidden">
+              
+              <div className="relative h-full flex flex-col overflow-hidden">
                 {/* Top Controls */}
                 {!isFullscreen && (
                   <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-20 flex justify-between items-center">
@@ -956,7 +959,7 @@ export default function PhotoGallery() {
                 {isFullscreen ? (
                   // Fullscreen režim - kompletně přepracovaný
                   <div 
-                    className="fixed inset-0 z-50 bg-black"
+                    className="fixed inset-0 z-50 bg-black transition-all duration-500 ease-in-out"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Fullscreen Controls */}
@@ -984,11 +987,11 @@ export default function PhotoGallery() {
                     </div>
                     
                     {/* Centr ovaná fotka */}
-                    <div className="w-full h-full flex items-center justify-center p-4">
+                    <div className="w-full h-full flex items-center justify-center p-4 transition-transform duration-300">
                       <img
                         src={`/api/photos/${selectedPhoto.filename}`}
                         alt={selectedPhoto.aiAnalysis || "Wedding photo"}
-                        className="max-w-full max-h-full object-contain cursor-pointer"
+                        className="max-w-full max-h-full object-contain cursor-pointer transition-all duration-500 ease-out hover:scale-105"
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                         }}
@@ -1024,7 +1027,7 @@ export default function PhotoGallery() {
                     <div className="flex-1 overflow-y-auto">
                       <div className="bg-black/80 p-3 md:p-4 lg:p-6">
                         <div className="text-white space-y-3 md:space-y-4">
-                    <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
+                          <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
                       <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
                         <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm md:text-base lg:text-lg font-bold flex-shrink-0 overflow-hidden">
                           {users[selectedPhoto.uploaderName]?.profileImageUrl ? (
@@ -1302,7 +1305,7 @@ export default function PhotoGallery() {
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
             </DialogContent>
           </Dialog>
         )}
