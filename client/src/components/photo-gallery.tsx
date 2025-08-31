@@ -1302,7 +1302,7 @@ export default function PhotoGallery() {
                     </div>
                   </div>
                 )}
-                </div>
+              </div>
             </DialogContent>
           </Dialog>
         )}
