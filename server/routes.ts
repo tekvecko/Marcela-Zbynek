@@ -71,16 +71,13 @@ const upload = multer({
     const allowedTypes = [
       'image/jpeg',
       'image/jpg',
-      'image/png',
-      'image/heic',
-      'image/heif',
-      'image/webp'
+      'image/png'
     ];
 
     // Check file type
     console.log('File mime type:', file.mimetype);
     if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
+      return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, JPEG, PNG`));
     }
 
     // Additional filename validation
