@@ -265,11 +265,32 @@ export default function ChallengePage() {
       setCurrentStep("Chyba při zpracování");
       setUploadSpeed(0);
 
+      // Poskytni specifičtější chybové hlášky
+      let errorMessage = error.message;
+      if (error.message?.includes("již splnili")) {
+        errorMessage = "Tento úkol jste již dokončili. Každou fotovýzvu lze splnit pouze jednou.";
+      } else if (error.message?.includes("Nepodporovaný typ souboru")) {
+        errorMessage = "Nepodporovaný formát obrázku. Použijte JPG, JPEG nebo PNG.";
+      } else if (error.message?.includes("příliš velký")) {
+        errorMessage = "Soubor je příliš velký. Maximální velikost je 5MB.";
+      } else if (error.message?.includes("timeout") || error.message?.includes("Network error")) {
+        errorMessage = "Problém se sítí. Zkontrolujte připojení a zkuste to znovu.";
+      } else if (!error.message || error.message === "") {
+        errorMessage = "Neočekávaná chyba při nahrávání. Zkuste to prosím znovu.";
+      }
+
       toast({
         title: "Chyba při nahrávání",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
+
+      // Reset po 5 sekundách pro možnost retry
+      setTimeout(() => {
+        setUploadStage('idle');
+        setUploadProgress(0);
+        setCurrentStep("");
+      }, 5000);
     },
   });
 

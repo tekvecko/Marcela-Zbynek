@@ -917,25 +917,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update quest progress if questId provided
       if (isQuestPhoto && req.user) {
-        const participantName = req.user.email;
-        const progress = await storage.getOrCreateQuestProgress(validatedData.questId, participantName);
-
-        if (isVerified) {
-          // Check if quest is already completed
-          if (progress.isCompleted) {
-            return res.status(400).json({
-              message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou."
-            });
+        try {
+          const participantName = req.user.email;
+          
+          // Validace questId před pokračováním
+          if (!validatedData.questId || typeof validatedData.questId !== 'string') {
+            throw new Error('Invalid questId provided');
           }
 
-          // For quest challenges, mark as completed when photo is verified by AI
-          await storage.updateQuestProgress(progress.id, 1, true);
-          console.log(`Quest completed with AI-verified photo`);
-        } else {
-          // Photo not verified - increment photos uploaded but don't complete quest
-          const newPhotosCount = progress.photosUploaded + 1;
-          await storage.updateQuestProgress(progress.id, newPhotosCount, false);
-          console.log(`Photo uploaded but not verified - quest still in progress (${newPhotosCount} photos uploaded)`);
+          // Ověř, že challenge existuje
+          const challenge = await storage.getQuestChallenge(validatedData.questId);
+          if (!challenge) {
+            throw new Error('Challenge not found');
+          }
+
+          const progress = await storage.getOrCreateQuestProgress(validatedData.questId, participantName);
+
+          if (isVerified) {
+            // Check if quest is already completed
+            if (progress.isCompleted) {
+              return res.status(400).json({
+                message: "Tento úkol jste již splnili. Každou fotovýzvu lze splnit pouze jednou."
+              });
+            }
+
+            // For quest challenges, mark as completed when photo is verified by AI
+            await storage.updateQuestProgress(progress.id, 1, true);
+            console.log(`Quest completed with AI-verified photo`);
+          } else {
+            // Photo not verified - increment photos uploaded but don't complete quest
+            const newPhotosCount = progress.photosUploaded + 1;
+            await storage.updateQuestProgress(progress.id, newPhotosCount, false);
+            console.log(`Photo uploaded but not verified - quest still in progress (${newPhotosCount} photos uploaded)`);
+          }
+        } catch (questError) {
+          console.error('Failed to update quest progress:', questError);
+          // Don't fail the entire upload if quest progress update fails
         }
       }
 
@@ -978,6 +995,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { achievementSystem } = await import("./achievement-system");
           const { streakSystem } = await import("./streak-system");
 
+          if (!req.user?.email) {
+            console.warn('No user email for gamification updates');
+            return;
+          }
+
           // Award experience based on action
           let experienceGained = 10; // Base XP for upload
           if (isVerified && isQuestPhoto) {
@@ -985,16 +1007,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const levelResult = await levelSystem.addExperience(
-            req.user?.email || 'anonymous',
+            req.user.email,
             experienceGained,
             'photo_upload'
           );
 
-          // Update photo streak
-          await streakSystem.updateUserStreak(req.user?.email || 'anonymous', 'photo');
+          // Update photo streak with better error handling
+          try {
+            await streakSystem.updateUserStreak(req.user.email, 'photo');
+          } catch (streakError) {
+            console.error('Error updating streak:', streakError);
+            // Continue with other gamification features even if streak fails
+          }
 
           // Check for new achievements
-          const newAchievements = await achievementSystem.checkUserAchievements(req.user?.email || 'anonymous');
+          let newAchievements = [];
+          try {
+            newAchievements = await achievementSystem.checkUserAchievements(req.user.email);
+          } catch (achievementError) {
+            console.error('Error checking achievements:', achievementError);
+            // Continue without achievements if they fail
+          }
 
           // Include gamification data in response
           photoData.gamification = {
@@ -1008,7 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }))
           };
         } catch (gamificationError) {
-          console.warn('Gamification update failed:', gamificationError);
+          console.error('Gamification update failed:', gamificationError);
           // Don't fail the upload if gamification fails
         }
 
