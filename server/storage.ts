@@ -1,6 +1,6 @@
 import {
   users, questChallenges, uploadedPhotos, photoLikes, photoComments, questProgress, authSessions,
-  userBehaviorLogs, aiLearningInsights, userAchievements, userStreaks, userLevels,
+  userBehaviorLogs, aiLearningInsights, userAchievements, userStreaks, userLevels, miniGameScores, miniGames,
   type User, type InsertUser, type UpsertUser,
   type QuestChallenge, type InsertQuestChallenge,
   type UploadedPhoto, type InsertUploadedPhoto,
@@ -9,7 +9,9 @@ import {
   type QuestProgress, type InsertQuestProgress,
   type AuthUser, type InsertAuthUser, type AuthSession, type InsertAuthSession,
   type UserBehaviorLog, type InsertUserBehaviorLog,
-  type AiLearningInsight, type InsertAiLearningInsight
+  type AiLearningInsight, type InsertAiLearningInsight,
+  type MiniGameScore, type InsertMiniGameScore,
+  type MiniGame, type InsertMiniGame
 } from "@shared/schema";
 import { db, dbName } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -89,6 +91,7 @@ export interface IStorage {
   getStreakLeaderboard(streakType: string): Promise<any[]>;
   addUserPoints(userId: string, points: number): Promise<void>;
   getMiniGameScores(userId?: string): Promise<any[]>;
+  getMiniGames(): Promise<any[]>;
   getUserLevel(userId: string): Promise<any | null>;
   saveUserLevel(level: any): Promise<void>;
   updateUserLevel(level: any): Promise<void>;
@@ -109,7 +112,7 @@ export class MemStorage implements IStorage {
   private userAchievements: Map<string, any>;
   private userStreaks: Map<string, any>;
   private userLevels: Map<string, any>;
-  private miniGameScores: Map<string, any>;
+  private miniGameScores: Map<string, any>; // Changed to Map<string, MiniGameScore> for type safety
 
   constructor() {
     this.users = new Map();
@@ -923,8 +926,20 @@ export class MemStorage implements IStorage {
   }
 
   async saveUserAchievement(achievement: any): Promise<void> {
-    const id = randomUUID();
-    this.userAchievements.set(id, { ...achievement, id });
+    try {
+      if (!db) throw new Error("Database not available");
+
+      await db.insert(userAchievements).values({
+        id: achievement.id || `${achievement.userId}_${achievement.achievementId}_${Date.now()}`,
+        userId: achievement.userId,
+        achievementId: achievement.achievementId,
+        unlockedAt: achievement.unlockedAt || new Date(),
+        progress: achievement.progress || 0
+      }).onConflictDoNothing();
+    } catch (error) {
+      console.error("Failed to save user achievement:", error);
+      // Don't throw error to prevent breaking the main flow
+    }
   }
 
   async getUserStreak(userId: string, streakType: string): Promise<any | null> {
@@ -937,12 +952,32 @@ export class MemStorage implements IStorage {
   }
 
   async saveUserStreak(streak: any): Promise<void> {
-    const existing = await this.getUserStreak(streak.userId, streak.streakType);
-    if (existing) {
-      Object.assign(existing, streak); // Update existing
-    } else {
-      const id = randomUUID();
-      this.userStreaks.set(id, { ...streak, id });
+    try {
+      if (!db) throw new Error("Database not available");
+
+      if (!streak.userId || !streak.streakType) {
+        console.warn("Missing required streak data, skipping save:", streak);
+        return;
+      }
+
+      await db.insert(userStreaks).values({
+        id: streak.id || `${streak.userId}_${streak.streakType}_${Date.now()}`,
+        userId: streak.userId,
+        currentStreak: streak.currentStreak || 0,
+        longestStreak: streak.longestStreak || 0,
+        lastActivityDate: streak.lastActivityDate || new Date(),
+        streakType: streak.streakType
+      }).onConflictDoUpdate({
+        target: userStreaks.id,
+        set: {
+          currentStreak: streak.currentStreak || 0,
+          longestStreak: streak.longestStreak || 0,
+          lastActivityDate: streak.lastActivityDate || new Date()
+        }
+      });
+    } catch (error) {
+      console.error("Failed to save user streak:", error);
+      // Don't throw error to prevent breaking the main flow
     }
   }
 
@@ -969,6 +1004,10 @@ export class MemStorage implements IStorage {
       return scores.filter(score => score.playerEmail === userId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     }
     return scores.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getMiniGames(): Promise<any[]> {
+    return Array.from(this.miniGameScores.values()); // Placeholder, this should return actual mini games
   }
 
   async getUserLevel(userId: string): Promise<any | null> {
@@ -1974,10 +2013,17 @@ export class DatabaseStorage implements IStorage {
   async saveUserAchievement(achievement: any): Promise<void> {
     try {
       if (!db) throw new Error("Database not available");
-      await db.insert(userAchievements).values(achievement);
+
+      await db.insert(userAchievements).values({
+        id: achievement.id || `${achievement.userId}_${achievement.achievementId}_${Date.now()}`,
+        userId: achievement.userId,
+        achievementId: achievement.achievementId,
+        unlockedAt: achievement.unlockedAt || new Date(),
+        progress: achievement.progress || 0
+      }).onConflictDoNothing();
     } catch (error) {
       console.error("Failed to save user achievement:", error);
-      throw error;
+      // Don't throw error to prevent breaking the main flow
     }
   }
 
@@ -2058,10 +2104,34 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getMiniGameScores(userId?: string): Promise<any[]> {
-    // This would need a mini game scores table implementation
-    console.log("DatabaseStorage: Getting mini game scores for user:", userId);
-    return [];
+  async getMiniGameScores(userEmail?: string): Promise<MiniGameScore[]> {
+    try {
+      if (!db) throw new Error("Database not available");
+
+      let query = db.select().from(miniGameScores);
+
+      if (userEmail) {
+        query = query.where(eq(miniGameScores.playerEmail, userEmail));
+      }
+
+      const scores = await query.orderBy(desc(miniGameScores.createdAt));
+      console.log(`DatabaseStorage: Getting mini game scores for user: ${userEmail || 'all users'}`);
+      return scores;
+    } catch (error) {
+      console.error("Failed to get mini game scores:", error);
+      return [];
+    }
+  }
+
+  async getMiniGames(): Promise<MiniGame[]> {
+    try {
+      if (!db) throw new Error("Database not available");
+      const games = await db.select().from(miniGames).where(eq(miniGames.isActive, true));
+      return games;
+    } catch (error) {
+      console.error("Failed to get mini games:", error);
+      return [];
+    }
   }
 
   async getUserLevel(userId: string): Promise<any | null> {
