@@ -1030,32 +1030,32 @@ export default function PhotoGallery() {
                       <div className="bg-black/80 p-3 md:p-4 lg:p-6">
                         <div className="text-white space-y-3 md:space-y-4">
                           <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
-                      <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
-                        <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm md:text-base lg:text-lg font-bold flex-shrink-0 overflow-hidden">
-                          {users[selectedPhoto.uploaderName]?.profileImageUrl ? (
-                            <img 
-                              src={users[selectedPhoto.uploaderName].profileImageUrl} 
-                              alt={getDisplayName(selectedPhoto.uploaderName, users)}
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            getProfileImage(selectedPhoto.uploaderName, users)
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm md:text-lg lg:text-xl font-semibold truncate">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
-                          <p className="text-white/80 text-xs md:text-sm">
-                            {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2 md:space-x-3 lg:space-x-4 flex-shrink-0">
+                            <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
+                              <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm md:text-base lg:text-lg font-bold flex-shrink-0 overflow-hidden">
+                                {users[selectedPhoto.uploaderName]?.profileImageUrl ? (
+                                  <img 
+                                    src={users[selectedPhoto.uploaderName].profileImageUrl} 
+                                    alt={getDisplayName(selectedPhoto.uploaderName, users)}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  getProfileImage(selectedPhoto.uploaderName, users)
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="text-sm md:text-lg lg:text-xl font-semibold truncate">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
+                                <p className="text-white/80 text-xs md:text-sm">
+                                  {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 md:space-x-3 lg:space-x-4 flex-shrink-0">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <GlassButton
@@ -1232,6 +1232,8 @@ export default function PhotoGallery() {
                             Zatím zde nejsou žádné komentáře
                           </p>
                         )}
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Fullscreen overlay info (hidden by default, shows on hover/tap) */}
@@ -1303,12 +1305,13 @@ export default function PhotoGallery() {
                         </div>
                       </div>
                     )}
+                    </div>
                   </div>
                 )}
               </div>
             </DialogContent>
           </Dialog>
         )}
-    </section>
+      </section>
   );
 }
