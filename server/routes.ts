@@ -71,16 +71,13 @@ const upload = multer({
     const allowedTypes = [
       'image/jpeg',
       'image/jpg',
-      'image/png',
-      'image/heic',
-      'image/heif',
-      'image/webp'
+      'image/png'
     ];
 
     // Check file type
     console.log('File mime type:', file.mimetype);
     if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, PNG, HEIC, WebP`));
+      return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, JPEG, PNG`));
     }
 
     // Additional filename validation
@@ -958,10 +955,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         await storage.logUserBehavior({
           userEmail: req.user?.email || 'anonymous',
-          actionType: isQuestPhoto ? 'photo_quest_upload' : 'photo_gallery_upload',
+          actionType: 'photo_upload',
+          targetId: validatedData.questId,
           details: JSON.stringify(analysisStats),
           pointsEarned: 0
         });
+
+        // Log quest completion separately if verified
+        if (isQuestPhoto && isVerified) {
+          await storage.logUserBehavior({
+            userEmail: req.user?.email || 'anonymous',
+            actionType: 'quest_complete',
+            targetId: validatedData.questId,
+            details: JSON.stringify({ questId: validatedData.questId, verificationScore }),
+            pointsEarned: 0
+          });
+        }
 
         // Award experience and check achievements
         try {
