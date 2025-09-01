@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { z } from "zod";
-import { insertQuestChallengeSchema, registerSchema, loginSchema } from "@shared/schema";
+import { insertQuestChallengeSchema, registerSchema, loginSchema, uploadedPhotos, questChallenges, questProgress } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -212,19 +212,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalSessions: progress.length * 2, // Approximate sessions
         averageSessionDuration: 180, // 3 minutes average
         popularChallenges: challenges
-          .map(c => ({
+          .map((c: any) => ({
             id: c.id,
             title: c.title,
-            interactions: photos.filter(p => p.questId === c.id).length
+            interactions: photos.filter((p: any) => p.questId === c.id).length
           }))
-          .sort((a, b) => b.interactions - a.interactions)
+          .sort((a: any, b: any) => b.interactions - a.interactions)
           .slice(0, 5),
         peakHours: Array.from({ length: 24 }, (_, hour) => ({
           hour,
           activity: Math.floor(Math.random() * 100)
         })),
         userRetentionRate: 85,
-        photoUploadSuccess: photos.filter(p => p.isVerified).length / Math.max(photos.length, 1) * 100
+        photoUploadSuccess: photos.filter((p: any) => p.isVerified).length / Math.max(photos.length, 1) * 100
       };
 
       res.json(analyticsData);
@@ -600,7 +600,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const photoLikeData = behaviorLogs
         .filter(log => log.actionType === 'photo_like')
         .map(log => {
-          const photo = photos.find(p => p.id === log.targetId);
+          // Extract photo ID from log details (since targetId doesn't exist)
+          let photoId = null;
+          if (log.details) {
+            try {
+              const details = JSON.parse(log.details);
+              photoId = details.photoId;
+            } catch {
+              // If details is just a string, try to extract ID
+              const match = log.details.match(/photo[_\s]id[:\s]+([a-f0-9\-]+)/i);
+              photoId = match ? match[1] : null;
+            }
+          }
+          const photo = photoId ? photos.find(p => p.id === photoId) : null;
           return { log, photo };
         })
         .filter(item => item.photo);
