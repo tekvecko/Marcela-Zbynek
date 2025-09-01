@@ -1,12 +1,41 @@
-import { Calendar, MapPin, Clock, Utensils, Music, Copy, Share2 } from "lucide-react";
+
+import { Calendar, MapPin, Clock, Utensils, Music, Copy, Share2, ChevronDown, Anchor } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { HelpTooltip } from "@/components/ui/help-tooltip"; // Předpokládám, že tato komponenta existuje
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 
 export default function WeddingDetails() {
-  const { toast } = useToast(); // Používám toast z useToast hooku
+  const { toast } = useToast();
+  const [activeSection, setActiveSection] = useState<string>('');
+
+  // Sledování aktivní sekce při scrollování
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['ceremony', 'venue', 'timeline', 'menu', 'music'];
+      const current = sections.find(section => {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          return rect.top <= 100 && rect.bottom >= 100;
+        }
+        return false;
+      });
+      if (current) setActiveSection(current);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const openGoogleCalendar = () => {
     const url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Svatba+Marcela+a+Zbyn%C4%9Bk&dates=20251011T120000Z/20251011T160000Z&details=Svatba+ve+Star%C3%A1+Po%C5%A1ta,+Kovalovice+109&location=Kovalovice+109,+%C4%8Cesk%C3%A1+republika";
@@ -14,7 +43,6 @@ export default function WeddingDetails() {
   };
 
   const openAppleCalendar = () => {
-    // Apple Calendar uses a different format
     const url = "data:text/calendar;charset=utf8,BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:20251011T120000Z\nDTEND:20251011T160000Z\nSUMMARY:Svatba Marcela a Zbyněk\nDESCRIPTION:Svatba ve Stará Pošta, Kovalovice 109\nLOCATION:Kovalovice 109, Česká republika\nEND:VEVENT\nEND:VCALENDAR";
     const blob = new Blob([url.replace(/data:text\/calendar;charset=utf8,/, '')], { type: 'text/calendar' });
     const link = document.createElement('a');
@@ -23,219 +51,415 @@ export default function WeddingDetails() {
     link.click();
   };
 
-  const shareOnFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
-    window.open(url, '_blank', 'width=600,height=400');
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Zkopírováno!",
+      description: "Text byl zkopírován do schránky",
+    });
   };
 
-  const shareOnWhatsApp = () => {
-    const text = "Pozvánka na svatbu Marcely a Zbyňka! 💕";
-    const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`;
-    window.open(url, '_blank');
-  };
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Odkaz zkopírován!",
-        description: "Odkaz na svatební web byl zkopírován do schránky.",
+  const shareEvent = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Svatba Marcela a Zbyněk',
+        text: 'Pozvánka na svatbu Marcely a Zbyňka - 11. října 2025',
+        url: window.location.href,
       });
-    } catch {
-      toast({
-        title: "Chyba při kopírování",
-        description: "Nepodařilo se zkopírovat odkaz.",
-        variant: "destructive",
-      });
+    } else {
+      copyToClipboard(window.location.href);
     }
   };
 
-  const openMap = () => {
-    const query = encodeURIComponent("Kovalovice 109, Česká republika");
-    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
-    window.open(url, '_blank');
-  };
+  const sections = [
+    { id: 'ceremony', title: 'Obřad', icon: Calendar },
+    { id: 'venue', title: 'Místo konání', icon: MapPin },
+    { id: 'timeline', title: 'Program dne', icon: Clock },
+    { id: 'menu', title: 'Občerstvení', icon: Utensils },
+    { id: 'music', title: 'Hudba', icon: Music }
+  ];
 
   return (
-    <section id="details" className="py-20 bg-white">
+    <section className="py-20 bg-gradient-to-br from-cream via-blush to-cream">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
           <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-4">
-            Kde se vezmeme? <span className="heart-decoration">💒</span>
+            Detaily svatby <span className="heart-decoration">💒</span>
           </h2>
-          <p className="text-lg text-charcoal/70">Všechny důležité informace o našem velkém dni</p>
-        </div>
+          <p className="text-lg text-charcoal/70 max-w-3xl mx-auto mb-8">
+            Vše, co potřebujete vědět o našem velkém dni
+          </p>
+        </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Location Info */}
-          <Card className="bg-gradient-to-br from-blush to-cream rounded-3xl shadow-lg">
-            <CardContent className="p-8">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-romantic rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="text-white" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal mb-2">Místo konání</h3>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start space-x-4">
-                  <Calendar className="text-romantic mt-1" size={20} />
-                  <div>
-                    <p className="font-semibold text-charcoal">Obřad</p>
-                    <p className="text-charcoal/70">Kovalovice 109</p>
-                    <p className="text-charcoal/70">Česká republika</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <Clock className="text-gold mt-1" size={20} />
-                  <div>
-                    <p className="font-semibold text-charcoal">Čas</p>
-                    <p className="text-charcoal/70">11. října 2025</p>
-                    <p className="text-charcoal/70">12:00</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <Utensils className="text-love mt-1" size={20} />
-                  <div>
-                    <p className="font-semibold text-charcoal">Hostina</p>
-                    <p className="text-charcoal/70">Následuje po obřadu</p>
-                    <p className="text-charcoal/70">Ve stejném místě</p>
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                onClick={openMap}
-                className="w-full bg-romantic text-white hover:bg-love mt-6"
-              >
-                <MapPin className="mr-2" size={16} />
-                Navigovat
-              </Button>
+        {/* Navigační menu */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-12"
+        >
+          <Card className="bg-white/30 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 sticky top-4 z-40">
+            <CardContent className="p-4">
+              <nav className="flex flex-wrap justify-center gap-2 md:gap-4">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <Button
+                      key={section.id}
+                      variant={activeSection === section.id ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => scrollToSection(section.id)}
+                      className={`flex items-center gap-2 transition-all duration-300 ${
+                        activeSection === section.id 
+                          ? 'bg-romantic text-white shadow-lg scale-105' 
+                          : 'text-charcoal hover:bg-romantic/10 hover:text-romantic'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span className="hidden sm:inline">{section.title}</span>
+                    </Button>
+                  );
+                })}
+              </nav>
             </CardContent>
           </Card>
+        </motion.div>
 
-          {/* Calendar & Social Sharing */}
-          <Card className="bg-gradient-to-br from-cream to-gold/20 rounded-3xl shadow-lg">
+        {/* Obřad */}
+        <motion.section
+          id="ceremony"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-16"
+        >
+          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
             <CardContent className="p-8">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Share2 className="text-white" size={24} />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-romantic/20 rounded-full">
+                  <Calendar className="text-romantic" size={24} />
                 </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal mb-2">Sdílejte s námi</h3>
+                <h3 className="font-display text-2xl font-bold text-charcoal">Svatební obřad</h3>
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold text-charcoal mb-4">Přidat do kalendáře</h4>
-                  <div className="space-y-3">
-                    {/* Zde došlo k úpravě */}
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={openGoogleCalendar}
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        <Calendar className="mr-2" size={16} />
-                        Google Kalendář
-                      </Button>
-                      <HelpTooltip 
-                        content="Přidá všechny důležité termíny svatby do vašeho kalendáře, abyste na nic nezapomněli."
-                        side="top"
-                      />
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="text-gold" size={20} />
+                    <div>
+                      <p className="font-semibold text-charcoal">Datum</p>
+                      <p className="text-charcoal/70">Sobota, 11. října 2025</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={openAppleCalendar}
-                        variant="outline" 
-                        className="w-full justify-start"
-                      >
-                        <Calendar className="mr-2" size={16} />
-                        Apple Kalendář
-                      </Button>
-                      <HelpTooltip 
-                        content="Přidá všechny důležité termíny svatby do vašeho kalendáře, abyste na nic nezapomněli."
-                        side="top"
-                      />
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Clock className="text-gold" size={20} />
+                    <div>
+                      <p className="font-semibold text-charcoal">Čas</p>
+                      <p className="text-charcoal/70">14:00 - začátek obřadu</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <MapPin className="text-gold" size={20} />
+                    <div>
+                      <p className="font-semibold text-charcoal">Místo</p>
+                      <p className="text-charcoal/70">Stará Pošta, Kovalovice 109</p>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold text-charcoal mb-4">Sdílet svatební web</h4>
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-charcoal mb-3">Přidat do kalendáře</h4>
+                  <div className="space-y-3">
                     <Button 
-                      onClick={shareOnFacebook}
-                      className="bg-blue-600 text-white hover:bg-blue-700"
+                      onClick={openGoogleCalendar}
+                      className="w-full bg-romantic hover:bg-romantic/90 text-white"
                     >
-                      Facebook
+                      <Calendar className="mr-2" size={16} />
+                      Google Calendar
                     </Button>
+                    
                     <Button 
-                      onClick={shareOnWhatsApp}
-                      className="bg-green-600 text-white hover:bg-green-700"
+                      onClick={openAppleCalendar}
+                      variant="outline"
+                      className="w-full border-romantic text-romantic hover:bg-romantic/10"
                     >
-                      WhatsApp
+                      <Calendar className="mr-2" size={16} />
+                      Apple Calendar
                     </Button>
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
 
-                  <div className="bg-white rounded-xl p-4">
-                    <p className="text-sm text-charcoal/70 mb-2">Nebo zkopírujte odkaz:</p>
-                    <div className="flex items-center space-x-2">
+        {/* Místo konání */}
+        <motion.section
+          id="venue"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mb-16"
+        >
+          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-gold/20 rounded-full">
+                  <MapPin className="text-gold" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal">Místo konání</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">Stará Pošta</h4>
+                    <p className="text-charcoal/70 mb-4">
+                      Historická budova v srdci Kovalovic, která poskytuje romantickou atmosféru 
+                      pro náš velký den. Krásné prostory s venkovní zahradou.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">Adresa</h4>
+                    <div className="flex items-center gap-2 mb-2">
                       <Input 
-                        value={window.location.href}
+                        value="Kovalovice 109, 664 07 Kovalovice" 
                         readOnly 
-                        className="flex-1 bg-blush border-0 text-sm text-charcoal"
+                        className="bg-white/50"
                       />
                       <Button 
-                        onClick={copyLink}
                         size="sm"
-                        className="bg-romantic text-white hover:bg-love"
+                        variant="outline"
+                        onClick={() => copyToClipboard("Kovalovice 109, 664 07 Kovalovice")}
                       >
                         <Copy size={16} />
                       </Button>
                     </div>
                   </div>
                 </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-3">Navigace</h4>
+                    <div className="space-y-2">
+                      <Button 
+                        className="w-full bg-gold hover:bg-gold/90 text-white"
+                        onClick={() => window.open('https://mapy.cz/s/2bCb8', '_blank')}
+                      >
+                        <MapPin className="mr-2" size={16} />
+                        Mapy.cz
+                      </Button>
+                      
+                      <Button 
+                        variant="outline"
+                        className="w-full border-gold text-gold hover:bg-gold/10"
+                        onClick={() => window.open('https://maps.google.com/?q=Kovalovice+109', '_blank')}
+                      >
+                        <MapPin className="mr-2" size={16} />
+                        Google Maps
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">Parkování</h4>
+                    <p className="text-charcoal/70 text-sm">
+                      K dispozici je parkoviště přímo u objektu. 
+                      Doporučujeme příjezd 15 minut před začátkem obřadu.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.section>
 
-        {/* Spotify Playlist Section */}
-        <Card className="bg-white rounded-3xl shadow-xl mt-12 max-w-4xl mx-auto">
-          <CardContent className="p-8">
-            <div className="text-center mb-8">
-              <h3 className="font-display text-2xl font-bold text-charcoal mb-4">
-                Náš svatební playlist <span className="heart-decoration">🎵</span>
-              </h3>
-              <p className="text-charcoal/70">Hudba, která doprovází náš velký den</p>
-            </div>
+        {/* Program dne */}
+        <motion.section
+          id="timeline"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-16"
+        >
+          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-love/20 rounded-full">
+                  <Clock className="text-love" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal">Program svatebního dne</h3>
+              </div>
 
-            {/* Spotify Embed */}
-            <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-2xl p-8 text-white text-center">
-              <Music size={48} className="mx-auto mb-4" />
-              <h4 className="text-xl font-bold mb-2">Spotify Playlist</h4>
-              <p className="mb-4">playlist - obřad - Marcela a Zbyněk</p>
-              <div className="bg-white/20 rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between text-left">
-                  <div>
-                    <p className="font-semibold">Feel Love - Nitelite Edit</p>
-                    <p className="text-sm opacity-80">Darren Styles</p>
+              <div className="space-y-6">
+                {[
+                  { time: "13:30", event: "Sraz hostů", description: "Přivítání a registrace hostů" },
+                  { time: "14:00", event: "Svatební obřad", description: "Oficiální začátek naší cesty" },
+                  { time: "14:30", event: "Gratulace a focení", description: "Společné fotky s hosty" },
+                  { time: "15:00", event: "Raut a občerstvení", description: "Aperitiv a lehké občerstvení" },
+                  { time: "16:00", event: "Svatební hostina", description: "Hlavní jídlo a proslovy" },
+                  { time: "18:00", event: "Krájení dortu", description: "Tradiční krájení svatebního dortu" },
+                  { time: "19:00", event: "První tanec", description: "Náš první tanec jako manželé" },
+                  { time: "19:30", event: "Zábava a tanec", description: "Hudba a tanec do pozdních hodin" }
+                ].map((item, index) => (
+                  <div key={index} className="flex gap-4 items-start">
+                    <div className="bg-love/20 text-love px-3 py-1 rounded-full text-sm font-semibold min-w-[60px] text-center">
+                      {item.time}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-charcoal">{item.event}</h4>
+                      <p className="text-charcoal/70 text-sm">{item.description}</p>
+                    </div>
                   </div>
-                  <span className="text-sm">04:09</span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+
+        {/* Občerstvení */}
+        <motion.section
+          id="menu"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mb-16"
+        >
+          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-sage/20 rounded-full">
+                  <Utensils className="text-sage" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal">Občerstvení</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div>
+                  <h4 className="font-semibold text-charcoal mb-4">Hlavní menu</h4>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Předkrm</p>
+                      <p className="text-charcoal/70 text-sm">Carpaccio z hovězího s parmazánem</p>
+                    </div>
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Hlavní chod</p>
+                      <p className="text-charcoal/70 text-sm">Pečená kachna s červeným zelím a knedlíky</p>
+                    </div>
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Dezert</p>
+                      <p className="text-charcoal/70 text-sm">Svatební dort a zmrzlinový pohár</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-charcoal mb-4">Nápoje a další</h4>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Aperitiv</p>
+                      <p className="text-charcoal/70 text-sm">Prosecco, víno, nealko</p>
+                    </div>
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">K hostině</p>
+                      <p className="text-charcoal/70 text-sm">Moravská vína, pivo, nealko nápoje</p>
+                    </div>
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Vegetariánská varianta</p>
+                      <p className="text-charcoal/70 text-sm">Dostupná na požádání</p>
+                    </div>
+                  </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+
+        {/* Hudba */}
+        <motion.section
+          id="music"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mb-16"
+        >
+          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-romantic/20 rounded-full">
+                  <Music className="text-romantic" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal">Hudba a zábava</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div>
+                  <h4 className="font-semibold text-charcoal mb-4">Hudební program</h4>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Obřad</p>
+                      <p className="text-charcoal/70 text-sm">Klasická hudba a svatební písně</p>
+                    </div>
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Hostina</p>
+                      <p className="text-charcoal/70 text-sm">Jemná background music</p>
+                    </div>
+                    <div className="p-3 bg-white/30 rounded-lg">
+                      <p className="font-medium text-charcoal">Večerní zábava</p>
+                      <p className="text-charcoal/70 text-sm">DJ mix - hity všech generací</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-charcoal mb-4">Hudební přání</h4>
+                  <p className="text-charcoal/70 mb-4">
+                    Máte oblíbenou písničku, při které se radi bavíte? 
+                    Napište nám ji do komentáře na svatební fotografii v galerii!
+                  </p>
+                  
+                  <div className="p-4 bg-white/30 rounded-lg">
+                    <p className="text-charcoal/70 text-sm italic">
+                      "Hudba spojuje srdce a vytváří nezapomenutelné okamžiky. 
+                      Těšíme se, až si s vámi zatancujeme!"
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+
+        {/* Sdílení */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="text-center"
+        >
+          <Card className="bg-gradient-to-r from-romantic/10 to-love/10 rounded-3xl shadow-lg border border-romantic/20 max-w-md mx-auto">
+            <CardContent className="p-6">
+              <h4 className="font-semibold text-charcoal mb-4">Sdílet detaily</h4>
               <Button 
-                onClick={() => window.open('https://open.spotify.com/playlist/6RzgRLBxtDY5vqvyj5Li6X', '_blank')}
-                className="bg-white text-green-600 hover:bg-gray-100"
+                onClick={shareEvent}
+                className="bg-romantic hover:bg-romantic/90 text-white"
               >
-                <Music className="mr-2" size={16} />
-                Poslouchat na Spotify
+                <Share2 className="mr-2" size={16} />
+                Sdílet s přáteli
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </section>
   );
