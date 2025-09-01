@@ -248,6 +248,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Progress and Achievement Endpoints
+  app.get("/api/user/quest-progress", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const userEmail = req.user?.email;
+      if (!userEmail) {
+        return res.status(400).json({ message: "User email required" });
+      }
+
+      const progress = await storage.getQuestProgressByParticipant(userEmail);
+      res.json(progress);
+    } catch (error) {
+      console.error("Failed to get user quest progress:", error);
+      res.status(500).json({ message: "Chyba při načítání pokroku" });
+    }
+  });
+
+  app.get("/api/user/level", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.id || req.user?.email;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID required" });
+      }
+
+      const level = await storage.getUserLevel(userId);
+      if (level) {
+        res.json(level);
+      } else {
+        // Return default level for new users
+        const defaultLevel = {
+          id: `level_${userId}`,
+          userId: userId,
+          level: 1,
+          experience: 0,
+          totalPoints: 0,
+          experienceToNext: 100,
+          title: "Svatební nováček",
+          createdAt: new Date(),
+          lastUpdated: new Date()
+        };
+        res.json(defaultLevel);
+      }
+    } catch (error) {
+      console.error("Failed to get user level:", error);
+      res.status(500).json({ message: "Chyba při načítání levelu" });
+    }
+  });
+
+  app.get("/api/user/achievements", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.id || req.user?.email;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID required" });
+      }
+
+      const achievements = await storage.getUserAchievements(userId);
+      res.json(achievements || []);
+    } catch (error) {
+      console.error("Failed to get user achievements:", error);
+      res.status(500).json({ message: "Chyba při načítání úspěchů" });
+    }
+  });
+
+  app.get("/api/user/streaks", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.id || req.user?.email;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID required" });
+      }
+
+      // Get different types of streaks
+      const photoStreak = await storage.getUserStreak(userId, 'photo_upload');
+      const questStreak = await storage.getUserStreak(userId, 'quest_completion');
+      
+      const streaks = {
+        photoUpload: photoStreak || { count: 0, lastActivity: null, type: 'photo_upload' },
+        questCompletion: questStreak || { count: 0, lastActivity: null, type: 'quest_completion' }
+      };
+      
+      res.json(streaks);
+    } catch (error) {
+      console.error("Failed to get user streaks:", error);
+      res.status(500).json({ message: "Chyba při načítání streaks" });
+    }
+  });
+
   // Použij monitoring middleware globálně
   app.use('/api', serviceMonitoringMiddleware);
 
