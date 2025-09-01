@@ -20,23 +20,38 @@ const stages = [
   { key: 'complete', icon: CheckCircle, label: 'Hotovo', color: 'text-green-500', bgColor: 'bg-green-500' },
 ];
 
-// Animated number counter
+// Animated number counter s lepší interpolací
 const AnimatedNumber = ({ value, color }: { value: number; color?: string }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDisplayValue(prev => {
-        if (prev < value) {
-          return Math.min(value, prev + 2);
-        } else if (prev > value) {
-          return Math.max(value, prev - 2);
-        }
-        return value;
-      });
-    }, 50);
+    let animationFrame: number;
+    const startValue = displayValue;
+    const startTime = Date.now();
+    const duration = 300; // 300ms pro plynulou animaci
 
-    return () => clearInterval(interval);
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Použij easing funkci pro plynulejší přechod
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const newValue = startValue + (value - startValue) * easeProgress;
+      
+      setDisplayValue(newValue);
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
   }, [value]);
 
   return (
@@ -137,23 +152,27 @@ export default function UploadProgress({
 }: UploadProgressProps) {
   const currentStageIndex = stages.findIndex(s => s.key === stage);
 
-  // Calculate individual stage progress
+  // Calculate individual stage progress s lepším mapováním
   const getStageProgress = (stageIndex: number) => {
     if (stageIndex < currentStageIndex) return 100;
     if (stageIndex > currentStageIndex) return 0;
 
-    // For current stage, map overall progress to stage-specific progress
+    // Vylepšené rozsahy s překryvem pro plynulejší přechody
     const stageRanges = [
-      { start: 0, end: 30 },    // uploading
-      { start: 30, end: 60 },   // analyzing
-      { start: 60, end: 90 },   // verifying
+      { start: 0, end: 35 },    // uploading - více času
+      { start: 25, end: 65 },   // analyzing - překrytí s uploadem
+      { start: 55, end: 95 },   // verifying - překrytí s analýzou
       { start: 90, end: 100 }   // complete
     ];
 
     const range = stageRanges[stageIndex];
     if (!range) return 0;
 
-    return Math.min(100, Math.max(0, ((progress - range.start) / (range.end - range.start)) * 100));
+    // Použij smooth interpolaci pro aktuální fázi
+    const stageProgress = Math.min(100, Math.max(0, ((progress - range.start) / (range.end - range.start)) * 100));
+    
+    // Aplikuj easing pro plynulejší pocit
+    return Math.round(stageProgress);
   };
 
   return (

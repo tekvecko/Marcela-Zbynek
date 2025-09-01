@@ -64,50 +64,94 @@ export default function ChallengePage() {
   };
 
   const uploadPhotoMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      // Reset analysis result and upload speed
-      setAnalysisResult(null);
+    onMutate: async () => {
+      // Reset states
+      setUploadStage('uploading');
+      setUploadProgress(0);
+      setCurrentStep("Připravuji nahrávání...");
       setUploadSpeed(0);
 
-      // Stage 1: Uploading
-      setUploadStage('uploading');
-      setUploadProgress(10);
-      setCurrentStep("Nahrávání fotky na server...");
+      const file = selectedFile;
+      if (!file) throw new Error('No file selected');
 
-      // Track upload speed
-      const file = formData.get('photo') as File;
-      const fileSizeMB = file ? file.size / (1024 * 1024) : 0;
-      const uploadStartTime = Date.now();
-
-      // Simulate upload progress with speed calculation
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const newProgress = Math.min(prev + 3, 30);
-
-          // Calculate upload speed based on progress
-          const elapsed = (Date.now() - uploadStartTime) / 1000; // seconds
-          const progressPercent = newProgress / 100;
-          const uploadedMB = fileSizeMB * progressPercent;
-          const speed = elapsed > 0 ? uploadedMB / elapsed : 0;
-          setUploadSpeed(speed);
-
-          return newProgress;
-        });
-      }, 150);
-
-      // Call the API with auth token
-      const token = localStorage.getItem('auth_token');
-      const headers: Record<string, string> = {};
-      
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      // Create FormData
+      const formData = new FormData();
+      formData.append('photo', file);
+      if (challenge?.id) {
+        formData.append('questId', challenge.id);
       }
 
-      const response = await fetch("/api/photos/upload", {
-        method: "POST",
-        body: formData,
-        headers,
+      // Track upload progress s lepším řízením
+      const startTime = Date.now();
+      let progressUpdateInterval: NodeJS.Timeout;
+
+      // Plynulý progress během přípravy
+      setCurrentStep("Připravuji soubor...");
+      await new Promise(resolve => {
+        let prepProgress = 0;
+        const prepInterval = setInterval(() => {
+          prepProgress += 1;
+          setUploadProgress(Math.min(prepProgress, 8));
+          if (prepProgress >= 8) {
+            clearInterval(prepInterval);
+            resolve(undefined);
+          }
+        }, 50);
       });
+
+      setCurrentStep("Nahrávám soubor...");
+
+      // XMLHttpRequest for progress tracking s vylepšeným řízením
+      const xhr = new XMLHttpRequest();
+      const uploadPromise = new Promise<Response>((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            // Upload zabírá 8-35% celkového procesu
+            const uploadPercent = (e.loaded / e.total) * 27; // 27% rozsah pro upload
+            const totalPercent = 8 + uploadPercent; // Začíná od 8%
+
+            const currentTime = Date.now();
+            const timeElapsed = (currentTime - startTime) / 1000; // seconds
+            const uploadSpeed = timeElapsed > 0 ? (e.loaded / 1024 / 1024) / timeElapsed : 0; // MB/s
+
+            setUploadProgress(Math.min(totalPercent, 35));
+            setUploadSpeed(uploadSpeed);
+
+            if (totalPercent >= 20) {
+              setCurrentStep("Dokončuji nahrávání...");
+            }
+            if (totalPercent >= 30) {
+              setCurrentStep("Přeposílám na server...");
+            }
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // Dokončení uploadu
+            setUploadProgress(35);
+            resolve(new Response(xhr.responseText, { status: xhr.status }));
+          } else {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+
+        xhr.open('POST', '/api/photos/upload');
+
+        // Add auth token if available
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+
+        xhr.send(formData);
+      });
+
+      const response = await uploadPromise;
 
       if (!response.ok) {
         let error;
@@ -119,29 +163,71 @@ export default function ChallengePage() {
         throw new Error(error.message || 'Upload failed');
       }
 
-      clearInterval(progressInterval);
-
-      // Stage 2: AI Analysis
+      // Stage 2: AI Analysis s postupným progressem
       setUploadStage('analyzing');
-      setUploadProgress(50);
-      setCurrentStep("AI analyzuje obsah fotky...");
       setUploadSpeed(0);
+      setCurrentStep("AI analyzuje obsah fotky...");
 
-      // Wait a moment for analysis simulation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Postupný progress pro AI analýzu (35-65%)
+      await new Promise(resolve => {
+        let analysisProgress = 35;
+        const analysisInterval = setInterval(() => {
+          analysisProgress += 1.5;
+          setUploadProgress(Math.min(analysisProgress, 65));
 
-      // Stage 3: Verification
+          if (analysisProgress >= 45) {
+            setCurrentStep("Detekuji objekty na fotce...");
+          }
+          if (analysisProgress >= 55) {
+            setCurrentStep("Hodnotím kvalitu snímku...");
+          }
+          if (analysisProgress >= 65) {
+            clearInterval(analysisInterval);
+            resolve(undefined);
+          }
+        }, 80);
+      });
+
+      // Stage 3: Verification s postupným progressem (65-95%)
       setUploadStage('verifying');
-      setUploadProgress(80);
       setCurrentStep("Ověřování shody se zadáním...");
 
-      // Wait a moment for verification simulation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => {
+        let verifyProgress = 65;
+        const verifyInterval = setInterval(() => {
+          verifyProgress += 2;
+          setUploadProgress(Math.min(verifyProgress, 95));
 
-      // Stage 4: Complete
+          if (verifyProgress >= 75) {
+            setCurrentStep("Kontroluji svatební téma...");
+          }
+          if (verifyProgress >= 85) {
+            setCurrentStep("Finalizuji výsledek...");
+          }
+          if (verifyProgress >= 95) {
+            clearInterval(verifyInterval);
+            resolve(undefined);
+          }
+        }, 60);
+      });
+
+      // Stage 4: Complete s finálním skokem na 100%
       setUploadStage('complete');
-      setUploadProgress(100);
       setCurrentStep("Hotovo!");
+
+      // Plynulý přechod na 100%
+      await new Promise(resolve => {
+        let finalProgress = 95;
+        const finalInterval = setInterval(() => {
+          finalProgress += 1;
+          setUploadProgress(Math.min(finalProgress, 100));
+
+          if (finalProgress >= 100) {
+            clearInterval(finalInterval);
+            resolve(undefined);
+          }
+        }, 40);
+      });
 
       return response.json();
     },
@@ -175,11 +261,13 @@ export default function ChallengePage() {
     },
     onError: (error: any) => {
       setUploadStage('error');
-      setUploadProgress(0);
-      setCurrentStep("Chyba při nahrávání");
+      // Zastavit progress na aktuální hodnotě, ne skočit zpět
+      setCurrentStep("Chyba při zpracování");
+      setUploadSpeed(0);
+
       toast({
         title: "Chyba při nahrávání",
-        description: error.message || "Zkuste to prosím znovu",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -190,7 +278,7 @@ export default function ChallengePage() {
     if (file) {
       // Frontend validation for supported file types
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-      
+
       if (!allowedTypes.includes(file.type)) {
         toast({
           title: "Nepodporovaný formát souboru",
@@ -267,10 +355,6 @@ export default function ChallengePage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("photo", selectedFile);
-    formData.append("questId", challenge.id);
-
     // Scroll to upload progress when analysis starts
     setTimeout(() => {
       uploadProgressRef.current?.scrollIntoView({
@@ -279,7 +363,7 @@ export default function ChallengePage() {
       });
     }, 500);
 
-    uploadPhotoMutation.mutate(formData);
+    uploadPhotoMutation.mutate();
   };
 
   if (challengesLoading) {
