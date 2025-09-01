@@ -81,13 +81,15 @@ export default function Profile() {
     ? ((userLevel.experience % 1000) / 1000) * 100 
     : 0;
 
-  const unlockedAchievementIds = userAchievements.map((ua: any) => ua.achievementId);
-  const unlockedAchievements = allAchievements.filter((a: any) => 
-    unlockedAchievementIds.includes(a.id)
-  );
-  const lockedAchievements = allAchievements.filter((a: any) => 
-    !unlockedAchievementIds.includes(a.id)
-  );
+  const unlockedAchievementIds = Array.isArray(userAchievements) 
+    ? userAchievements.map((ua: any) => ua.achievementId)
+    : [];
+  const unlockedAchievements = Array.isArray(allAchievements) 
+    ? allAchievements.filter((a: any) => unlockedAchievementIds.includes(a.id))
+    : [];
+  const lockedAchievements = Array.isArray(allAchievements)
+    ? allAchievements.filter((a: any) => !unlockedAchievementIds.includes(a.id))
+    : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage">

@@ -138,15 +138,19 @@ export class AchievementSystem {
   
   async checkUserAchievements(userId: string): Promise<UserAchievement[]> {
     try {
+      console.log(`🏆 Checking achievements for user: ${userId}`);
       const userProgress = await storage.getUserBehaviorLogs({ userEmail: userId, limit: 1000 });
       const userAchievements = await this.getUserAchievements(userId);
       const unlockedIds = userAchievements.map(ua => ua.achievementId);
       const newAchievements: UserAchievement[] = [];
 
+      console.log(`📊 User has ${userProgress.length} behavior logs and ${userAchievements.length} achievements`);
+
       for (const achievement of ACHIEVEMENTS) {
         if (unlockedIds.includes(achievement.id)) continue;
 
         const progress = await this.calculateProgress(userId, achievement, userProgress);
+        console.log(`🎯 Achievement "${achievement.id}": ${progress}/${achievement.requirement.count}`);
         
         if (progress >= achievement.requirement.count) {
           const newAchievement = {
@@ -158,9 +162,11 @@ export class AchievementSystem {
           
           await this.unlockAchievement(newAchievement);
           newAchievements.push(newAchievement);
+          console.log(`🎉 NEW ACHIEVEMENT UNLOCKED: ${achievement.title} for ${userId}`);
         }
       }
 
+      console.log(`✅ Achievement check completed. ${newAchievements.length} new achievements unlocked.`);
       return newAchievements;
     } catch (error) {
       console.error('Error checking achievements:', error);
@@ -189,16 +195,26 @@ export class AchievementSystem {
         return relevantActions.filter(log => log.actionType === 'photo_like').length;
       
       case 'perfect_quiz':
-        const quizScores = await storage.getMiniGameScores(userId);
-        return quizScores.filter(score => 
-          score.gameType === 'trivia' && score.score === score.maxScore
-        ).length;
+        try {
+          const quizScores = await storage.getMiniGameScores(userId);
+          return quizScores.filter(score => 
+            score.gameType === 'trivia' && score.score === score.maxScore
+          ).length;
+        } catch (error) {
+          console.warn('Error fetching quiz scores for achievement:', error);
+          return 0;
+        }
       
       case 'play_all_games':
-        const allGames = await storage.getMiniGames();
-        const playedGames = await storage.getMiniGameScores(userId);
-        const uniqueGames = new Set(playedGames.map(score => score.gameId));
-        return uniqueGames.size >= allGames.length ? 1 : 0;
+        try {
+          const allGames = await storage.getMiniGames();
+          const playedGames = await storage.getMiniGameScores(userId);
+          const uniqueGames = new Set(playedGames.map(score => score.gameId));
+          return uniqueGames.size >= allGames.length ? 1 : 0;
+        } catch (error) {
+          console.warn('Error checking game completion for achievement:', error);
+          return 0;
+        }
       
       case 'upload_early':
         return relevantActions.filter(log => {
@@ -211,6 +227,38 @@ export class AchievementSystem {
           const hour = new Date(log.createdAt).getHours();
           return log.actionType === 'photo_upload' && hour >= 22;
         }).length;
+      
+      case 'fast_completion':
+        // Check for quick challenge completions based on session data
+        const fastCompletions = relevantActions.filter(log => {
+          if (log.actionType !== 'quest_complete') return false;
+          try {
+            const details = JSON.parse(log.details || '{}');
+            return details.completionTime && details.completionTime < 60000; // Under 60 seconds
+          } catch {
+            return false;
+          }
+        });
+        return fastCompletions.length;
+      
+      case 'most_liked_photo':
+        try {
+          // Find user's most liked photo
+          const userPhotos = await storage.getUploadedPhotos();
+          const userPhotosByEmail = userPhotos.filter(p => p.uploaderName === userId);
+          if (userPhotosByEmail.length === 0) return 0;
+          
+          const maxLikes = Math.max(...userPhotosByEmail.map(p => p.likes || 0));
+          
+          // Check if this is the highest liked photo overall
+          const allPhotos = await storage.getUploadedPhotos();
+          const globalMaxLikes = Math.max(...allPhotos.map(p => p.likes || 0));
+          
+          return maxLikes === globalMaxLikes && maxLikes > 0 ? 1 : 0;
+        } catch (error) {
+          console.warn('Error checking most liked photo achievement:', error);
+          return 0;
+        }
       
       default:
         return 0;
