@@ -197,8 +197,14 @@ Maximálně 5 prvků v každém poli typu array.
         // If no closing brace found, try to find where JSON likely ends
         if (jsonEnd <= jsonStart) {
           console.log('⚠️ No closing brace found, trying to reconstruct JSON');
-          // Take from start and try to build valid JSON
-          jsonEnd = cleanedJson.length;
+          // Find the last reasonable position for JSON end
+          const lastComma = cleanedJson.lastIndexOf(',');
+          const lastQuote = cleanedJson.lastIndexOf('"');
+          if (lastComma > jsonStart && lastQuote > lastComma) {
+            jsonEnd = lastQuote + 1;
+          } else {
+            jsonEnd = cleanedJson.length;
+          }
         }
         
         let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
@@ -207,13 +213,17 @@ Maximálně 5 prvků v každém poli typu array.
         jsonString = jsonString.replace(/[^}\]]*$/, ''); // Remove trailing non-JSON content
         
         // Fix problematic very long numbers that cause JSON parsing issues
-        jsonString = jsonString.replace(/:\s*(\d+\.\d{10,}[e\-\+\d]*)/g, (match: string, number: string) => {
+        jsonString = jsonString.replace(/:\s*(\d+\.?\d*[e\-\+\d]*)/g, (match: string, number: string) => {
           const num = parseFloat(number);
-          if (isNaN(num)) return ': 0.7';
+          if (isNaN(num) || !isFinite(num)) return ': 0.7';
           // Round to reasonable precision and clamp to 0-1 range for scores
           const rounded = Math.max(0, Math.min(1, Math.round(num * 100) / 100));
           return `: ${rounded}`;
-        });
+        })
+        // Remove any extremely long decimal numbers before JSON parsing
+        .replace(/\d+\.\d{50,}/g, '0.8')
+        // Remove any scientific notation with extremely long exponents
+        .replace(/\d+\.?\d*e[\+\-]?\d{10,}/g, '0.8');
         
         // Fix truncated arrays and objects more aggressively
         // If JSON ends abruptly in an array or object, close it properly

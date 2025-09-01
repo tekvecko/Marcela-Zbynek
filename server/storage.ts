@@ -1994,20 +1994,43 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async saveUserStreak(streak: any): Promise<void> {
+  async saveUserStreak(data: {
+    userEmail: string;
+    streakType: 'photo' | 'login' | 'challenge';
+    currentStreak: number;
+    longestStreak: number;
+    lastActivity: Date;
+  }): Promise<any> {
     try {
-      if (!db) throw new Error("Database not available");
-
-      const existing = await this.getUserStreak(streak.userId, streak.streakType);
-      if (existing) {
-        await db.update(userStreaks)
-          .set(streak)
-          .where(and(eq(userStreaks.userId, streak.userId), eq(userStreaks.streakType, streak.streakType)));
-      } else {
-        await db.insert(userStreaks).values(streak);
+      // Ensure we have all required data
+      if (!data.userEmail || !data.streakType) {
+        throw new Error('Missing required streak data');
       }
+
+      const result = await db
+        .insert(userStreaks)
+        .values({
+          id: sql`gen_random_uuid()`, // Explicitly generate UUID
+          userEmail: data.userEmail,
+          streakType: data.streakType,
+          currentStreak: data.currentStreak,
+          longestStreak: data.longestStreak,
+          lastActivity: data.lastActivity
+        })
+        .onConflictDoUpdate({
+          target: [userStreaks.userEmail, userStreaks.streakType],
+          set: {
+            currentStreak: data.currentStreak,
+            longestStreak: data.longestStreak,
+            lastActivity: data.lastActivity,
+            updatedAt: sql`now()`
+          }
+        })
+        .returning();
+
+      return result[0];
     } catch (error) {
-      console.error("Failed to save user streak:", error);
+      console.error('Error saving user streak:', error);
       throw error;
     }
   }
