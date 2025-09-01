@@ -333,6 +333,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quest Challenges Endpoints
+  app.get("/api/quest-challenges", optionalAuth, async (req: AuthRequest, res) => {
+    try {
+      const challenges = await storage.getQuestChallenges();
+      res.json(challenges);
+    } catch (error) {
+      console.error("Failed to get quest challenges:", error);
+      res.status(500).json({ message: "Chyba při načítání výzev" });
+    }
+  });
+
+  app.get("/api/quest-challenges/all-with-status", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const userEmail = req.user?.email;
+      if (!userEmail) {
+        return res.status(400).json({ message: "User email required" });
+      }
+
+      // Get all challenges
+      const challenges = await storage.getQuestChallenges();
+      
+      // Get user progress for all challenges
+      const userProgress = await storage.getQuestProgressByParticipant(userEmail);
+      
+      // Combine challenges with user progress
+      const challengesWithStatus = challenges.map(challenge => {
+        const progress = userProgress.find(p => p.questId === challenge.id);
+        return {
+          ...challenge,
+          userProgress: progress ? {
+            photosUploaded: progress.photosUploaded,
+            isCompleted: progress.isCompleted,
+            completedAt: progress.completedAt
+          } : {
+            photosUploaded: 0,
+            isCompleted: false,
+            completedAt: null
+          }
+        };
+      });
+
+      res.json(challengesWithStatus);
+    } catch (error) {
+      console.error("Failed to get quest challenges with status:", error);
+      res.status(500).json({ message: "Chyba při načítání výzev s pokrokem" });
+    }
+  });
+
+  // Photos by Quest Endpoints
+  app.get("/api/photos/quest/:questId", optionalAuth, async (req: AuthRequest, res) => {
+    try {
+      const { questId } = req.params;
+      const photos = await storage.getPhotosByQuestId(questId);
+      res.json(photos);
+    } catch (error) {
+      console.error("Failed to get photos for quest:", error);
+      res.status(500).json({ message: "Chyba při načítání fotek pro výzvu" });
+    }
+  });
+
   // Použij monitoring middleware globálně
   app.use('/api', serviceMonitoringMiddleware);
 
