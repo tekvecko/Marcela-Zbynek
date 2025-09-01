@@ -927,7 +927,7 @@ export default function PhotoGallery() {
                   new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ')
                 }
               </DialogDescription>
-              
+
               <div className="relative h-full flex flex-col overflow-hidden">
                 {/* Top Controls */}
                 {!isFullscreen && (
@@ -985,14 +985,14 @@ export default function PhotoGallery() {
                         <X className="w-5 h-5" />
                       </GlassButton>
                     </div>
-                    
+
                     {/* Centr ovaná fotka */}
                     <div className="w-full h-full flex items-center justify-center p-4 transition-transform duration-300">
                       <img
                         src={`/api/photos/${selectedPhoto.filename}`}
                         alt={selectedPhoto.aiAnalysis || "Wedding photo"}
                         className="max-w-full max-h-full object-contain cursor-pointer transition-all duration-500 ease-out hover:scale-105"
-                        onClick={(e: React.MouseEvent) => {
+                        onClick={(e) => {
                           e.stopPropagation();
                         }}
                         onDoubleClick={() => setIsFullscreen(false)}
@@ -1022,7 +1022,7 @@ export default function PhotoGallery() {
                         />
                       </div>
                     </div>
-                    
+
                     {/* Scrollovatelná informační sekce */}
                     <div className="flex-1 overflow-y-auto">
                       <div className="bg-black/80 p-3 md:p-4 lg:p-6">
