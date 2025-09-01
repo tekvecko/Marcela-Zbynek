@@ -873,51 +873,53 @@ export default function PhotoGallery() {
           </div>
         )}
 
-        {/* Létající srdíčka */}
-        {flyingHearts.map((heart) => (
-          <div
-            key={heart.id}
-            className="fixed pointer-events-none z-[9999]"
-            style={{
-              left: heart.x,
-              top: heart.y,
-              animation: `fly-heart 2s ease-out forwards`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <Heart 
-              className="text-red-500 fill-red-500" 
-              size={24}
-              style={{
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                animation: `heart-pulse 0.6s ease-in-out infinite alternate`
-              }}
-            />
-          </div>
-        ))}
+      </div>
 
-        {/* Photo Detail Modal */}
-        {selectedPhoto && (
-          <Dialog open={!!selectedPhoto} onOpenChange={(open) => {
-            if (!open) {
+      {/* Létající srdíčka */}
+      {flyingHearts.map((heart) => (
+        <div
+          key={heart.id}
+          className="fixed pointer-events-none z-[9999]"
+          style={{
+            left: heart.x,
+            top: heart.y,
+            animation: `fly-heart 2s ease-out forwards`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <Heart 
+            className="text-red-500 fill-red-500" 
+            size={24}
+            style={{
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              animation: `heart-pulse 0.6s ease-in-out infinite alternate`
+            }}
+          />
+        </div>
+      ))}
+
+      {/* Photo Detail Modal */}
+      {selectedPhoto && (
+        <Dialog open={!!selectedPhoto} onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPhoto(null);
+            setIsFullscreen(false);
+          }
+        }}>
+          <DialogContent
+            className={`${
+              isFullscreen
+                ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
+                : 'max-w-5xl w-[95vw] md:w-[90vw] lg:w-[85vw] h-[95vh] md:max-h-[95vh] p-0'
+            } bg-black/95 border-none transition-all duration-500 ease-in-out transform overflow-hidden
+            animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-4`}
+            onInteractOutside={(e) => {
+              // Zavřít dialog při kliknutí mimo obsah
               setSelectedPhoto(null);
               setIsFullscreen(false);
-            }
-          }}>
-            <DialogContent
-              className={`${
-                isFullscreen
-                  ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
-                  : 'max-w-5xl w-[95vw] md:w-[90vw] lg:w-[85vw] h-[95vh] md:max-h-[95vh] p-0'
-              } bg-black/95 border-none transition-all duration-500 ease-in-out transform overflow-hidden
-              animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-4`}
-              onInteractOutside={(e) => {
-                // Zavřít dialog při kliknutí mimo obsah
-                setSelectedPhoto(null);
-                setIsFullscreen(false);
-              }}
-              aria-describedby="photo-description"
-            >
+            }}
+            aria-describedby="photo-description"
+          >
               {/* Hidden accessibility elements */}
               <DialogTitle className="sr-only">
                 Fotka od {getDisplayName(selectedPhoto.uploaderName, users)}
@@ -1230,86 +1232,83 @@ export default function PhotoGallery() {
                             Zatím zde nejsou žádné komentáře
                           </p>
                         )}
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Fullscreen overlay info (hidden by default, shows on hover/tap) */}
-                {isFullscreen && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 p-4 sm:p-6">
-                    <div className="text-white space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
-                            {getProfileImage(selectedPhoto.uploaderName, users)}
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
-                            <p className="text-white/80 text-sm">
-                              {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <GlassButton
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              if (!user) {
-                                toast({
-                                  title: "🔒 Přihlášení vyžadováno",
-                                  description: "Pro hodnocení fotek se musíte přihlásit.",
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
-                              if (!selectedPhoto.userHasLiked && !likePhotoMutation.isPending) {
-                                likePhotoMutation.mutate({ 
-                                  photoId: selectedPhoto.id, 
-                                  buttonElement: e.currentTarget 
-                                });
-                              }
-                            }}
-                            disabled={likePhotoMutation.isPending}
-                            className={`p-2 transition-all duration-300 ${
-                              !user 
-                                ? 'text-gray-400 hover:bg-white/10 cursor-pointer' 
-                                : selectedPhoto.userHasLiked 
-                                  ? 'text-red-400 cursor-default bg-red-500/20' 
-                                  : 'text-white hover:bg-red-500/30 hover:text-red-200'
-                            }`}
-                          >
-                            <div className="flex items-center gap-1">
-                              {!user ? (
-                                <Lock className="w-4 h-4" />
-                              ) : (
-                                <Heart className={`w-4 h-4 transition-all duration-300 ${
-                                  selectedPhoto.userHasLiked ? 'fill-red-400 text-red-400' : 'text-white'
-                                }`} />
-                              )}
-                              <span className="text-sm font-medium">
-                                {selectedPhoto.likes || 0}
-                              </span>
+                    
+                    {/* Fullscreen overlay info (hidden by default, shows on hover/tap) */}
+                    {isFullscreen && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 p-4 sm:p-6">
+                        <div className="text-white space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
+                                {getProfileImage(selectedPhoto.uploaderName, users)}
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-semibold">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
+                                <p className="text-white/80 text-sm">
+                                  {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
                             </div>
-                          </GlassButton>
+                            <div className="flex items-center space-x-2">
+                              <GlassButton
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  if (!user) {
+                                    toast({
+                                      title: "🔒 Přihlášení vyžadováno",
+                                      description: "Pro hodnocení fotek se musíte přihlásit.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  if (!selectedPhoto.userHasLiked && !likePhotoMutation.isPending) {
+                                    likePhotoMutation.mutate({ 
+                                      photoId: selectedPhoto.id, 
+                                      buttonElement: e.currentTarget 
+                                    });
+                                  }
+                                }}
+                                disabled={likePhotoMutation.isPending}
+                                className={`p-2 transition-all duration-300 ${
+                                  !user 
+                                    ? 'text-gray-400 hover:bg-white/10 cursor-pointer' 
+                                    : selectedPhoto.userHasLiked 
+                                      ? 'text-red-400 cursor-default bg-red-500/20' 
+                                      : 'text-white hover:bg-red-500/30 hover:text-red-200'
+                                }`}
+                              >
+                                <div className="flex items-center gap-1">
+                                  {!user ? (
+                                    <Lock className="w-4 h-4" />
+                                  ) : (
+                                    <Heart className={`w-4 h-4 transition-all duration-300 ${
+                                      selectedPhoto.userHasLiked ? 'fill-red-400 text-red-400' : 'text-white'
+                                    }`} />
+                                  )}
+                                  <span className="text-sm font-medium">
+                                    {selectedPhoto.likes || 0}
+                                  </span>
+                                </div>
+                              </GlassButton>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
             </DialogContent>
           </Dialog>
         )}
-      </div>
     </section>
   );
 }
