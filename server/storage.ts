@@ -944,7 +944,7 @@ export class MemStorage implements IStorage {
 
   async getUserStreak(userId: string, streakType: string): Promise<any | null> {
     for (const streak of this.userStreaks.values()) {
-      if (streak.userId === userId && streak.streakType === streakType) {
+      if ((streak.userId === userId || streak.userEmail === userId) && streak.streakType === streakType) {
         return streak;
       }
     }
@@ -2031,7 +2031,7 @@ export class DatabaseStorage implements IStorage {
     try {
       if (!db) throw new Error("Database not available");
       const [streak] = await db.select().from(userStreaks)
-        .where(and(eq(userStreaks.userId, userId), eq(userStreaks.streakType, streakType)))
+        .where(and(eq(userStreaks.userEmail, userId), eq(userStreaks.streakType, streakType)))
         .limit(1);
       return streak || null;
     } catch (error) {

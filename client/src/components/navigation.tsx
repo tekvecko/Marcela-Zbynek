@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoImage from "../../../logoMZ.png";
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut } from "lucide-react";
+import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut, Calendar, MapPin, Clock, Utensils, Music } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,45 @@ export default function Navigation({}: NavigationProps = {}) {
   const { user, logout, login } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const [activeDetailSection, setActiveDetailSection] = useState<string>('');
+
+  // Sekce detailů svatby
+  const detailSections = [
+    { id: 'ceremony', title: 'Obřad', icon: Calendar },
+    { id: 'venue', title: 'Místo', icon: MapPin },
+    { id: 'timeline', title: 'Program', icon: Clock },
+    { id: 'menu', title: 'Menu', icon: Utensils },
+    { id: 'music', title: 'Hudba', icon: Music }
+  ];
+
+  // Sledování aktivní sekce při scrollování na stránce detailů
+  useEffect(() => {
+    if (location !== '/details') return;
+    
+    const handleScroll = () => {
+      const sections = ['ceremony', 'venue', 'timeline', 'menu', 'music'];
+      const current = sections.find(section => {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          return rect.top <= 150 && rect.bottom >= 150;
+        }
+        return false;
+      });
+      if (current) setActiveDetailSection(current);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location]);
+
+  // Funkce pro scrollování na sekci
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Navigation items - simplified
   const navigationItems = [
@@ -381,6 +420,71 @@ export default function Navigation({}: NavigationProps = {}) {
             </div>
           </div>
         </div>
+
+        {/* Dodatečná navigace pro detaily svatby - pouze na stránce /details */}
+        <AnimatePresence>
+          {location === '/details' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white/90 backdrop-blur-md border-t border-gray-200/50"
+            >
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div className="flex items-center justify-center">
+                  {/* Mobile scrollable menu */}
+                  <div className="lg:hidden flex overflow-x-auto space-x-2 scrollbar-hide w-full">
+                    {detailSections.map((section) => {
+                      const Icon = section.icon;
+                      const isActive = activeDetailSection === section.id;
+                      return (
+                        <motion.button
+                          key={section.id}
+                          onClick={() => scrollToSection(section.id)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                            isActive 
+                              ? 'bg-romantic text-white shadow-md' 
+                              : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
+                          }`}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Icon size={16} />
+                          <span>{section.title}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop centered menu */}
+                  <div className="hidden lg:flex items-center space-x-2">
+                    {detailSections.map((section) => {
+                      const Icon = section.icon;
+                      const isActive = activeDetailSection === section.id;
+                      return (
+                        <motion.button
+                          key={section.id}
+                          onClick={() => scrollToSection(section.id)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-romantic text-white shadow-lg scale-105' 
+                              : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
+                          }`}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Icon size={16} />
+                          <span>{section.title}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
 

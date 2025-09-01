@@ -31,7 +31,7 @@ const DAILY_REWARDS: DailyReward[] = [
 
 export class StreakSystem {
   
-  async updateUserStreak(userId: string, activityType: 'photo' | 'login' | 'challenge'): Promise<UserStreak> {
+  async updateUserStreak(userId: string, activityType: 'photo' | 'login' | 'challenge'): Promise<any> {
     try {
       const existingStreak = await this.getUserStreak(userId, activityType);
       const today = new Date();
@@ -41,7 +41,7 @@ export class StreakSystem {
       let longestStreak = 1;
       
       if (existingStreak) {
-        const lastActivity = new Date(existingStreak.lastActivityDate);
+        const lastActivity = new Date(existingStreak.lastActivityDate || existingStreak.lastActivity);
         lastActivity.setHours(0, 0, 0, 0);
         
         const daysDiff = (today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24);
@@ -60,29 +60,35 @@ export class StreakSystem {
         }
       }
       
-      const newStreak: UserStreak = {
-        userId,
+      const streakData = {
+        userEmail: userId, // Use userEmail instead of userId to match DatabaseStorage expectation
+        streakType: activityType,
         currentStreak,
         longestStreak,
-        lastActivityDate: new Date(),
-        streakType: activityType
+        lastActivity: new Date()
       };
       
-      await storage.saveUserStreak(newStreak);
+      await storage.saveUserStreak(streakData);
       
       // Check for daily rewards
       if (activityType === 'login') {
         await this.checkDailyReward(userId, currentStreak);
       }
       
-      return newStreak;
+      return {
+        userId,
+        currentStreak,
+        longestStreak,
+        lastActivityDate: new Date(),
+        streakType: activityType
+      };
     } catch (error) {
       console.error('Error updating streak:', error);
       throw error;
     }
   }
   
-  async getUserStreak(userId: string, streakType: 'photo' | 'login' | 'challenge'): Promise<UserStreak | null> {
+  async getUserStreak(userId: string, streakType: 'photo' | 'login' | 'challenge'): Promise<any | null> {
     try {
       return await storage.getUserStreak(userId, streakType);
     } catch (error) {
