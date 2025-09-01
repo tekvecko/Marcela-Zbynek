@@ -277,12 +277,12 @@ export default function ChallengePage() {
     const file = e.target.files?.[0];
     if (file) {
       // Frontend validation for supported file types
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
 
       if (!allowedTypes.includes(file.type)) {
         toast({
           title: "Nepodporovaný formát souboru",
-          description: `Typ souboru "${file.type}" není podporován. Povolené formáty: JPG, PNG, WebP, HEIC`,
+          description: `Typ souboru "${file.type}" není podporován. Povolené formáty: JPG, JPEG, PNG`,
           variant: "destructive",
         });
         // Clear the file input
@@ -547,7 +547,7 @@ export default function ChallengePage() {
                       Vyberte fotku nebo vyfotografujte
                     </Label>
                     <HelpTooltip
-                      content="Můžete vybrat existující fotku z galerie nebo použít fotoaparát pro pořízení nové fotky na místě."
+                      content="Můžete vybrat existující fotku z galerie nebo použít fotoaparát pro pořízení nové fotky na místě. Podporované formáty: JPG, JPEG, PNG."
                       side="top"
                     />
                   </div>
@@ -577,7 +577,7 @@ export default function ChallengePage() {
                     <Input
                       id="photo"
                       type="file"
-                      accept="image/*,image/webp,image/heic,image/heif"
+                      accept="image/jpeg,image/jpg,image/png"
                       ref={fileInputRef}
                       onChange={handleFileSelect}
                       className="hidden"
