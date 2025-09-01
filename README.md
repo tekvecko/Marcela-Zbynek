@@ -17,10 +17,13 @@ Svatební webová aplikace pro Marcelu a Zbyňka s interaktivním systémem foto
 ### Remixování projektu
 
 1. **Remixněte projekt** na Replit
-2. **Nastavte environment proměnné**:
-   - `GEMINI_API_KEY` - API klíč pro Google Gemini AI
-   - `DATABASE_URL` - Automaticky nastaveno Replitem
-3. **Spusťte aplikaci** - Výzvy se vytvoří automaticky při prvním spuštění
+2. **Spusťte aplikaci** - Automaticky se zkontrolují potřebné SECRETS
+3. **Nastavte chybějící SECRETS** podle pokynů v konzoli:
+   - `GEMINI_API_KEY` - **POVINNÝ** API klíč pro Google Gemini AI
+   - Ostatní SECRETS se vygenerují automaticky
+4. **Restartujte aplikaci** - Výzvy se vytvoří automaticky při prvním spuštění
+
+📖 **Detailní návod**: Viz [SECRETS_SETUP.md](SECRETS_SETUP.md)
 
 ### Manuální instalace
 

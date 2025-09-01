@@ -6,6 +6,7 @@ import { initializeDefaultMiniGames } from "./init-mini-games";
 import { authenticateUser as authenticateToken } from "./middleware/auth";
 import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from "./db";
 import { initializeDatabase } from "./init-database";
+import { initializeSecrets } from "./init-secrets";
 import { storage } from "./storage";
 
 const app = express();
@@ -85,6 +86,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Zkontroluj a inicializuj SECRETS
+  const secretsReady = await initializeSecrets();
+  if (!secretsReady) {
+    console.log("❌ Server se nespustí bez povinných SECRETS");
+    process.exit(1);
+  }
+
   const server = await registerRoutes(app);
 
   // Test databázového připojení
