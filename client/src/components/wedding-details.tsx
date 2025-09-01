@@ -9,33 +9,6 @@ import { useState, useEffect } from "react";
 
 export default function WeddingDetails() {
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState<string>('');
-
-  // Sledování aktivní sekce při scrollování
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['ceremony', 'venue', 'timeline', 'menu', 'music'];
-      const current = sections.find(section => {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          return rect.top <= 100 && rect.bottom >= 100;
-        }
-        return false;
-      });
-      if (current) setActiveSection(current);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
   const openGoogleCalendar = () => {
     const url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Svatba+Marcela+a+Zbyn%C4%9Bk&dates=20251011T120000Z/20251011T160000Z&details=Svatba+ve+Star%C3%A1+Po%C5%A1ta,+Kovalovice+109&location=Kovalovice+109,+%C4%8Cesk%C3%A1+republika";
@@ -71,13 +44,7 @@ export default function WeddingDetails() {
     }
   };
 
-  const sections = [
-    { id: 'ceremony', title: 'Obřad', icon: Calendar },
-    { id: 'venue', title: 'Místo konání', icon: MapPin },
-    { id: 'timeline', title: 'Program dne', icon: Clock },
-    { id: 'menu', title: 'Občerstvení', icon: Utensils },
-    { id: 'music', title: 'Hudba', icon: Music }
-  ];
+  
 
   return (
     <section className="py-20 bg-gradient-to-br from-cream via-blush to-cream">
@@ -98,39 +65,7 @@ export default function WeddingDetails() {
           </p>
         </motion.div>
 
-        {/* Navigační menu */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-12"
-        >
-          <Card className="bg-white/30 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 sticky top-4 z-40">
-            <CardContent className="p-4">
-              <nav className="flex flex-wrap justify-center gap-2 md:gap-4">
-                {sections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <Button
-                      key={section.id}
-                      variant={activeSection === section.id ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => scrollToSection(section.id)}
-                      className={`flex items-center gap-2 transition-all duration-300 ${
-                        activeSection === section.id 
-                          ? 'bg-romantic text-white shadow-lg scale-105' 
-                          : 'text-charcoal hover:bg-romantic/10 hover:text-romantic'
-                      }`}
-                    >
-                      <Icon size={16} />
-                      <span className="hidden sm:inline">{section.title}</span>
-                    </Button>
-                  );
-                })}
-              </nav>
-            </CardContent>
-          </Card>
-        </motion.div>
+        
 
         {/* Obřad */}
         <motion.section
