@@ -102,56 +102,25 @@ export default function ChallengePage() {
       setCurrentStep("Nahrávám soubor...");
 
       // XMLHttpRequest for progress tracking s vylepšeným řízením
-      const xhr = new XMLHttpRequest();
-      const uploadPromise = new Promise<Response>((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            // Upload zabírá 8-35% celkového procesu
-            const uploadPercent = (e.loaded / e.total) * 27; // 27% rozsah pro upload
-            const totalPercent = 8 + uploadPercent; // Začíná od 8%
+      // Get auth token from localStorage
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
 
-            const currentTime = Date.now();
-            const timeElapsed = (currentTime - startTime) / 1000; // seconds
-            const uploadSpeed = timeElapsed > 0 ? (e.loaded / 1024 / 1024) / timeElapsed : 0; // MB/s
+      // Add Authorization header if token exists
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-            setUploadProgress(Math.min(totalPercent, 35));
-            setUploadSpeed(uploadSpeed);
-
-            if (totalPercent >= 20) {
-              setCurrentStep("Dokončuji nahrávání...");
-            }
-            if (totalPercent >= 30) {
-              setCurrentStep("Přeposílám na server...");
-            }
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            // Dokončení uploadu
-            setUploadProgress(35);
-            resolve(new Response(xhr.responseText, { status: xhr.status }));
-          } else {
-            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
-          }
-        });
-
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
-        });
-
-        xhr.open('POST', '/api/photos/upload');
-
-        // Add auth token if available
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        }
-
-        xhr.send(formData);
+      // Use fetch for proper upload with auth
+      const response = await fetch('/api/photos/upload', {
+        method: 'POST',
+        headers,
+        body: formData,
+        credentials: 'include'
       });
 
-      const response = await uploadPromise;
+      // Update progress to 35% after upload completes
+      setUploadProgress(35);
 
       if (!response.ok) {
         let error;
