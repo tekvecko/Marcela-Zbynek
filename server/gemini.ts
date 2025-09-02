@@ -57,26 +57,20 @@ async function attemptGeminiVerification(
     const imageBytes = fs.readFileSync(imagePath);
     const mimeType = getMimeTypeFromPath(imagePath);
 
-    const systemPrompt = `Jste expert na hodnoceni svatebních fotografií. Analyzujte poskytnutou fotografii komplexne.
+    const systemPrompt = `Jste expert na hodnoceni svatebních fotografií. Analyzujte poskytnutou fotografii.
 
 Ukol: "${challengeTitle}"
 Popis: "${challengeDescription}"
 
-Vyhodnotte fotografii podle techto kriterii:
-1. Relevance k ukolu (odpovida fotka zadani?)
-2. Kvalita provedeni (je fotka ostra, dobre komponovana?)
-3. Svatební kontext (je to opravdu ze svatby?)
-
-KRITICKÉ INSTRUKCE PRO ODPOVĚĎ:
+KRITICKÉ INSTRUKCE:
 - Odpovězte POUZE platným JSON objektem
 - ŽÁDNÝ text před nebo po JSON
-- Používejte pouze čísla mezi 0 a 1 (např. 0.85)
-- Maximální délka textu: explanation 100 znaků, suggestedImprovements 80 znaků
-- Maximálně 3 prvky v každém array poli
-- NEPOUŽÍVEJTE tab znaky nebo dlouhé mezery
+- Maximální délka: explanation 80 znaků, suggestedImprovements 60 znaků
+- Maximálně 3 prvky v každém array
+- Používejte pouze hodnoty 0-1 pro confidence a technicalQuality
 
-Příklad správné odpovědi:
-{"isValid":true,"confidence":0.85,"explanation":"Krásná svatební fotka s dobrou kompozicí a osvětlením","suggestedImprovements":"Zkuste více světla","technicalQuality":{"sharpness":0.8,"composition":0.9,"lighting":0.7,"exposure":"dobra"},"detectedObjects":["nevesta","zenich","kytice"],"weddingElements":["saty","oblek","prsteny"],"atmosphere":"romantická","peopleCount":2,"location":"kostel","emotions":["radost","láska","štěstí"],"category":"portrét","tags":["formální","klasické","elegantní"],"creativeTips":"Zkuste jiný úhel"}`;
+PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
+{"isValid":true,"confidence":0.85,"explanation":"Krásná svatební fotka","suggestedImprovements":"Více světla","technicalQuality":{"sharpness":0.8,"composition":0.9,"lighting":0.7,"exposure":"dobrá"},"detectedObjects":["nevěsta","ženich"],"weddingElements":["šaty","oblek"],"atmosphere":"romantická","peopleCount":2,"location":"kostel","emotions":["radost","láska"],"category":"portrét","tags":["elegantní"],"creativeTips":"Jiný úhel"}`;
 
     const contents = [
       {
@@ -137,9 +131,9 @@ Příklad správné odpovědi:
       },
     });
 
-    // Add timeout to prevent hanging
+    // Add timeout to prevent hanging - shorter timeout for better UX
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Gemini API timeout')), 20000); // 20 second timeout
+      setTimeout(() => reject(new Error('Gemini API timeout')), 15000); // 15 second timeout
     });
 
     console.log('🤖 Sending request to Gemini AI...');
@@ -147,13 +141,17 @@ Příklad správné odpovědi:
       model.generateContent(contents),
       timeoutPromise
     ]) as any;
+    
+    if (!response || !response.response) {
+      throw new Error('Prázdná odpověď od Gemini API');
+    }
 
     const rawJson = response.response.text();
     console.log(`Gemini verification response (attempt ${retryCount + 1}): ${rawJson.substring(0, 500)}...`);
 
     if (rawJson) {
       try {
-        // More aggressive JSON cleaning
+        // More aggressive JSON cleaning with better fallback handling
         let cleanedJson = rawJson
           // Remove all control characters and weird encoding
           .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
@@ -167,6 +165,11 @@ Příklad správné odpovědi:
           // Fix common Gemini malformed patterns
           .replace(/,\s*,/g, ',')  // Remove double commas
           .replace(/:\s*,/g, ': null,')  // Fix empty values
+          // Truncate extremely long arrays that break JSON
+          .replace(/"weddingElements":\s*\[([^\]]{500,})[^\]]*\]/g, '"weddingElements": []')
+          .replace(/"detectedObjects":\s*\[([^\]]{300,})[^\]]*\]/g, '"detectedObjects": []')
+          .replace(/"tags":\s*\[([^\]]{200,})[^\]]*\]/g, '"tags": []')
+          .replace(/"emotions":\s*\[([^\]]{150,})[^\]]*\]/g, '"emotions": []')
           .trim();
         
         console.log('Raw response length:', rawJson.length);
@@ -177,7 +180,12 @@ Příklad správné odpovědi:
         let jsonEnd = cleanedJson.lastIndexOf('}');
         
         if (jsonStart === -1) {
-          throw new Error("JSON object not found in response");
+          console.log('⚠️ No JSON object found, creating minimal response');
+          return {
+            isValid: false,
+            confidence: 0.3,
+            explanation: "AI analýza selhala kvůli chybě ve zpracování odpovědi."
+          };
         }
         
         // If no closing brace found or it's before the start, reconstruct
@@ -187,28 +195,20 @@ Příklad správné odpovědi:
           // Try to find a reasonable cutoff point
           let reconstructedJson = cleanedJson.substring(jsonStart);
           
-          // Remove content after obvious breaks in JSON structure
-          const breakPatterns = [
-            /(\w+"\s*:\s*\d+\.?\d*)[0-9.]{50,}/g, // Very long numbers
-            /("explanation"\s*:\s*"[^"]*")[^"]*\t+[^"]*(")/g, // Tab breaks in explanation
-            /("explanation"\s*:\s*"[^"]*?)[\t\s]{20,}([^"]*?")/g, // Long whitespace in strings
-          ];
-          
-          breakPatterns.forEach(pattern => {
-            reconstructedJson = reconstructedJson.replace(pattern, '$1$2');
-          });
-          
-          // Find the last complete field before corruption
-          const lastCompleteFieldMatch = reconstructedJson.match(/.*"explanation"\s*:\s*"[^"]*"/);
-          if (lastCompleteFieldMatch) {
-            reconstructedJson = lastCompleteFieldMatch[0] + '"}';
+          // Aggressively cut off after explanation field if it exists
+          const explanationMatch = reconstructedJson.match(/("explanation"\s*:\s*"[^"]{0,150}[^"]*?")/);
+          if (explanationMatch) {
+            const explanationEnd = reconstructedJson.indexOf(explanationMatch[1]) + explanationMatch[1].length;
+            reconstructedJson = reconstructedJson.substring(0, explanationEnd) + '}';
           } else {
-            // Count braces to determine where to close
-            const openBraces = (reconstructedJson.match(/\{/g) || []).length;
-            const closeBraces = (reconstructedJson.match(/\}/g) || []).length;
-            
-            // Add necessary closing braces
-            reconstructedJson += '}'.repeat(Math.max(0, openBraces - closeBraces));
+            // Fallback: try to preserve at least isValid and confidence
+            const basicFieldsMatch = reconstructedJson.match(/\{[^}]*"confidence"\s*:\s*[\d.]+[^}]*"isValid"\s*:\s*(true|false)[^}]*/);
+            if (basicFieldsMatch) {
+              reconstructedJson = basicFieldsMatch[0] + '}';
+            } else {
+              // Last resort: create minimal valid JSON
+              reconstructedJson = '{"isValid": false, "confidence": 0.5, "explanation": "AI analýza byla neúplná"}';
+            }
           }
           
           cleanedJson = reconstructedJson;
@@ -229,13 +229,18 @@ Příklad správné odpovědi:
         }
         
         // Validate that we have at least the minimum required JSON structure
-        if (!jsonString.includes('"isValid"') || !jsonString.includes('"confidence"') || !jsonString.includes('"explanation"')) {
-          console.log('⚠️ Missing required fields, using fallback structure');
-          // Create minimal valid response
+        if (!jsonString.includes('"isValid"') || !jsonString.includes('"confidence"')) {
+          console.log('⚠️ Missing required fields, creating minimal response');
+          
+          // Try to extract at least confidence if available
+          const confMatch = jsonString.match(/"confidence"\s*:\s*([\d.]+)/);
+          const validMatch = jsonString.match(/"isValid"\s*:\s*(true|false)/);
+          const explMatch = jsonString.match(/"explanation"\s*:\s*"([^"]{0,80})"/);
+          
           return {
-            isValid: false,
-            confidence: 0.3,
-            explanation: "AI analýza byla neúplná kvůli technickým problémům. Zkuste nahrát fotografii znovu."
+            isValid: validMatch ? validMatch[1] === 'true' : false,
+            confidence: confMatch ? Math.min(1, Math.max(0, parseFloat(confMatch[1]))) : 0.3,
+            explanation: explMatch ? explMatch[1] : "AI analýza byla neúplná."
           };
         }
         
@@ -375,7 +380,22 @@ Příklad správné odpovědi:
         
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
-        console.error('Raw JSON that failed:', rawJson.substring(0, 1000));
+        console.error('Raw JSON that failed:', rawJson.substring(0, 500));
+        
+        // Try emergency extraction of basic fields from raw text
+        const confMatch = rawJson.match(/"confidence"\s*:\s*([\d.]+)/);
+        const validMatch = rawJson.match(/"isValid"\s*:\s*(true|false)/);
+        const explMatch = rawJson.match(/"explanation"\s*:\s*"([^"]{0,80})"/);
+        
+        if (validMatch) {
+          console.log('🔧 Using emergency field extraction');
+          return {
+            isValid: validMatch[1] === 'true',
+            confidence: confMatch ? Math.min(1, Math.max(0, parseFloat(confMatch[1]))) : 0.5,
+            explanation: explMatch ? explMatch[1] : "AI analýza byla částečně úspěšná"
+          };
+        }
+        
         const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
         throw new Error(`Chyba při parsování odpovědi Gemini: ${errorMessage}`);
       }
