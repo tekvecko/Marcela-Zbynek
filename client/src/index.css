@@ -515,6 +515,22 @@
   h1 { font-size: 1.875rem !important; }
   h2 { font-size: 1.5rem !important; }
   h3 { font-size: 1.25rem !important; }
+
+  /* Lepší touch targets na mobilech */
+  button, .button {
+    min-height: 44px !important;
+  }
+
+  /* Zamezení horizontálního scrollování */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Úprava velikosti formulářových prvků */
+  input, textarea, select {
+    min-height: 44px;
+    font-size: 16px; /* Zamezí zoom na iOS */
+  }
 }
 
 @media (max-width: 768px) {

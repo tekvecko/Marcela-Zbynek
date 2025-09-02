@@ -29,9 +29,9 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Link href="/photo-quest" className="group block">
-              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <Link href="/photo-quest" className="group block touch-manipulation">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
                 <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <Camera className="text-white" size={24} />
                 </div>
@@ -49,8 +49,8 @@ export default function Home() {
               </div>
             </Link>
             
-            <Link href="/gallery" className="group block">
-              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+            <Link href="/gallery" className="group block touch-manipulation">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
                 <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <Heart className="text-white" size={24} />
                 </div>
@@ -68,8 +68,8 @@ export default function Home() {
               </div>
             </Link>
             
-            <Link href="/details" className="group block">
-              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+            <Link href="/details" className="group block touch-manipulation">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
                 <div className="w-16 h-16 bg-gradient-to-br from-sage to-green-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <MapPin className="text-white" size={24} />
                 </div>
