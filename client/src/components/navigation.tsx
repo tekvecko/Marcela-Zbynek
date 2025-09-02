@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, LogOut, Calendar, MapPin, Clock, Utensils, Music } from "lucide-react";
+import { Trophy, Star, Mail, Lock, User, Loader2, Menu, LogOut, Calendar, MapPin, Clock, Utensils, Music, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import AuthForm from "@/components/auth-form";
 
 interface NavigationProps {}
 
@@ -248,6 +250,18 @@ export default function Navigation({}: NavigationProps = {}) {
 
   const [showQuickNav, setShowQuickNav] = useState(false);
 
+  // Mobile menu state management
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+
   return (
     <>
       {/* Modern Floating Navigation */}
@@ -395,7 +409,7 @@ export default function Navigation({}: NavigationProps = {}) {
                     >
                       <Menu className="h-4 w-4 text-romantic" />
                     </motion.div>
-                    
+
                     {/* Quick nav dropdown */}
                     <AnimatePresence>
                       {showQuickNav && (
@@ -530,7 +544,7 @@ export default function Navigation({}: NavigationProps = {}) {
       </motion.nav>
 
 
-      
+
 
       {/* Login Dropdown for non-authenticated users */}
       <AnimatePresence>
