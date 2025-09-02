@@ -17,7 +17,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, Heart, Eye, Shield, AlertTriangle, CheckSquare, Square, Zap, TrendingUp } from "lucide-react";
+import { Users, Camera, Trophy, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, Heart, Eye, Shield, AlertTriangle, CheckSquare, Square, Zap, TrendingUp, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -1136,8 +1136,8 @@ export default function AdminPage() {
                       className="w-full"
                       data-testid="button-reset-progress"
                     >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Resetovat pokrok všech hráčů
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      {resetProgressMutation.isPending ? "Resetuji..." : "Resetovat pokrok"}
                     </Button>
 
                     <Button
