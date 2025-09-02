@@ -210,9 +210,13 @@ export default function ChallengePage() {
           description: "Gratulujeme! Fotka splnila požadavky úkolu a byla přidána do galerie.",
         });
       } else {
+        // Zobraz konkrétní důvod zamítnutí od AI
+        const aiExplanation = data.aiAnalysis || "Fotka nesplnila požadavky úkolu";
+        const aiSuggestion = data.suggestedImprovements ? ` ${data.suggestedImprovements}` : "";
+        
         toast({
           title: "❌ Fotka neschválena",
-          description: "Fotka nesplnila požadavky úkolu a nebyla přidána do galerie. Zkuste to znovu s jinou fotkou.",
+          description: `${aiExplanation}${aiSuggestion}`,
           variant: "destructive",
         });
       }

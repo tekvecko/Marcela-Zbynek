@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             photoData.emotions = verificationResult.emotions;
             photoData.category = verificationResult.category;
             photoData.tags = verificationResult.tags;
-            photoData.creativeTips = verificationResult.creativeTips;
+            photoData.creativeTips = verificationResult.suggestedImprovements || verificationResult.creativeTips;
             photoData.aiAnalysis = verificationResult.explanation;
           }
         } catch (error) {
@@ -586,6 +586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isVerified: uploadedPhoto.isVerified,
         verificationScore: uploadedPhoto.verificationScore,
         aiAnalysis: uploadedPhoto.aiAnalysis,
+        suggestedImprovements: uploadedPhoto.creativeTips,
         message: uploadedPhoto.isVerified 
           ? "Fotka byla úspěšně nahrána a schválena!" 
           : "Fotka byla nahrána, ale nesplnila požadavky výzvy."
