@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
@@ -175,6 +176,9 @@ const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve uploaded photos statically
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
   // Authentication Routes
   app.post("/api/auth/login", async (req, res) => {
     try {

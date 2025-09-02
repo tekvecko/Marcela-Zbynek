@@ -728,7 +728,7 @@ export default function PhotoGallery() {
                 {/* Photo */}
                 <div className="relative cursor-pointer" onClick={() => setSelectedPhoto(photo)}>
                   <img
-                    src={`/api/photos/${photo.filename}`}
+                    src={`/uploads/${photo.filename}`}
                     alt={`Fotka od ${getDisplayName(photo.uploaderName, users)}`}
                     className="w-full h-auto object-cover pointer-events-none"
                   />
@@ -991,7 +991,7 @@ export default function PhotoGallery() {
                     {/* Centr ovaná fotka */}
                     <div className="w-full h-full flex items-center justify-center p-4 transition-transform duration-300">
                       <img
-                        src={`/api/photos/${selectedPhoto.filename}`}
+                        src={`/uploads/${selectedPhoto.filename}`}
                         alt={selectedPhoto.aiAnalysis || "Wedding photo"}
                         className="max-w-full max-h-full object-contain cursor-pointer transition-all duration-500 ease-out hover:scale-105"
                         onClick={(e) => {
@@ -1018,7 +1018,7 @@ export default function PhotoGallery() {
                         onDoubleClick={() => setIsFullscreen(!isFullscreen)}
                       >
                         <OptimizedImage
-                          src={`/api/photos/${selectedPhoto.filename}`}
+                          src={`/uploads/${selectedPhoto.filename}`}
                           alt={selectedPhoto.aiAnalysis || "Wedding photo"}
                           className="max-w-full max-h-full object-contain"
                         />
