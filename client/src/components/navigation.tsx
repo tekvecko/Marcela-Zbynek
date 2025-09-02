@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import logoImage from "../../../logoMZ.png";
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, Sparkles, Bell, LogOut, Calendar, MapPin, Clock, Utensils, Music } from "lucide-react";
+
+import { Trophy, Star, Mail, Lock, User, Loader2, Menu, LogOut, Calendar, MapPin, Clock, Utensils, Music } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -246,144 +246,7 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsLoginDropdownOpen(!isLoginDropdownOpen);
   };
 
-  // Useful interactive features
-  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<string[]>([]);
   const [showQuickNav, setShowQuickNav] = useState(false);
-
-  // Quick actions for wedding guests
-  const quickActions = [
-    { 
-      id: 'rsvp', 
-      label: 'Rychlé RSVP', 
-      icon: '✅', 
-      action: () => window.location.href = '/profile#rsvp',
-      description: 'Potvrdit účast'
-    },
-    { 
-      id: 'gift', 
-      label: 'Seznam přání', 
-      icon: '🎁', 
-      action: () => window.location.href = '/details#gifts',
-      description: 'Zobrazit přání'
-    },
-    { 
-      id: 'transport', 
-      label: 'Doprava', 
-      icon: '🚗', 
-      action: () => window.location.href = '/details#transport',
-      description: 'Info o dopravě'
-    },
-    { 
-      id: 'contact', 
-      label: 'Kontakt', 
-      icon: '📞', 
-      action: () => window.location.href = '/details#contact',
-      description: 'Kontaktní údaje'
-    }
-  ];
-
-  // Important notifications for guests
-  useEffect(() => {
-    const importantNotifications = [
-      'Nezapomeňte potvrdit účast do 15. března!',
-      'Nové fotky v galerii',
-      'Aktualizace programu svatby'
-    ];
-    
-    // Show notifications randomly
-    const timer = setTimeout(() => {
-      if (Math.random() > 0.7 && notifications.length === 0) {
-        setNotifications([importantNotifications[Math.floor(Math.random() * importantNotifications.length)]]);
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [notifications]);
-
-  // Enhanced logo click handler - now opens quick actions
-  const handleLogoClick = () => {
-    if (location !== '/') {
-      window.location.href = '/';
-    } else {
-      setQuickActionsOpen(!quickActionsOpen);
-    }
-  };
-
-  // Enhanced logo element with useful functionality
-  const LogoElement = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
-    <motion.div
-      className={`group relative ${className} cursor-pointer`}
-      onClick={onClick || handleLogoClick}
-      data-testid="nav-logo"
-    >
-      {/* Main logo container */}
-      <motion.div
-        className="relative z-10 w-full h-full rounded-full overflow-hidden bg-white shadow-lg"
-        whileHover={{ 
-          scale: 1.05,
-          boxShadow: "0 10px 25px rgba(155, 119, 148, 0.3)"
-        }}
-        whileTap={{ 
-          scale: 0.95
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 25
-        }}
-      >
-        <img
-          src={logoImage}
-          alt="M&Z Wedding Logo"
-          className="w-full h-full object-contain filter drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
-          style={{
-            objectFit: 'contain',
-            imageRendering: 'crisp-edges'
-          }}
-        />
-      </motion.div>
-
-      {/* Notification indicator */}
-      <AnimatePresence>
-        {notifications.length > 0 && (
-          <motion.div
-            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center shadow-lg font-bold"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: 1
-            }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{
-              scale: {
-                duration: 0.5,
-                repeat: 3
-              }
-            }}
-          >
-            {notifications.length}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick actions indicator when available */}
-      {location === '/' && (
-        <motion.div
-          className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-lg"
-          animate={{
-            scale: quickActionsOpen ? [1, 1.3, 1] : [1, 1.1, 1],
-            opacity: [0.8, 1, 0.8]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      )}
-    </motion.div>
-  );
 
   return (
     <>
@@ -402,7 +265,7 @@ export default function Navigation({}: NavigationProps = {}) {
         <div className="bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200">
           {/* Main Navigation Bar */}
           <div className="flex items-center justify-between px-6 py-4">
-            {/* Logo and Mobile Menu */}
+            {/* Mobile Menu and Title */}
             <div className="flex items-center space-x-4">
               {/* Mobile Menu Button */}
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -485,9 +348,8 @@ export default function Navigation({}: NavigationProps = {}) {
                 </SheetContent>
               </Sheet>
 
-              <LogoElement className="w-12 h-12" />
-              <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
-                M&Z
+              <div className="font-dancing text-2xl text-romantic font-bold">
+                M&Z Wedding
               </div>
             </div>
 
@@ -668,89 +530,7 @@ export default function Navigation({}: NavigationProps = {}) {
       </motion.nav>
 
 
-      {/* Notifications Panel */}
-      <AnimatePresence>
-        {notifications.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 300 }}
-            className="fixed top-20 right-4 z-[9999] bg-white/95 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 p-4 max-w-xs"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Bell className="text-romantic" size={16} />
-                <span className="font-medium text-charcoal text-sm">Oznámení</span>
-              </div>
-              <button
-                onClick={() => setNotifications([])}
-                className="text-gray-400 hover:text-gray-600 text-xs"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-2">
-              {notifications.map((notification, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-charcoal/80 p-2 bg-romantic/5 rounded-lg border border-romantic/10"
-                >
-                  {notification}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick Actions Popup */}
-      <AnimatePresence>
-        {quickActionsOpen && location === '/' && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed top-20 left-4 z-[9999] bg-white/95 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 p-4"
-            style={{ width: isMobile ? 'calc(100vw - 2rem)' : '280px' }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="text-romantic" size={16} />
-                <span className="font-medium text-charcoal">Rychlé akce</span>
-              </div>
-              <button
-                onClick={() => setQuickActionsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="grid gap-2">
-              {quickActions.map((action) => (
-                <motion.button
-                  key={action.id}
-                  onClick={() => {
-                    action.action();
-                    setQuickActionsOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-romantic/5 hover:bg-romantic/10 transition-all text-left group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="text-lg">{action.icon}</span>
-                  <div>
-                    <div className="font-medium text-charcoal text-sm">{action.label}</div>
-                    <div className="text-xs text-charcoal/60">{action.description}</div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      
 
       {/* Login Dropdown for non-authenticated users */}
       <AnimatePresence>
