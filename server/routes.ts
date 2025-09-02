@@ -424,6 +424,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photos Endpoints
+  app.get("/api/photos", optionalAuth, async (req: AuthRequest, res) => {
+    try {
+      const photos = await storage.getUploadedPhotos();
+      
+      // If user is authenticated, add userHasLiked status
+      if (req.user?.email) {
+        const photosWithLikeStatus = await Promise.all(
+          photos.map(async (photo) => {
+            try {
+              const likes = await storage.getPhotoLikes(photo.id);
+              const userHasLiked = likes.some(like => like.voterName === req.user!.email);
+              return { ...photo, userHasLiked };
+            } catch (error) {
+              console.error(`Failed to get likes for photo ${photo.id}:`, error);
+              return { ...photo, userHasLiked: false };
+            }
+          })
+        );
+        res.json(photosWithLikeStatus);
+      } else {
+        res.json(photos);
+      }
+    } catch (error) {
+      console.error("Failed to get photos:", error);
+      res.status(500).json({ message: "Chyba při načítání fotek" });
+    }
+  });
+
   // Photos by Quest Endpoints
   app.get("/api/photos/quest/:questId", optionalAuth, async (req: AuthRequest, res) => {
     try {
