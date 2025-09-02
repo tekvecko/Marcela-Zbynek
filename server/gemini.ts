@@ -188,29 +188,63 @@ Maximálně 5 prvků v každém poli typu array.
         
         // Find JSON boundaries more reliably with better error handling
         const jsonStart = cleanedJson.indexOf('{');
-        let jsonEnd = cleanedJson.lastIndexOf('}') + 1;
+        let jsonEnd = cleanedJson.lastIndexOf('}');
         
         if (jsonStart === -1) {
           throw new Error("JSON object not found in response");
         }
         
-        // If no closing brace found, try to find where JSON likely ends
-        if (jsonEnd <= jsonStart) {
-          console.log('⚠️ No closing brace found, trying to reconstruct JSON');
-          // Find the last reasonable position for JSON end
-          const lastComma = cleanedJson.lastIndexOf(',');
-          const lastQuote = cleanedJson.lastIndexOf('"');
-          if (lastComma > jsonStart && lastQuote > lastComma) {
-            jsonEnd = lastQuote + 1;
-          } else {
-            jsonEnd = cleanedJson.length;
-          }
+        // If no closing brace found or it's before the start, reconstruct
+        if (jsonEnd === -1 || jsonEnd <= jsonStart) {
+          console.log('⚠️ No valid closing brace found, reconstructing JSON');
+          
+          // Try to find a reasonable cutoff point
+          let reconstructedJson = cleanedJson.substring(jsonStart);
+          
+          // Remove any content after obvious JSON structure break
+          const patterns = [
+            /(\w+"\s*:\s*\d+\.?\d*)[0-9.]{100,}/g, // Very long numbers
+            /("technicalQuality"\s*:\s*\{[^}]*"sharpness"\s*:\s*\d+\.\d*)[0-9.]{50,}/g, // Long sharpness values
+          ];
+          
+          patterns.forEach(pattern => {
+            reconstructedJson = reconstructedJson.replace(pattern, '$1');
+          });
+          
+          // Count braces to determine where to close
+          const openBraces = (reconstructedJson.match(/\{/g) || []).length;
+          const closeBraces = (reconstructedJson.match(/\}/g) || []).length;
+          
+          // Add necessary closing braces
+          reconstructedJson += '}'.repeat(Math.max(0, openBraces - closeBraces));
+          
+          cleanedJson = reconstructedJson;
+          jsonEnd = cleanedJson.length;
+        } else {
+          jsonEnd = jsonEnd + 1;
         }
         
         let jsonString = cleanedJson.substring(jsonStart, jsonEnd);
         
         // Remove any clearly invalid trailing content
         jsonString = jsonString.replace(/[^}\]]*$/, ''); // Remove trailing non-JSON content
+        
+        // Pre-parse validation: ensure JSON structure integrity
+        const bracesCount = (jsonString.match(/\{/g) || []).length - (jsonString.match(/\}/g) || []).length;
+        if (bracesCount > 0) {
+          jsonString += '}'.repeat(bracesCount);
+        }
+        
+        // Validate that we have at least the minimum required JSON structure
+        if (!jsonString.includes('"isValid"') || !jsonString.includes('"confidence"') || !jsonString.includes('"explanation"')) {
+          console.log('⚠️ Missing required fields, using fallback structure');
+          // Create minimal valid response
+          jsonString = `{
+            "isValid": false,
+            "confidence": 0.5,
+            "explanation": "AI analýza byla neúplná, zkuste nahrát fotografii znovu."
+          }`;
+        }
         
         // Fix problematic very long numbers that cause JSON parsing issues
         jsonString = jsonString.replace(/:\s*(\d+\.?\d*[e\-\+\d]*)/g, (match: string, number: string) => {
@@ -220,10 +254,13 @@ Maximálně 5 prvků v každém poli typu array.
           const rounded = Math.max(0, Math.min(1, Math.round(num * 100) / 100));
           return `: ${rounded}`;
         })
-        // Remove any extremely long decimal numbers before JSON parsing
-        .replace(/\d+\.\d{50,}/g, '0.8')
+        // Remove any extremely long decimal numbers before JSON parsing (more aggressive)
+        .replace(/\d+\.\d{20,}/g, '0.8')
         // Remove any scientific notation with extremely long exponents
-        .replace(/\d+\.?\d*e[\+\-]?\d{10,}/g, '0.8');
+        .replace(/\d+\.?\d*e[\+\-]?\d{10,}/g, '0.8')
+        // Fix specific cases of very long repeating decimals that break JSON
+        .replace(/0\.8599999999999999[0-9]+/g, '0.86')
+        .replace(/0\.9678901234567[0-9]+/g, '0.97');
         
         // Fix truncated arrays and objects more aggressively
         // If JSON ends abruptly in an array or object, close it properly
