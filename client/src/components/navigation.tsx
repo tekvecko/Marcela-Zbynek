@@ -39,30 +39,52 @@ export default function Navigation({}: NavigationProps = {}) {
 
   // Sledování aktivní sekce při scrollování na stránce detailů
   useEffect(() => {
-    if (location !== '/details') return;
-    
-    const handleScroll = () => {
-      const sections = ['ceremony', 'venue', 'timeline', 'menu', 'music'];
-      const current = sections.find(section => {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          return rect.top <= 150 && rect.bottom >= 150;
-        }
-        return false;
-      });
-      if (current) setActiveDetailSection(current);
-    };
+    if (location === '/details') {
+      const handleScroll = () => {
+        const sections = detailSections.map(section => section.id);
+        let currentSection = '';
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [location]);
+        for (const sectionId of sections) {
+          const element = document.getElementById(sectionId);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            if (rect.top <= 150 && rect.bottom >= 150) {
+              currentSection = sectionId;
+              break;
+            }
+          }
+        }
+
+        if (currentSection && currentSection !== activeDetailSection) {
+          setActiveDetailSection(currentSection);
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll);
+
+      // Only check initial position without scrolling
+      setTimeout(() => {
+        handleScroll();
+      }, 100);
+
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [location, activeDetailSection]);
 
   // Funkce pro scrollování na sekci
-  const scrollToSection = (sectionId: string) => {
+  const scrollToSection = (sectionId: string, smooth: boolean = true) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const navHeight = 120; // Adjust based on your navigation height
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: smooth ? 'smooth' : 'auto'
+      });
+
+      setActiveDetailSection(sectionId);
     }
   };
 
@@ -143,7 +165,7 @@ export default function Navigation({}: NavigationProps = {}) {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollY = window.scrollY;
-          
+
           // Simple logic: up = show, down = hide
           if (scrollY > previousScrollY && scrollY > 100) {
             // Scrolling down
@@ -152,7 +174,7 @@ export default function Navigation({}: NavigationProps = {}) {
             // Scrolling up or at top
             setIsVisible(true);
           }
-          
+
           previousScrollY = scrollY;
           setLastScrollY(scrollY);
           setCurrentScrollY(scrollY);
@@ -168,7 +190,7 @@ export default function Navigation({}: NavigationProps = {}) {
     setCurrentScrollY(window.scrollY);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -242,7 +264,7 @@ export default function Navigation({}: NavigationProps = {}) {
           imageRendering: 'crisp-edges'
         }}
       />
-      
+
       <motion.div
         className="absolute -top-1 -right-1 w-3 h-3 bg-romantic rounded-full shadow-lg"
         animate={{
@@ -357,7 +379,7 @@ export default function Navigation({}: NavigationProps = {}) {
                   </div>
                 </SheetContent>
               </Sheet>
-              
+
               <LogoElement className="w-12 h-12" />
               <div className="font-dancing text-2xl text-romantic font-bold hidden sm:block">
                 M&Z
@@ -443,8 +465,8 @@ export default function Navigation({}: NavigationProps = {}) {
                           key={section.id}
                           onClick={() => scrollToSection(section.id)}
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                            isActive 
-                              ? 'bg-romantic text-white shadow-md' 
+                            isActive
+                              ? 'bg-romantic text-white shadow-md'
                               : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
                           }`}
                           whileHover={{ scale: 1.05 }}
@@ -467,8 +489,8 @@ export default function Navigation({}: NavigationProps = {}) {
                           key={section.id}
                           onClick={() => scrollToSection(section.id)}
                           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                            isActive 
-                              ? 'bg-romantic text-white shadow-lg scale-105' 
+                            isActive
+                              ? 'bg-romantic text-white shadow-lg scale-105'
                               : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
                           }`}
                           whileHover={{ scale: 1.05 }}
@@ -508,7 +530,7 @@ export default function Navigation({}: NavigationProps = {}) {
           >
             {/* Dekorativní gradient overlay */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-romantic via-love to-romantic opacity-60 rounded-t-2xl" />
-            
+
             {/* Close button */}
             <motion.button
               onClick={() => setIsLoginDropdownOpen(false)}
@@ -518,11 +540,11 @@ export default function Navigation({}: NavigationProps = {}) {
               data-testid="login-dropdown-close"
             >
               <div className="w-5 h-5 flex items-center justify-center relative">
-                <motion.div 
+                <motion.div
                   className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(45deg)' }}
                 />
-                <motion.div 
+                <motion.div
                   className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
                   style={{ transform: 'rotate(-45deg)' }}
                 />
@@ -530,13 +552,13 @@ export default function Navigation({}: NavigationProps = {}) {
             </motion.button>
 
             <div className="text-center mb-4 relative">
-              <motion.div 
+              <motion.div
                 className="w-12 h-12 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-                animate={{ 
+                animate={{
                   rotate: [0, 5, -5, 0],
                   scale: [1, 1.05, 1]
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
                   ease: "easeInOut"

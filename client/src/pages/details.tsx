@@ -1,9 +1,14 @@
+import { useEffect } from "react";
 import Navigation from "@/components/navigation";
 import WeddingDetails from "@/components/wedding-details";
 import WeddingTimeline from "@/components/wedding-timeline";
 import OurStory from "@/components/our-story";
 
 export default function DetailsPage() {
+  // Ensure page loads at top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="min-h-screen bg-cream">
