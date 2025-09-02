@@ -66,35 +66,17 @@ Vyhodnotte fotografii podle techto kriterii:
 1. Relevance k ukolu (odpovida fotka zadani?)
 2. Kvalita provedeni (je fotka ostra, dobre komponovana?)
 3. Svatební kontext (je to opravdu ze svatby?)
-4. Technicke parametry a kompozice
-5. Rozpoznani objektu a atmosfery
-6. Emocni obsah
 
-DŮLEŽITÉ: Odpovězte POUZE platným JSON objektem, žádný další text před ani po JSON!
-Používejte pouze čísla mezi 0 a 1 pro skóre (např. 0.85, ne 0.8500000000000000000).
-Maximálně 5 prvků v každém poli typu array.
+KRITICKÉ INSTRUKCE PRO ODPOVĚĎ:
+- Odpovězte POUZE platným JSON objektem
+- ŽÁDNÝ text před nebo po JSON
+- Používejte pouze čísla mezi 0 a 1 (např. 0.85)
+- Maximální délka textu: explanation 100 znaků, suggestedImprovements 80 znaků
+- Maximálně 3 prvky v každém array poli
+- NEPOUŽÍVEJTE tab znaky nebo dlouhé mezery
 
-{
-"isValid": true,
-"confidence": 0.85,
-"explanation": "Krátké vysvětlení v češtině (max 200 znaků)",
-"suggestedImprovements": "Návrhy na zlepšení (max 150 znaků)",
-"technicalQuality": {
-  "sharpness": 0.8,
-  "composition": 0.7,
-  "lighting": 0.9,
-  "exposure": "dobrá"
-},
-"detectedObjects": ["max 5 objektů"],
-"weddingElements": ["max 5 svatebních prvků"],
-"atmosphere": "nálada fotky",
-"peopleCount": 2,
-"location": "typ místa",
-"emotions": ["max 5 emocí"],
-"category": "kategorie",
-"tags": ["max 5 tagů"],
-"creativeTips": "Kreativní návrhy (max 100 znaků)"
-}`;
+Příklad správné odpovědi:
+{"isValid":true,"confidence":0.85,"explanation":"Krásná svatební fotka s dobrou kompozicí a osvětlením","suggestedImprovements":"Zkuste více světla","technicalQuality":{"sharpness":0.8,"composition":0.9,"lighting":0.7,"exposure":"dobra"},"detectedObjects":["nevesta","zenich","kytice"],"weddingElements":["saty","oblek","prsteny"],"atmosphere":"romantická","peopleCount":2,"location":"kostel","emotions":["radost","láska","štěstí"],"category":"portrét","tags":["formální","klasické","elegantní"],"creativeTips":"Zkuste jiný úhel"}`;
 
     const contents = [
       {
@@ -157,9 +139,10 @@ Maximálně 5 prvků v každém poli typu array.
 
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Gemini API timeout')), 30000); // 30 second timeout
+      setTimeout(() => reject(new Error('Gemini API timeout')), 20000); // 20 second timeout
     });
 
+    console.log('🤖 Sending request to Gemini AI...');
     const response = await Promise.race([
       model.generateContent(contents),
       timeoutPromise
@@ -177,10 +160,13 @@ Maximálně 5 prvků v každém poli typu array.
           .replace(/\r\n/g, ' ')
           .replace(/\r/g, ' ')
           .replace(/\n/g, ' ')
-          .replace(/\t/g, ' ')
+          .replace(/\t+/g, ' ')  // Replace multiple tabs with single space
           .replace(/\s+/g, ' ')
-          // Remove any non-printable characters
-          .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F]/g, '')
+          // Remove any non-printable characters but preserve Czech characters
+          .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F\u1E00-\u1EFF]/g, '')
+          // Fix common Gemini malformed patterns
+          .replace(/,\s*,/g, ',')  // Remove double commas
+          .replace(/:\s*,/g, ': null,')  // Fix empty values
           .trim();
         
         console.log('Raw response length:', rawJson.length);
@@ -201,22 +187,29 @@ Maximálně 5 prvků v každém poli typu array.
           // Try to find a reasonable cutoff point
           let reconstructedJson = cleanedJson.substring(jsonStart);
           
-          // Remove any content after obvious JSON structure break
-          const patterns = [
-            /(\w+"\s*:\s*\d+\.?\d*)[0-9.]{100,}/g, // Very long numbers
-            /("technicalQuality"\s*:\s*\{[^}]*"sharpness"\s*:\s*\d+\.\d*)[0-9.]{50,}/g, // Long sharpness values
+          // Remove content after obvious breaks in JSON structure
+          const breakPatterns = [
+            /(\w+"\s*:\s*\d+\.?\d*)[0-9.]{50,}/g, // Very long numbers
+            /("explanation"\s*:\s*"[^"]*")[^"]*\t+[^"]*(")/g, // Tab breaks in explanation
+            /("explanation"\s*:\s*"[^"]*?)[\t\s]{20,}([^"]*?")/g, // Long whitespace in strings
           ];
           
-          patterns.forEach(pattern => {
-            reconstructedJson = reconstructedJson.replace(pattern, '$1');
+          breakPatterns.forEach(pattern => {
+            reconstructedJson = reconstructedJson.replace(pattern, '$1$2');
           });
           
-          // Count braces to determine where to close
-          const openBraces = (reconstructedJson.match(/\{/g) || []).length;
-          const closeBraces = (reconstructedJson.match(/\}/g) || []).length;
-          
-          // Add necessary closing braces
-          reconstructedJson += '}'.repeat(Math.max(0, openBraces - closeBraces));
+          // Find the last complete field before corruption
+          const lastCompleteFieldMatch = reconstructedJson.match(/.*"explanation"\s*:\s*"[^"]*"/);
+          if (lastCompleteFieldMatch) {
+            reconstructedJson = lastCompleteFieldMatch[0] + '"}';
+          } else {
+            // Count braces to determine where to close
+            const openBraces = (reconstructedJson.match(/\{/g) || []).length;
+            const closeBraces = (reconstructedJson.match(/\}/g) || []).length;
+            
+            // Add necessary closing braces
+            reconstructedJson += '}'.repeat(Math.max(0, openBraces - closeBraces));
+          }
           
           cleanedJson = reconstructedJson;
           jsonEnd = cleanedJson.length;
@@ -239,11 +232,11 @@ Maximálně 5 prvků v každém poli typu array.
         if (!jsonString.includes('"isValid"') || !jsonString.includes('"confidence"') || !jsonString.includes('"explanation"')) {
           console.log('⚠️ Missing required fields, using fallback structure');
           // Create minimal valid response
-          jsonString = `{
-            "isValid": false,
-            "confidence": 0.5,
-            "explanation": "AI analýza byla neúplná, zkuste nahrát fotografii znovu."
-          }`;
+          return {
+            isValid: false,
+            confidence: 0.3,
+            explanation: "AI analýza byla neúplná kvůli technickým problémům. Zkuste nahrát fotografii znovu."
+          };
         }
         
         // Fix problematic very long numbers that cause JSON parsing issues
