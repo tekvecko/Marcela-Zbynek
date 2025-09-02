@@ -393,6 +393,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photo upload endpoint
+  app.post("/api/photos/upload", uploadRateLimit, optionalAuth, upload.single('photo'), async (req: AuthRequest, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Žádný soubor nebyl nahrán" });
+      }
+
+      const file = req.file;
+      const { questId } = req.body;
+
+      // Validate quest ID if provided
+      if (questId) {
+        const challenge = await storage.getQuestChallenge(questId);
+        if (!challenge) {
+          return res.status(400).json({ message: "Neplatné ID výzvy" });
+        }
+      }
+
+      // Create uploaded photo record
+      const photoData: any = {
+        filename: file.filename,
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        uploaderName: req.user?.email || 'anonymous',
+        questId: questId || null,
+        likes: 0,
+        isVerified: false,
+        verificationScore: null,
+        technicalQuality: null,
+        detectedObjects: null,
+        weddingElements: null,
+        atmosphere: null,
+        peopleCount: null,
+        location: null,
+        emotions: null,
+        category: null,
+        tags: null,
+        creativeTips: null,
+        aiAnalysis: null
+      };
+
+      // Try AI verification if Google API key is available
+      if (process.env.GOOGLE_API_KEY && questId) {
+        try {
+          const { verifyPhotoForChallenge } = await import('./gemini');
+          const challenge = await storage.getQuestChallenge(questId);
+          
+          if (challenge) {
+            const verificationResult = await verifyPhotoForChallenge(
+              file.path,
+              challenge.title,
+              challenge.description
+            );
+
+            photoData.isVerified = verificationResult.isValid;
+            photoData.verificationScore = Math.round(verificationResult.confidence * 100);
+            photoData.technicalQuality = verificationResult.technicalQuality;
+            photoData.detectedObjects = verificationResult.detectedObjects;
+            photoData.weddingElements = verificationResult.weddingElements;
+            photoData.atmosphere = verificationResult.atmosphere;
+            photoData.peopleCount = verificationResult.peopleCount;
+            photoData.location = verificationResult.location;
+            photoData.emotions = verificationResult.emotions;
+            photoData.category = verificationResult.category;
+            photoData.tags = verificationResult.tags;
+            photoData.creativeTips = verificationResult.creativeTips;
+            photoData.aiAnalysis = verificationResult.explanation;
+          }
+        } catch (error) {
+          console.error('AI verification failed:', error);
+          // Continue without AI verification - don't fail the upload
+          photoData.isVerified = false;
+          photoData.verificationScore = 0;
+        }
+      } else {
+        // Auto-approve if no AI verification available
+        photoData.isVerified = true;
+        photoData.verificationScore = 100;
+      }
+
+      const uploadedPhoto = await storage.createUploadedPhoto(photoData);
+
+      // Update quest progress if questId provided and user authenticated
+      if (questId && req.user?.email) {
+        try {
+          const progress = await storage.getOrCreateQuestProgress(questId, req.user.email);
+          if (photoData.isVerified) {
+            await storage.updateQuestProgress(
+              progress.id, 
+              progress.photosUploaded + 1,
+              progress.photosUploaded + 1 >= (await storage.getQuestChallenge(questId))?.targetPhotos
+            );
+          }
+        } catch (error) {
+          console.error('Failed to update quest progress:', error);
+        }
+      }
+
+      res.json({
+        id: uploadedPhoto.id,
+        filename: uploadedPhoto.filename,
+        isVerified: uploadedPhoto.isVerified,
+        verificationScore: uploadedPhoto.verificationScore,
+        aiAnalysis: uploadedPhoto.aiAnalysis,
+        message: uploadedPhoto.isVerified 
+          ? "Fotka byla úspěšně nahrána a schválena!" 
+          : "Fotka byla nahrána, ale nesplnila požadavky výzvy."
+      });
+
+    } catch (error) {
+      console.error("Photo upload error:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Chyba při nahrávání fotky" 
+      });
+    }
+  });
+
   // Použij monitoring middleware globálně
   app.use('/api', serviceMonitoringMiddleware);
 
