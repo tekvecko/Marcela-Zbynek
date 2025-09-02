@@ -246,28 +246,135 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsLoginDropdownOpen(!isLoginDropdownOpen);
   };
 
-  // Logo element component
+  // Enhanced logo state
+  const [logoClicks, setLogoClicks] = useState(0);
+  const [isLogoAnimating, setIsLogoAnimating] = useState(false);
+  const [lastClickTime, setLastClickTime] = useState(0);
+
+  // Logo click handler with special effects
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime < 500) {
+      // Double click detected
+      setLogoClicks(prev => prev + 2);
+      setIsLogoAnimating(true);
+      setTimeout(() => setIsLogoAnimating(false), 2000);
+    } else {
+      setLogoClicks(prev => prev + 1);
+    }
+    setLastClickTime(now);
+
+    // Navigate to home
+    if (location !== '/') {
+      window.location.href = '/';
+    }
+  };
+
+  // Enhanced logo element component
   const LogoElement = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
-    <motion.button
-      className={`group relative ${className} cursor-pointer hover:scale-105 transition-transform duration-200`}
-      onClick={onClick}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+    <motion.div
+      className={`group relative ${className} cursor-pointer`}
+      onClick={onClick || handleLogoClick}
       data-testid="nav-logo"
     >
-      <img
-        src={logoImage}
-        alt="M&Z Wedding Logo"
-        className="w-full h-full object-contain filter drop-shadow-lg group-hover:drop-shadow-xl transition-all duration-300"
-        style={{
-          objectFit: 'contain',
-          imageRendering: 'crisp-edges'
-        }}
+      {/* Outer glow ring */}
+      <motion.div
+        className="absolute inset-0 rounded-full bg-gradient-to-r from-romantic via-love to-romantic opacity-0 group-hover:opacity-20 transition-opacity duration-500"
+        animate={isLogoAnimating ? {
+          scale: [1, 1.5, 2],
+          opacity: [0.2, 0.4, 0]
+        } : {}}
+        transition={{ duration: 1.5 }}
       />
 
+      {/* Main logo container */}
       <motion.div
-        className="absolute -top-1 -right-1 w-3 h-3 bg-romantic rounded-full shadow-lg"
+        className="relative z-10 w-full h-full rounded-full overflow-hidden"
+        whileHover={{ 
+          scale: 1.08,
+          rotate: 2
+        }}
+        whileTap={{ 
+          scale: 0.92,
+          rotate: -2
+        }}
+        animate={isLogoAnimating ? {
+          rotate: [0, 180, 360],
+          scale: [1, 1.2, 1],
+        } : {}}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 20,
+          duration: isLogoAnimating ? 2 : 0.3
+        }}
+      >
+        {/* Background gradient */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-romantic/10 via-love/10 to-romantic/10 rounded-full"
+          animate={{
+            rotate: [0, 360],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+
+        <img
+          src={logoImage}
+          alt="M&Z Wedding Logo"
+          className="w-full h-full object-contain relative z-10 filter drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-500 group-hover:brightness-110"
+          style={{
+            objectFit: 'contain',
+            imageRendering: 'crisp-edges'
+          }}
+        />
+      </motion.div>
+
+      {/* Sparkle effects */}
+      <AnimatePresence>
+        {isLogoAnimating && (
+          <>
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-romantic rounded-full"
+                initial={{ 
+                  scale: 0,
+                  x: 0,
+                  y: 0,
+                  opacity: 1
+                }}
+                animate={{
+                  scale: [0, 1, 0],
+                  x: [0, (Math.cos(i * 60 * Math.PI / 180) * 30)],
+                  y: [0, (Math.sin(i * 60 * Math.PI / 180) * 30)],
+                  opacity: [1, 1, 0]
+                }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 1.5,
+                  delay: i * 0.1,
+                  ease: "easeOut"
+                }}
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)'
+                }}
+              />
+            ))}
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Status indicator */}
+      <motion.div
+        className="absolute -top-1 -right-1 w-3 h-3 rounded-full shadow-lg"
         animate={{
+          backgroundColor: logoClicks > 10 ? ['#9b7794', '#c4a484', '#9b7794'] : ['#9b7794', '#c4a484', '#9b7794'],
           scale: [1, 1.2, 1],
           opacity: [0.7, 1, 0.7]
         }}
@@ -277,7 +384,61 @@ export default function Navigation({}: NavigationProps = {}) {
           ease: "easeInOut"
         }}
       />
-    </motion.button>
+
+      {/* Click counter tooltip */}
+      <AnimatePresence>
+        {logoClicks > 5 && (
+          <motion.div
+            className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-charcoal text-white text-xs px-2 py-1 rounded-full shadow-lg whitespace-nowrap"
+            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.8 }}
+          >
+            🎉 {logoClicks} kliků!
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Special effects for milestone clicks */}
+      <AnimatePresence>
+        {logoClicks === 20 && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 bg-love rounded-full"
+                initial={{
+                  scale: 0,
+                  x: 0,
+                  y: 0,
+                }}
+                animate={{
+                  scale: [0, 1, 0.5, 0],
+                  x: [0, Math.cos(i * 30 * Math.PI / 180) * 50],
+                  y: [0, Math.sin(i * 30 * Math.PI / 180) * 50],
+                  opacity: [1, 1, 0.5, 0]
+                }}
+                transition={{
+                  duration: 2,
+                  delay: i * 0.1,
+                  ease: "easeOut"
+                }}
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)'
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 
   return (
