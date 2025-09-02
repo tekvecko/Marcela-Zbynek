@@ -362,8 +362,8 @@ export default function Navigation({}: NavigationProps = {}) {
                 </SheetContent>
               </Sheet>
 
-              <div className="font-dancing text-2xl text-romantic font-bold">
-                M&Z Wedding
+              <div className="font-script text-2xl text-romantic font-bold tracking-wide">
+                Marcela ❤️ Zbyněk
               </div>
             </div>
 
