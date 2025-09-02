@@ -481,11 +481,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const progress = await storage.getOrCreateQuestProgress(questId, req.user.email);
           if (photoData.isVerified) {
-            await storage.updateQuestProgress(
-              progress.id, 
-              progress.photosUploaded + 1,
-              progress.photosUploaded + 1 >= (await storage.getQuestChallenge(questId))?.targetPhotos
-            );
+            const challenge = await storage.getQuestChallenge(questId);
+            if (challenge) {
+              await storage.updateQuestProgress(
+                progress.id, 
+                progress.photosUploaded + 1,
+                progress.photosUploaded + 1 >= challenge.targetPhotos
+              );
+            }
           }
         } catch (error) {
           console.error('Failed to update quest progress:', error);

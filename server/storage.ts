@@ -544,6 +544,7 @@ export class MemStorage implements IStorage {
       weddingElements: photo.weddingElements ?? null,
       atmosphere: photo.atmosphere ?? null,
       peopleCount: photo.peopleCount ?? null,
+      location: photo.location ?? null,
       emotions: photo.emotions ?? null,
       category: photo.category ?? null,
       tags: photo.tags ?? null,
@@ -880,6 +881,8 @@ export class MemStorage implements IStorage {
     const log: UserBehaviorLog = {
       ...behaviorData,
       id,
+      details: behaviorData.details ?? null,
+      pointsEarned: behaviorData.pointsEarned ?? null,
       createdAt: new Date(),
     };
     // For MemStorage, we don't have a persistent log, but we can simulate it or just return the created log.
@@ -901,6 +904,9 @@ export class MemStorage implements IStorage {
     const insight: AiLearningInsight = {
       ...insightData,
       id,
+      createdAt: new Date(),
+      confidence: insightData.confidence ?? 0.8,
+      sampleSize: insightData.sampleSize ?? 1,
       lastUpdated: new Date(),
     };
     // In-memory storage, so we don't have a persistent store for insights.
