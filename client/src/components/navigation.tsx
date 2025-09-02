@@ -249,6 +249,7 @@ export default function Navigation({}: NavigationProps = {}) {
   };
 
   const [showQuickNav, setShowQuickNav] = useState(false);
+  const [showLoginDropdown, setShowLoginDropdown] = useState(false); // State for login dialog
 
   // Mobile menu state management
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -348,7 +349,7 @@ export default function Navigation({}: NavigationProps = {}) {
                       <Button
                         onClick={() => {
                           setIsMenuOpen(false);
-                          setIsLoginDropdownOpen(true);
+                          setShowLoginDropdown(true);
                         }}
                         variant="outline"
                         className="w-full"
@@ -421,21 +422,21 @@ export default function Navigation({}: NavigationProps = {}) {
                         >
                           <div className="text-xs font-medium text-charcoal/60 mb-2">Skočit na:</div>
                           <div className="space-y-1">
-                            <button 
+                            <button
                               onClick={() => { scrollToSection('ceremony'); setShowQuickNav(false); }}
                               className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
                             >
                               <Calendar size={14} />
                               Obřad
                             </button>
-                            <button 
+                            <button
                               onClick={() => { scrollToSection('venue'); setShowQuickNav(false); }}
                               className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
                             >
                               <MapPin size={14} />
                               Místo konání
                             </button>
-                            <button 
+                            <button
                               onClick={() => { scrollToSection('menu'); setShowQuickNav(false); }}
                               className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
                             >
@@ -465,7 +466,7 @@ export default function Navigation({}: NavigationProps = {}) {
                 </div>
               ) : (
                 <Button
-                  onClick={() => setIsLoginDropdownOpen(!isLoginDropdownOpen)}
+                  onClick={() => setShowLoginDropdown(true)} // Use dialog state
                   variant="outline"
                   size="sm"
                   data-testid="nav-login-btn"
@@ -546,125 +547,22 @@ export default function Navigation({}: NavigationProps = {}) {
 
 
 
-      {/* Login Dropdown for non-authenticated users */}
-      <AnimatePresence>
-        {!user && isLoginDropdownOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            className="fixed z-[10000] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 p-6"
-            style={{
-              width: isMobile ? 'calc(100vw - 2rem)' : '320px',
-              maxWidth: isMobile ? '360px' : '320px',
-              top: `${Math.min(Math.max(currentScrollY + 20, 20), currentScrollY + window.innerHeight - Math.min(480, window.innerHeight - 40))}px`,
-              right: isMobile ? '1rem' : '1rem',
-              left: isMobile ? '1rem' : 'auto',
-              maxHeight: `${Math.min(window.innerHeight - 40, 480)}px`,
-              overflowY: 'hidden'
-            }}
-          >
-            {/* Dekorativní gradient overlay */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-romantic via-love to-romantic opacity-60 rounded-t-2xl" />
-
-            {/* Close button */}
-            <motion.button
-              onClick={() => setIsLoginDropdownOpen(false)}
-              className="absolute top-3 right-3 p-2 rounded-full bg-gray-100/80 hover:bg-gray-200 transition-all duration-200 z-10 group shadow-sm border border-gray-200/50"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              data-testid="login-dropdown-close"
-            >
-              <div className="w-5 h-5 flex items-center justify-center relative">
-                <motion.div
-                  className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
-                  style={{ transform: 'rotate(45deg)' }}
-                />
-                <motion.div
-                  className="w-4 h-0.5 bg-charcoal group-hover:bg-romantic absolute rounded-full"
-                  style={{ transform: 'rotate(-45deg)' }}
-                />
-              </div>
-            </motion.button>
-
-            <div className="text-center mb-4 relative">
-              <motion.div
-                className="w-12 h-12 bg-gradient-to-br from-romantic via-love to-romantic/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-                animate={{
-                  rotate: [0, 5, -5, 0],
-                  scale: [1, 1.05, 1]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <User className="text-white drop-shadow-lg" size={20} />
-              </motion.div>
-              <h3 className="text-lg font-semibold text-charcoal mb-1">Vítejte zpět!</h3>
-              <p className="text-xs text-charcoal/60">Přihlaste se ke svému účtu</p>
-            </div>
-
-            <form onSubmit={handleLoginSubmit} className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="login-email" className="text-sm">E-mail</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="vas.email@example.com"
-                  value={loginFormData.email}
-                  onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                  className="h-10"
-                  data-testid="login-email-input"
-                />
-                {loginErrors.email && (
-                  <p className="text-red-500 text-xs">{loginErrors.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="login-password" className="text-sm">Heslo</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="Vaše heslo"
-                  value={loginFormData.password}
-                  onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                  className="h-10"
-                  data-testid="login-password-input"
-                />
-                {loginErrors.password && (
-                  <p className="text-red-500 text-xs">{loginErrors.password}</p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full h-10"
-                disabled={loginMutation.isPending}
-                data-testid="login-submit-btn"
-              >
-                {loginMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {loginMutation.isPending ? "Přihlašování..." : "Přihlásit se"}
-              </Button>
-            </form>
-
-            <div className="mt-3 text-center">
-              <a
-                href="/login"
-                onClick={() => setIsLoginDropdownOpen(false)}
-                className="text-xs text-romantic hover:text-love transition-colors"
-                data-testid="login-register-link"
-              >
-                ✨ Nemáte účet? Registrujte se zde
-              </a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Login Dialog for non-authenticated users */}
+      {!user && (
+        <Dialog open={showLoginDropdown} onOpenChange={setShowLoginDropdown}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-script text-charcoal text-center">
+                Přihlášení
+              </DialogTitle>
+              <DialogDescription className="text-charcoal/60 text-center">
+                Přihlaste se pro přístup k fotovýzvám a galerii
+              </DialogDescription>
+            </DialogHeader>
+            <AuthForm onSuccess={login} />
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
