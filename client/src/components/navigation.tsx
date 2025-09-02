@@ -246,86 +246,97 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsLoginDropdownOpen(!isLoginDropdownOpen);
   };
 
-  // Enhanced logo state
-  const [logoClicks, setLogoClicks] = useState(0);
-  const [isLogoAnimating, setIsLogoAnimating] = useState(false);
-  const [lastClickTime, setLastClickTime] = useState(0);
+  // Useful interactive features
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<string[]>([]);
+  const [showQuickNav, setShowQuickNav] = useState(false);
 
-  // Logo click handler with special effects
-  const handleLogoClick = () => {
-    const now = Date.now();
-    if (now - lastClickTime < 500) {
-      // Double click detected
-      setLogoClicks(prev => prev + 2);
-      setIsLogoAnimating(true);
-      setTimeout(() => setIsLogoAnimating(false), 2000);
-    } else {
-      setLogoClicks(prev => prev + 1);
+  // Quick actions for wedding guests
+  const quickActions = [
+    { 
+      id: 'rsvp', 
+      label: 'Rychlé RSVP', 
+      icon: '✅', 
+      action: () => window.location.href = '/profile#rsvp',
+      description: 'Potvrdit účast'
+    },
+    { 
+      id: 'gift', 
+      label: 'Seznam přání', 
+      icon: '🎁', 
+      action: () => window.location.href = '/details#gifts',
+      description: 'Zobrazit přání'
+    },
+    { 
+      id: 'transport', 
+      label: 'Doprava', 
+      icon: '🚗', 
+      action: () => window.location.href = '/details#transport',
+      description: 'Info o dopravě'
+    },
+    { 
+      id: 'contact', 
+      label: 'Kontakt', 
+      icon: '📞', 
+      action: () => window.location.href = '/details#contact',
+      description: 'Kontaktní údaje'
     }
-    setLastClickTime(now);
+  ];
 
-    // Navigate to home
+  // Important notifications for guests
+  useEffect(() => {
+    const importantNotifications = [
+      'Nezapomeňte potvrdit účast do 15. března!',
+      'Nové fotky v galerii',
+      'Aktualizace programu svatby'
+    ];
+    
+    // Show notifications randomly
+    const timer = setTimeout(() => {
+      if (Math.random() > 0.7 && notifications.length === 0) {
+        setNotifications([importantNotifications[Math.floor(Math.random() * importantNotifications.length)]]);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [notifications]);
+
+  // Enhanced logo click handler - now opens quick actions
+  const handleLogoClick = () => {
     if (location !== '/') {
       window.location.href = '/';
+    } else {
+      setQuickActionsOpen(!quickActionsOpen);
     }
   };
 
-  // Enhanced logo element component
+  // Enhanced logo element with useful functionality
   const LogoElement = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
     <motion.div
       className={`group relative ${className} cursor-pointer`}
       onClick={onClick || handleLogoClick}
       data-testid="nav-logo"
     >
-      {/* Outer glow ring */}
-      <motion.div
-        className="absolute inset-0 rounded-full bg-gradient-to-r from-romantic via-love to-romantic opacity-0 group-hover:opacity-20 transition-opacity duration-500"
-        animate={isLogoAnimating ? {
-          scale: [1, 1.5, 2],
-          opacity: [0.2, 0.4, 0]
-        } : {}}
-        transition={{ duration: 1.5 }}
-      />
-
       {/* Main logo container */}
       <motion.div
-        className="relative z-10 w-full h-full rounded-full overflow-hidden"
+        className="relative z-10 w-full h-full rounded-full overflow-hidden bg-white shadow-lg"
         whileHover={{ 
-          scale: 1.08,
-          rotate: 2
+          scale: 1.05,
+          boxShadow: "0 10px 25px rgba(155, 119, 148, 0.3)"
         }}
         whileTap={{ 
-          scale: 0.92,
-          rotate: -2
+          scale: 0.95
         }}
-        animate={isLogoAnimating ? {
-          rotate: [0, 180, 360],
-          scale: [1, 1.2, 1],
-        } : {}}
         transition={{
           type: "spring",
-          stiffness: 300,
-          damping: 20,
-          duration: isLogoAnimating ? 2 : 0.3
+          stiffness: 400,
+          damping: 25
         }}
       >
-        {/* Background gradient */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-romantic/10 via-love/10 to-romantic/10 rounded-full"
-          animate={{
-            rotate: [0, 360],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-
         <img
           src={logoImage}
           alt="M&Z Wedding Logo"
-          className="w-full h-full object-contain relative z-10 filter drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-500 group-hover:brightness-110"
+          className="w-full h-full object-contain filter drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
           style={{
             objectFit: 'contain',
             imageRendering: 'crisp-edges'
@@ -333,111 +344,44 @@ export default function Navigation({}: NavigationProps = {}) {
         />
       </motion.div>
 
-      {/* Sparkle effects */}
+      {/* Notification indicator */}
       <AnimatePresence>
-        {isLogoAnimating && (
-          <>
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 bg-romantic rounded-full"
-                initial={{ 
-                  scale: 0,
-                  x: 0,
-                  y: 0,
-                  opacity: 1
-                }}
-                animate={{
-                  scale: [0, 1, 0],
-                  x: [0, (Math.cos(i * 60 * Math.PI / 180) * 30)],
-                  y: [0, (Math.sin(i * 60 * Math.PI / 180) * 30)],
-                  opacity: [1, 1, 0]
-                }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: 1.5,
-                  delay: i * 0.1,
-                  ease: "easeOut"
-                }}
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)'
-                }}
-              />
-            ))}
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Status indicator */}
-      <motion.div
-        className="absolute -top-1 -right-1 w-3 h-3 rounded-full shadow-lg"
-        animate={{
-          backgroundColor: logoClicks > 10 ? ['#9b7794', '#c4a484', '#9b7794'] : ['#9b7794', '#c4a484', '#9b7794'],
-          scale: [1, 1.2, 1],
-          opacity: [0.7, 1, 0.7]
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-
-      {/* Click counter tooltip */}
-      <AnimatePresence>
-        {logoClicks > 5 && (
+        {notifications.length > 0 && (
           <motion.div
-            className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-charcoal text-white text-xs px-2 py-1 rounded-full shadow-lg whitespace-nowrap"
-            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.8 }}
+            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center shadow-lg font-bold"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: 1
+            }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{
+              scale: {
+                duration: 0.5,
+                repeat: 3
+              }
+            }}
           >
-            🎉 {logoClicks} kliků!
+            {notifications.length}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Special effects for milestone clicks */}
-      <AnimatePresence>
-        {logoClicks === 20 && (
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {[...Array(12)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 bg-love rounded-full"
-                initial={{
-                  scale: 0,
-                  x: 0,
-                  y: 0,
-                }}
-                animate={{
-                  scale: [0, 1, 0.5, 0],
-                  x: [0, Math.cos(i * 30 * Math.PI / 180) * 50],
-                  y: [0, Math.sin(i * 30 * Math.PI / 180) * 50],
-                  opacity: [1, 1, 0.5, 0]
-                }}
-                transition={{
-                  duration: 2,
-                  delay: i * 0.1,
-                  ease: "easeOut"
-                }}
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)'
-                }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Quick actions indicator when available */}
+      {location === '/' && (
+        <motion.div
+          className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full shadow-lg"
+          animate={{
+            scale: quickActionsOpen ? [1, 1.3, 1] : [1, 1.1, 1],
+            opacity: [0.8, 1, 0.8]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      )}
     </motion.div>
   );
 
@@ -571,10 +515,63 @@ export default function Navigation({}: NavigationProps = {}) {
               })}
             </div>
 
-            {/* User Section */}
+            {/* User Section with Useful Features */}
             <div className="flex items-center space-x-3">
               {user ? (
                 <div className="flex items-center space-x-3">
+                  {/* Quick Nav Helper Button */}
+                  <motion.button
+                    onClick={() => setShowQuickNav(!showQuickNav)}
+                    className="p-2 rounded-full hover:bg-romantic/10 transition-colors relative"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    title="Rychlá navigace"
+                  >
+                    <motion.div
+                      animate={{ rotate: showQuickNav ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Menu className="h-4 w-4 text-romantic" />
+                    </motion.div>
+                    
+                    {/* Quick nav dropdown */}
+                    <AnimatePresence>
+                      {showQuickNav && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute top-full right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-lg shadow-xl border border-gray-200/50 p-3 min-w-[200px]"
+                        >
+                          <div className="text-xs font-medium text-charcoal/60 mb-2">Skočit na:</div>
+                          <div className="space-y-1">
+                            <button 
+                              onClick={() => { scrollToSection('ceremony'); setShowQuickNav(false); }}
+                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
+                            >
+                              <Calendar size={14} />
+                              Obřad
+                            </button>
+                            <button 
+                              onClick={() => { scrollToSection('venue'); setShowQuickNav(false); }}
+                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
+                            >
+                              <MapPin size={14} />
+                              Místo konání
+                            </button>
+                            <button 
+                              onClick={() => { scrollToSection('menu'); setShowQuickNav(false); }}
+                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
+                            >
+                              <Utensils size={14} />
+                              Menu
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+
                   <div className="hidden md:block">
                     <div className="text-sm font-medium text-charcoal">
                       {user.firstName} {user.lastName}
@@ -670,6 +667,90 @@ export default function Navigation({}: NavigationProps = {}) {
         </AnimatePresence>
       </motion.nav>
 
+
+      {/* Notifications Panel */}
+      <AnimatePresence>
+        {notifications.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            className="fixed top-20 right-4 z-[9999] bg-white/95 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 p-4 max-w-xs"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Bell className="text-romantic" size={16} />
+                <span className="font-medium text-charcoal text-sm">Oznámení</span>
+              </div>
+              <button
+                onClick={() => setNotifications([])}
+                className="text-gray-400 hover:text-gray-600 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-2">
+              {notifications.map((notification, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-charcoal/80 p-2 bg-romantic/5 rounded-lg border border-romantic/10"
+                >
+                  {notification}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Actions Popup */}
+      <AnimatePresence>
+        {quickActionsOpen && location === '/' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed top-20 left-4 z-[9999] bg-white/95 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 p-4"
+            style={{ width: isMobile ? 'calc(100vw - 2rem)' : '280px' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-romantic" size={16} />
+                <span className="font-medium text-charcoal">Rychlé akce</span>
+              </div>
+              <button
+                onClick={() => setQuickActionsOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid gap-2">
+              {quickActions.map((action) => (
+                <motion.button
+                  key={action.id}
+                  onClick={() => {
+                    action.action();
+                    setQuickActionsOpen(false);
+                  }}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-romantic/5 hover:bg-romantic/10 transition-all text-left group"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="text-lg">{action.icon}</span>
+                  <div>
+                    <div className="font-medium text-charcoal text-sm">{action.label}</div>
+                    <div className="text-xs text-charcoal/60">{action.description}</div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Login Dropdown for non-authenticated users */}
       <AnimatePresence>
