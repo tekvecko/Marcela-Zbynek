@@ -47,7 +47,7 @@ export default function ChallengePage() {
   const queryClient = useQueryClient();
 
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
-    queryKey: user ? ["/api/quest-challenges/unlocked"] : ["/api/quest-challenges"],
+    queryKey: user ? ["/api/quest-challenges/all-with-status"] : ["/api/quest-challenges"],
   });
 
   const challenge = challenges.find(c => c.id === challengeId);
