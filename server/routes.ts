@@ -520,8 +520,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiAnalysis: null
       };
 
-      // Try AI verification if Google API key is available
-      if (process.env.GOOGLE_API_KEY && questId) {
+      // Try AI verification if Gemini API key is available
+      if (process.env.GEMINI_API_KEY && questId) {
         try {
           const { verifyPhotoForChallenge } = await import('./gemini');
           const challenge = await storage.getQuestChallenge(questId);
