@@ -469,6 +469,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photo Like/Unlike Endpoint
+  app.post("/api/photos/:photoId/like", likeRateLimit, authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { photoId } = req.params;
+      const userEmail = req.user?.email;
+
+      if (!userEmail) {
+        return res.status(401).json({ message: "Pro hodnocení fotek se musíte přihlásit" });
+      }
+
+      // Toggle like status
+      const result = await storage.togglePhotoLike(photoId, userEmail);
+      
+      res.json({
+        userHasLiked: result.userHasLiked,
+        likes: result.likes,
+        action: result.action
+      });
+    } catch (error) {
+      console.error("Failed to toggle photo like:", error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Fotka nebyla nalezena')) {
+          return res.status(404).json({ message: "Fotka nebyla nalezena" });
+        }
+        if (error.message.includes('already liked')) {
+          return res.status(400).json({ message: "Tuto fotku jste již ohodnotili" });
+        }
+      }
+      
+      res.status(500).json({ message: "Chyba při hodnocení fotky" });
+    }
+  });
+
+  // Photo Comments Endpoints
+  app.get("/api/photos/:photoId/comments", async (req, res) => {
+    try {
+      const { photoId } = req.params;
+      const comments = await storage.getPhotoComments(photoId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Failed to get photo comments:", error);
+      res.status(500).json({ message: "Chyba při načítání komentářů" });
+    }
+  });
+
+  app.post("/api/photos/:photoId/comments", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { photoId } = req.params;
+      const { content } = req.body;
+      const userEmail = req.user?.email;
+      const userName = req.user?.firstName || userEmail?.split('@')[0] || 'Anonym';
+
+      if (!userEmail) {
+        return res.status(401).json({ message: "Pro přidání komentáře se musíte přihlásit" });
+      }
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Komentář nemůže být prázdný" });
+      }
+
+      const comment = await storage.createPhotoComment({
+        photoId,
+        commenterEmail: userEmail,
+        commenterName: userName,
+        content: content.trim()
+      });
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Failed to create photo comment:", error);
+      res.status(500).json({ message: "Chyba při přidávání komentáře" });
+    }
+  });
+
   // Photo upload endpoint with enhanced error handling
   app.post("/api/photos/upload", uploadRateLimit, optionalAuth, (req, res, next) => {
     upload.single('photo')(req, res, (err) => {
