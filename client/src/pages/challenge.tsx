@@ -438,27 +438,27 @@ export default function ChallengePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <GlassButton
             variant="outline"
             size="sm"
             onClick={() => setLocation("/photo-quest")}
-            className="mb-4"
+            className="mb-4 min-h-[44px] touch-manipulation"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Zpět na úkoly
           </GlassButton>
 
           <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <span className="text-3xl text-white">📸</span>
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+              <span className="text-2xl sm:text-3xl text-white">📸</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-display font-bold bg-gradient-to-r from-romantic to-love bg-clip-text text-transparent mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold bg-gradient-to-r from-romantic to-love bg-clip-text text-transparent mb-4 px-2">
               {challenge.title}
             </h1>
-            <p className="text-charcoal/70 text-lg max-w-2xl mx-auto">
+            <p className="text-charcoal/70 text-base sm:text-lg max-w-2xl mx-auto px-4">
               {challenge.description}
             </p>
           </div>
@@ -466,7 +466,7 @@ export default function ChallengePage() {
 
         <div className="max-w-2xl mx-auto">
           {/* Progress Card */}
-          <div className={`bg-gradient-to-r rounded-2xl p-6 border mb-8 ${
+          <div className={`bg-gradient-to-r rounded-2xl p-4 sm:p-6 border mb-6 sm:mb-8 ${
             isCompleted
               ? 'from-emerald-50/80 to-green-50/80 border-emerald-200'
               : 'from-romantic/10 to-love/10 border-white/30'
@@ -490,8 +490,8 @@ export default function ChallengePage() {
           </div>
 
           {/* Challenge Instructions */}
-          <div className="space-y-6 mb-8">
-            <div className="bg-gradient-to-r from-blush/50 to-cream/50 p-6 rounded-2xl border border-romantic/10 backdrop-blur-sm">
+          <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+            <div className="bg-gradient-to-r from-blush/50 to-cream/50 p-4 sm:p-6 rounded-2xl border border-romantic/10 backdrop-blur-sm">
               <h4 className="font-semibold text-charcoal mb-3 flex items-center text-lg">
                 <span className="text-romantic mr-3 text-xl">🎯</span>
                 Zadání úkolu
@@ -500,7 +500,7 @@ export default function ChallengePage() {
             </div>
 
             {/* Specific Instructions Based on Challenge */}
-            <div className="bg-gradient-to-r from-amber-50/80 to-yellow-50/80 border border-amber-200/50 p-6 rounded-2xl backdrop-blur-sm">
+            <div className="bg-gradient-to-r from-amber-50/80 to-yellow-50/80 border border-amber-200/50 p-4 sm:p-6 rounded-2xl backdrop-blur-sm">
               <h4 className="font-semibold text-amber-800 mb-4 flex items-center text-lg">
                 <span className="mr-3 text-xl">💡</span>
                 Jak vyfotit
@@ -556,12 +556,12 @@ export default function ChallengePage() {
 
           {/* Upload Section */}
           {!isCompleted && (
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-8 border border-white/20 shadow-xl">
-              <h3 className="text-xl font-semibold text-charcoal mb-6 text-center">
+            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 sm:p-6 lg:p-8 border border-white/20 shadow-xl">
+              <h3 className="text-lg sm:text-xl font-semibold text-charcoal mb-4 sm:mb-6 text-center">
                 Nahrajte svou fotku
               </h3>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Label htmlFor="photo" className="text-base font-medium text-charcoal/80">
@@ -573,13 +573,14 @@ export default function ChallengePage() {
                     />
                   </div>
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <GlassButton
                         type="button"
                         variant="outline"
                         size="lg"
                         onClick={handleCameraCapture}
                         disabled={uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
+                        className="min-h-[52px] touch-manipulation text-base font-medium"
                       >
                         <Camera size={20} />
                         <span>Vyfotit</span>
@@ -590,6 +591,7 @@ export default function ChallengePage() {
                         size="lg"
                         onClick={handleFilePickerOpen}
                         disabled={uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
+                        className="min-h-[52px] touch-manipulation text-base font-medium"
                       >
                         <Upload size={20} />
                         <span>Vybrat</span>
@@ -608,7 +610,7 @@ export default function ChallengePage() {
 
                 {/* File Preview */}
                 {selectedFile && (
-                  <div className="bg-gradient-to-r from-sage/10 to-emerald-50 p-6 rounded-2xl border border-sage/20">
+                  <div className="bg-gradient-to-r from-sage/10 to-emerald-50 p-4 sm:p-6 rounded-2xl border border-sage/20">
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-lg">📎</span>
                       <div>
@@ -628,7 +630,7 @@ export default function ChallengePage() {
                   disabled={!selectedFile || uploadStage === 'uploading' || uploadStage === 'analyzing' || uploadStage === 'verifying'}
                   variant="primary"
                   size="lg"
-                  className={`w-full transition-all duration-300 ${
+                  className={`w-full min-h-[56px] touch-manipulation text-base font-semibold transition-all duration-300 ${
                     selectedFile && uploadStage === 'idle'
                       ? 'animate-pulse ring-4 ring-romantic/30 shadow-lg shadow-romantic/30'
                       : ''
