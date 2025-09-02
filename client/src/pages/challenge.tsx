@@ -231,7 +231,7 @@ export default function ChallengePage() {
 
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setAnalysisResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
 
@@ -408,7 +408,7 @@ export default function ChallengePage() {
     );
   }
 
-  if (challenge.isUnlocked === false) {
+  if ((challenge as any).isUnlocked === false) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love flex items-center justify-center">
         <div className="text-center">
@@ -417,7 +417,7 @@ export default function ChallengePage() {
           </div>
           <h2 className="text-2xl font-bold text-charcoal mb-4">Výzva je zamčena</h2>
           <p className="text-charcoal/60 mb-6 max-w-md mx-auto">
-            {challenge.unlockRequirement}
+            {(challenge as any).unlockRequirement}
           </p>
           <GlassButton onClick={() => setLocation("/photo-quest")}>
             Zpět na úkoly
