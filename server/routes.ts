@@ -42,8 +42,10 @@ const createRateLimit = (maxRequests: number, windowMs: number) => {
     }
 
     if (userLimit.count >= maxRequests) {
+      const remainingTime = Math.ceil((userLimit.resetTime - now) / 1000);
       return res.status(429).json({
-        message: "Příliš mnoho požadavků. Zkuste to prosím později."
+        message: `Příliš mnoho požadavků. Zkuste to prosím za ${remainingTime} sekund.`,
+        retryAfter: remainingTime
       });
     }
 
@@ -64,37 +66,57 @@ if (!fs.existsSync(uploadDir)) {
 const upload = multer({
   dest: uploadDir,
   limits: {
-    fileSize: 5 * 1024 * 1024, // Reduced to 5MB for better performance
+    fileSize: 5 * 1024 * 1024, // 5MB limit
     files: 1, // Only allow single file upload
+    fieldSize: 1024 * 1024, // 1MB field size limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png'
-    ];
+    try {
+      const allowedTypes = [
+        'image/jpeg',
+        'image/jpg', 
+        'image/png'
+      ];
 
-    // Check file type
-    console.log('File mime type:', file.mimetype);
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype}. Povolené typy: JPG, JPEG, PNG`));
-    }
-
-    // Additional filename validation
-    if (!file.originalname || file.originalname.length > 255) {
-      return cb(new Error('Neplatný název souboru'));
-    }
-
-    // Check for suspicious file extensions
-    const suspiciousExtensions = ['.exe', '.bat', '.sh', '.php', '.js', '.html'];
-    const fileName = file.originalname.toLowerCase();
-    for (const ext of suspiciousExtensions) {
-      if (fileName.includes(ext)) {
-        return cb(new Error('Podezřelý typ souboru'));
+      // Check file type
+      console.log('File validation - mime type:', file.mimetype, 'original name:', file.originalname);
+      
+      if (!file.mimetype || !allowedTypes.includes(file.mimetype.toLowerCase())) {
+        return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype || 'neznámý'}. Povolené typy: JPG, JPEG, PNG`));
       }
-    }
 
-    cb(null, true);
+      // Additional filename validation
+      if (!file.originalname || file.originalname.trim().length === 0) {
+        return cb(new Error('Název souboru je povinný'));
+      }
+      
+      if (file.originalname.length > 255) {
+        return cb(new Error('Název souboru je příliš dlouhý (max 255 znaków)'));
+      }
+
+      // Check for suspicious file extensions and content
+      const suspiciousExtensions = ['.exe', '.bat', '.sh', '.php', '.js', '.html', '.htm', '.asp', '.jsp'];
+      const fileName = file.originalname.toLowerCase();
+      
+      for (const ext of suspiciousExtensions) {
+        if (fileName.includes(ext)) {
+          return cb(new Error(`Nepodporovaný typ souboru: obsahuje ${ext}`));
+        }
+      }
+
+      // Validate file extension matches mime type
+      const validExtensions = ['.jpg', '.jpeg', '.png'];
+      const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!hasValidExtension) {
+        return cb(new Error('Soubor musí mít příponu .jpg, .jpeg nebo .png'));
+      }
+
+      cb(null, true);
+    } catch (error) {
+      console.error('File filter error:', error);
+      cb(new Error('Chyba při validaci souboru'));
+    }
   }
 });
 
@@ -105,6 +127,27 @@ const photoUploadSchema = z.object({
 const photoLikeSchema = z.object({
   // voterName will be automatically extracted from authenticated user
 });
+
+// Middleware pro monitoring upload chyb
+const uploadMonitoringMiddleware = (req: any, res: any, next: any) => {
+  if (req.path === '/api/photos/upload' && req.method === 'POST') {
+    console.log(`📸 Upload attempt from: ${req.user?.email || req.ip}`);
+    console.log(`📁 Content-Type: ${req.headers['content-type']}`);
+    console.log(`📏 Content-Length: ${req.headers['content-length']}`);
+    
+    // Monitor response
+    const originalSend = res.send;
+    res.send = function(data: any) {
+      if (res.statusCode >= 400) {
+        console.error(`❌ Upload failed (${res.statusCode}):`, data);
+      } else {
+        console.log(`✅ Upload successful (${res.statusCode})`);
+      }
+      originalSend.call(this, data);
+    };
+  }
+  next();
+};
 
 // Middleware pro monitoring dostupnosti služeb
 const serviceMonitoringMiddleware = (req: any, res: any, next: any) => {
@@ -393,15 +436,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Photo upload endpoint
-  app.post("/api/photos/upload", uploadRateLimit, optionalAuth, upload.single('photo'), async (req: AuthRequest, res) => {
+  // Photo upload endpoint with enhanced error handling
+  app.post("/api/photos/upload", uploadRateLimit, optionalAuth, (req, res, next) => {
+    upload.single('photo')(req, res, (err) => {
+      if (err) {
+        console.error('Multer upload error:', err);
+        
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ 
+              message: "Soubor je příliš velký. Maximální velikost je 5MB." 
+            });
+          }
+          if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({ 
+              message: "Můžete nahrát pouze jeden soubor najednou." 
+            });
+          }
+          if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({ 
+              message: "Neočekávaný soubor. Ujistěte se, že uploadujete fotku." 
+            });
+          }
+        }
+        
+        return res.status(400).json({ 
+          message: err.message || "Chyba při nahrávání souboru" 
+        });
+      }
+      next();
+    });
+  }, async (req: AuthRequest, res) => {
+    let uploadedFilePath: string | null = null;
+    
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Žádný soubor nebyl nahrán" });
       }
 
       const file = req.file;
+      uploadedFilePath = file.path;
       const { questId } = req.body;
+
+      // Additional file validation
+      if (file.size === 0) {
+        return res.status(400).json({ message: "Soubor je prázdný" });
+      }
+
+      // Validate file exists and is readable
+      if (!fs.existsSync(file.path)) {
+        return res.status(500).json({ message: "Nahraný soubor se nepodařilo najít" });
+      }
 
       // Validate quest ID if provided
       if (questId) {
@@ -508,13 +593,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Photo upload error:", error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Chyba při nahrávání fotky" 
-      });
+      
+      // Cleanup uploaded file on error
+      if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
+        try {
+          fs.unlinkSync(uploadedFilePath);
+          console.log('Cleaned up failed upload file:', uploadedFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup uploaded file:', cleanupError);
+        }
+      }
+      
+      // Provide more specific error messages
+      let errorMessage = "Chyba při nahrávání fotky";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('ENOSPC')) {
+          errorMessage = "Nedostatek místa na serveru. Zkuste to prosím později.";
+        } else if (error.message.includes('ENOENT')) {
+          errorMessage = "Soubor se nepodařilo najít. Zkuste nahrát fotku znovu.";
+        } else if (error.message.includes('EACCES')) {
+          errorMessage = "Problém s přístupovými právy. Kontaktujte správce.";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "Nahrávání trvalo příliš dlouho. Zkuste menší soubor.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      res.status(500).json({ message: errorMessage });
     }
   });
 
   // Použij monitoring middleware globálně
+  app.use('/api', uploadMonitoringMiddleware);
   app.use('/api', serviceMonitoringMiddleware);
 
   // Performance monitoring endpoint
