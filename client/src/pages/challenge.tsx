@@ -64,7 +64,7 @@ export default function ChallengePage() {
   };
 
   const uploadPhotoMutation = useMutation({
-    onMutate: async () => {
+    mutationFn: async () => {
       // Reset states
       setUploadStage('uploading');
       setUploadProgress(0);
