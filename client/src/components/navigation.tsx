@@ -248,7 +248,6 @@ export default function Navigation({}: NavigationProps = {}) {
     setIsLoginDropdownOpen(!isLoginDropdownOpen);
   };
 
-  const [showQuickNav, setShowQuickNav] = useState(false);
   const [showLoginDropdown, setShowLoginDropdown] = useState(false); // State for login dialog
 
   // Mobile menu state management
@@ -396,58 +395,6 @@ export default function Navigation({}: NavigationProps = {}) {
             <div className="flex items-center space-x-3">
               {user ? (
                 <div className="flex items-center space-x-3">
-                  {/* Quick Nav Helper Button */}
-                  <motion.button
-                    onClick={() => setShowQuickNav(!showQuickNav)}
-                    className="p-2 rounded-full hover:bg-romantic/10 transition-colors relative"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    title="Rychlá navigace"
-                  >
-                    <motion.div
-                      animate={{ rotate: showQuickNav ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Menu className="h-4 w-4 text-romantic" />
-                    </motion.div>
-
-                    {/* Quick nav dropdown */}
-                    <AnimatePresence>
-                      {showQuickNav && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute top-full right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-lg shadow-xl border border-gray-200/50 p-3 min-w-[200px]"
-                        >
-                          <div className="text-xs font-medium text-charcoal/60 mb-2">Skočit na:</div>
-                          <div className="space-y-1">
-                            <div
-                              onClick={() => { scrollToSection('ceremony'); setShowQuickNav(false); }}
-                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left cursor-pointer"
-                            >
-                              <Calendar size={14} />
-                              Obřad
-                            </div>
-                            <div
-                              onClick={() => { scrollToSection('venue'); setShowQuickNav(false); }}
-                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left cursor-pointer"
-                            >
-                              <MapPin size={14} />
-                              Místo konání
-                            </div>
-                            <div
-                              onClick={() => { scrollToSection('menu'); setShowQuickNav(false); }}
-                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left cursor-pointer"
-                            >
-                              <Utensils size={14} />
-                              Menu
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
 
                   <div className="hidden md:block">
                     <div className="text-sm font-medium text-charcoal">
