@@ -8,6 +8,10 @@ import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from ".
 import { initializeDatabase } from "./init-database";
 import { initializeSecrets } from "./init-secrets";
 import { storage } from "./storage";
+import { initializeAdminUser } from "./init-admin-user";
+import { initializeQuestChallenges } from "./init-challenges";
+import { initializeMiniGames } from "./init-mini-games";
+import * as miniGamesStorage from "./mini-games-storage";
 
 const app = express();
 app.use(express.json({ limit: "50mb" }));
@@ -132,16 +136,76 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  const port = parseInt(process.env.PORT || "5000", 10);
+  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+
+  server.listen(port, host, () => {
+    console.log(`8:39:08 PM [express] serving on port ${port}`);
   });
+}
+
+async function verifyInitialization() {
+  console.log("🔍 Ověřuji kompletnost inicializace...");
+
+  const issues = [];
+
+  try {
+    // Check database connection
+    const challengesCount = await storage.getQuestChallenges();
+    if (challengesCount.length === 0) {
+      issues.push("❌ Žádné fotovýzvy v databázi");
+    } else {
+      console.log(`✅ Fotovýzvy: ${challengesCount.length} načteno`);
+    }
+
+    // Check mini games
+    const gamesCount = await miniGamesStorage.getAllMiniGames();
+    if (gamesCount.length === 0) {
+      issues.push("❌ Žádné mini-hry v databázi");
+    } else {
+      console.log(`✅ Mini-hry: ${gamesCount.length} načteno`);
+    }
+
+    // Check admin user
+    const adminEmail = process.env.ADMIN_EMAIL || `${process.env.REPL_OWNER}@admin.local`;
+    const adminUser = await storage.getAuthUserByEmail(adminEmail);
+    if (!adminUser) {
+      issues.push("❌ Admin uživatel neexistuje");
+    } else {
+      console.log(`✅ Admin uživatel: ${adminEmail}`);
+    }
+
+    // Check upload directory
+    const fs = await import('fs');
+    const path = await import('path');
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      console.log("✅ Upload složka vytvořena");
+    } else {
+      console.log("✅ Upload složka existuje");
+    }
+
+    // Check client build
+    const clientDir = path.join(process.cwd(), 'client');
+    if (!fs.existsSync(clientDir)) {
+      issues.push("❌ Client složka neexistuje");
+    } else {
+      console.log("✅ Client aplikace je dostupná");
+    }
+
+    if (issues.length > 0) {
+      console.log("\n⚠️  Nalezeny problémy při inicializaci:");
+      issues.forEach(issue => console.log(issue));
+      console.log("\n🔧 Pokračuji ve spuštění, ale některé funkce nemusí fungovat...");
+    } else {
+      console.log("\n🎉 Všechny komponenty úspěšně inicializovány!");
+      console.log("📱 Aplikace je připravena k použití");
+    }
+
+  } catch (error) {
+    console.error("❌ Chyba při verifikaci inicializace:", error);
+    console.log("🔧 Pokračuji ve spuštění s možnými omezeními...");
+  }
+}
 })();

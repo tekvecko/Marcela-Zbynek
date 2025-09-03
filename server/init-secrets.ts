@@ -56,7 +56,7 @@ function generateRandomPassword(): string {
 }
 
 export async function initializeSecrets(): Promise<boolean> {
-  console.log("🔐 Kontroluji SECRETS...");
+  console.log("🔐 Kontroluji SECRETS a komponenty...");
   
   const missingRequired: RequiredSecret[] = [];
   const missingOptional: RequiredSecret[] = [];
@@ -68,6 +68,19 @@ export async function initializeSecrets(): Promise<boolean> {
       } else {
         missingOptional.push(secret);
       }
+    }
+  }
+  
+  // Check critical environment variables
+  const criticalEnvVars = ['DATABASE_URL', 'NODE_ENV'];
+  const missingCritical = criticalEnvVars.filter(key => !process.env[key]);
+  
+  if (missingCritical.length > 0) {
+    console.log(`⚠️  Chybějící kritické proměnné: ${missingCritical.join(', ')}`);
+    // Set defaults for missing critical vars
+    if (!process.env.NODE_ENV) {
+      process.env.NODE_ENV = 'development';
+      console.log("✅ NODE_ENV nastaveno na 'development'");
     }
   }
   
