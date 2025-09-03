@@ -81,7 +81,7 @@ const upload = multer({
 
       // Check file type
       console.log('File validation - mime type:', file.mimetype, 'original name:', file.originalname);
-      
+
       if (!file.mimetype || !allowedTypes.includes(file.mimetype.toLowerCase())) {
         return cb(new Error(`Nepodporovaný typ souboru: ${file.mimetype || 'neznámý'}. Povolené typy: JPG, JPEG, PNG`));
       }
@@ -90,7 +90,7 @@ const upload = multer({
       if (!file.originalname || file.originalname.trim().length === 0) {
         return cb(new Error('Název souboru je povinný'));
       }
-      
+
       if (file.originalname.length > 255) {
         return cb(new Error('Název souboru je příliš dlouhý (max 255 znaków)'));
       }
@@ -98,7 +98,7 @@ const upload = multer({
       // Check for suspicious file extensions and content
       const suspiciousExtensions = ['.exe', '.bat', '.sh', '.php', '.js', '.html', '.htm', '.asp', '.jsp'];
       const fileName = file.originalname.toLowerCase();
-      
+
       for (const ext of suspiciousExtensions) {
         if (fileName.includes(ext)) {
           return cb(new Error(`Nepodporovaný typ souboru: obsahuje ${ext}`));
@@ -108,7 +108,7 @@ const upload = multer({
       // Validate file extension matches mime type
       const validExtensions = ['.jpg', '.jpeg', '.png'];
       const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
-      
+
       if (!hasValidExtension) {
         return cb(new Error('Soubor musí mít příponu .jpg, .jpeg nebo .png'));
       }
@@ -135,7 +135,7 @@ const uploadMonitoringMiddleware = (req: any, res: any, next: any) => {
     console.log(`📸 Upload attempt from: ${req.user?.email || req.ip}`);
     console.log(`📁 Content-Type: ${req.headers['content-type']}`);
     console.log(`📏 Content-Length: ${req.headers['content-length']}`);
-    
+
     // Monitor response
     const originalSend = res.send;
     res.send = function(data: any) {
@@ -367,12 +367,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get different types of streaks
       const photoStreak = await storage.getUserStreak(userId, 'photo_upload');
       const questStreak = await storage.getUserStreak(userId, 'quest_completion');
-      
+
       const streaks = {
         photoUpload: photoStreak || { count: 0, lastActivity: null, type: 'photo_upload' },
         questCompletion: questStreak || { count: 0, lastActivity: null, type: 'quest_completion' }
       };
-      
+
       res.json(streaks);
     } catch (error) {
       console.error("Failed to get user streaks:", error);
@@ -400,10 +400,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all challenges
       const challenges = await storage.getQuestChallenges();
-      
+
       // Get user progress for all challenges
       const userProgress = await storage.getQuestProgressByParticipant(userEmail);
-      
+
       // Combine challenges with user progress
       const challengesWithStatus = challenges.map(challenge => {
         const progress = userProgress.find(p => p.questId === challenge.id);
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos", optionalAuth, async (req: AuthRequest, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
-      
+
       // If user is authenticated, add userHasLiked status
       if (req.user?.email) {
         const photosWithLikeStatus = await Promise.all(
@@ -469,12 +469,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photo Like/Unlike Endpoint
+  app.post("/api/photos/:photoId/like", likeRateLimit, authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { photoId } = req.params;
+      const userEmail = req.user?.email;
+
+      if (!userEmail) {
+        return res.status(401).json({ message: "Pro hodnocení fotek se musíte přihlásit" });
+      }
+
+      // Toggle like status
+      const result = await storage.togglePhotoLike(photoId, userEmail);
+
+      res.json({
+        userHasLiked: result.userHasLiked,
+        likes: result.likes,
+        action: result.action
+      });
+    } catch (error) {
+      console.error("Failed to toggle photo like:", error);
+
+      if (error instanceof Error) {
+        if (error.message.includes('Fotka nebyla nalezena')) {
+          return res.status(404).json({ message: "Fotka nebyla nalezena" });
+        }
+        if (error.message.includes('already liked')) {
+          return res.status(400).json({ message: "Tuto fotku jste již ohodnotili" });
+        }
+      }
+
+      res.status(500).json({ message: "Chyba při hodnocení fotky" });
+    }
+  });
+
+  // Photo Comments Endpoints
+  app.get("/api/photos/:photoId/comments", async (req, res) => {
+    try {
+      const { photoId } = req.params;
+      const comments = await storage.getPhotoComments(photoId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Failed to get photo comments:", error);
+      res.status(500).json({ message: "Chyba při načítání komentářů" });
+    }
+  });
+
+  app.post("/api/photos/:photoId/comments", authenticateUser, async (req: AuthRequest, res) => {
+    try {
+      const { photoId } = req.params;
+      const { content } = req.body;
+      const userEmail = req.user?.email;
+      const userName = req.user?.firstName || userEmail?.split('@')[0] || 'Anonym';
+
+      if (!userEmail) {
+        return res.status(401).json({ message: "Pro přidání komentáře se musíte přihlásit" });
+      }
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Komentář nemůže být prázdný" });
+      }
+
+      const comment = await storage.createPhotoComment({
+        photoId,
+        commenterEmail: userEmail,
+        commenterName: userName,
+        content: content.trim()
+      });
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Failed to create photo comment:", error);
+      res.status(500).json({ message: "Chyba při přidávání komentáře" });
+    }
+  });
+
   // Photo upload endpoint with enhanced error handling
   app.post("/api/photos/upload", uploadRateLimit, optionalAuth, (req, res, next) => {
     upload.single('photo')(req, res, (err) => {
       if (err) {
         console.error('Multer upload error:', err);
-        
+
         if (err instanceof multer.MulterError) {
           if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({ 
@@ -492,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         }
-        
+
         return res.status(400).json({ 
           message: err.message || "Chyba při nahrávání souboru" 
         });
@@ -501,7 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }, async (req: AuthRequest, res) => {
     let uploadedFilePath: string | null = null;
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Žádný soubor nebyl nahrán" });
@@ -558,7 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const { verifyPhotoForChallenge } = await import('./gemini');
           const challenge = await storage.getQuestChallenge(questId);
-          
+
           if (challenge) {
             const verificationResult = await verifyPhotoForChallenge(
               file.path,
@@ -627,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Photo upload error:", error);
-      
+
       // Cleanup uploaded file on error
       if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
         try {
@@ -637,10 +712,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('Failed to cleanup uploaded file:', cleanupError);
         }
       }
-      
+
       // Provide more specific error messages
       let errorMessage = "Chyba při nahrávání fotky";
-      
+
       if (error instanceof Error) {
         if (error.message.includes('ENOSPC')) {
           errorMessage = "Nedostatek místa na serveru. Zkuste to prosím později.";
@@ -654,7 +729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errorMessage = error.message;
         }
       }
-      
+
       res.status(500).json({ message: errorMessage });
     }
   });
@@ -695,12 +770,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Health check endpoint for Render
-  app.get('/api/health', (req, res) => {
-    res.status(200).json({
-      status: 'ok',
+  app.get("/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV
+      uptime: process.uptime()
     });
+  });
+
+  // Debug endpoint pro diagnostiku
+  app.get("/api/debug", async (req, res) => {
+    try {
+      const challenges = await storage.getQuestChallenges();
+      const photos = await storage.getAllPhotos();
+      const users = await storage.getAllAuthUsers();
+
+      res.json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        environment: {
+          nodeEnv: process.env.NODE_ENV,
+          port: process.env.PORT || 5000,
+          hasGeminiKey: !!process.env.GEMINI_API_KEY,
+          hasDatabaseUrl: !!process.env.DATABASE_URL,
+          hasJwtSecret: !!process.env.JWT_SECRET
+        },
+        data: {
+          challengesCount: challenges.length,
+          photosCount: photos.length,
+          usersCount: users.length
+        },
+        server: {
+          uptime: Math.floor(process.uptime()),
+          memory: process.memoryUsage(),
+          platform: process.platform
+        }
+      });
+    } catch (error) {
+      console.error("Debug endpoint error:", error);
+      res.status(500).json({ 
+        error: "Debug failed", 
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
   });
 
   // Monitoring dashboard pro stav služeb

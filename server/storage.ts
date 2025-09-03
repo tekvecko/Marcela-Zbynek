@@ -103,7 +103,9 @@ export class MemStorage implements IStorage {
   private questChallenges: Map<string, QuestChallenge>;
   private uploadedPhotos: Map<string, UploadedPhoto>;
   private photoLikes: Map<string, PhotoLike>;
-  private photoComments: Map<string, PhotoComment>;
+  private photoComments = new Map<string, any>();
+  private userBehaviorLogs = new Map<string, UserBehaviorLog>();
+  private aiInsights = new Map<string, AiInsight>();
   private questProgress: Map<string, QuestProgress>;
   private authUsers: Map<string, AuthUser>;
   private authSessions: Map<string, AuthSession>;
@@ -544,7 +546,6 @@ export class MemStorage implements IStorage {
       weddingElements: photo.weddingElements ?? null,
       atmosphere: photo.atmosphere ?? null,
       peopleCount: photo.peopleCount ?? null,
-      location: photo.location ?? null,
       emotions: photo.emotions ?? null,
       category: photo.category ?? null,
       tags: photo.tags ?? null,
