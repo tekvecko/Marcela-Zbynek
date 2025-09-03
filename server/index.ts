@@ -110,13 +110,27 @@ app.use((req, res, next) => {
   // Spustit monitoring databáze pro automatické přepínání
   startDatabaseHealthMonitoring();
 
+  // Ověř komponenty před inicializací
+  const { verifyAllComponents } = await import("./verify-components");
+  const componentsReady = await verifyAllComponents();
+  
+  if (!componentsReady) {
+    console.log("⚠️  Některé komponenty chybí, pokračuji s omezenou funkcionalitou");
+  }
+
   // Inicializuj výchozí fotovýzvy a mini-hry
   try {
     await initializeDefaultChallenges();
+    console.log("✅ Fotovýzvy inicializovány");
     await initializeDefaultMiniGames();
+    console.log("✅ Mini-hry inicializovány");
   } catch (error) {
+    console.error("❌ Chyba při inicializaci:", error);
     console.log("⚠️  Inicializace se nezdařila, aplikace bude fungovat s omezenou funkcionalitou");
   }
+
+  // Kompletní verifikace inicializace
+  await verifyInitialization();
 
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
