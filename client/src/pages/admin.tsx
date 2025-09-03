@@ -66,9 +66,12 @@ export default function AdminPage() {
     queryKey: ["/api/quest-challenges"],
   });
 
-  const { data: photos = [], isLoading: photosLoading } = useQuery<UploadedPhoto[]>({
+  const { data: photoData, isLoading: photosLoading } = useQuery({
     queryKey: ["/api/photos"],
   });
+
+  const photos = (photoData as any)?.photos || photoData || [];
+  const users = (photoData as any)?.users || {};
 
   const { data: progress = [], isLoading: progressLoading } = useQuery<QuestProgress[]>({
     queryKey: ["/api/quest-progress"],
@@ -343,7 +346,7 @@ export default function AdminPage() {
     totalPhotos: photos.length,
     verifiedPhotos: photos.filter(p => p.isVerified).length,
     totalLikes: photos.reduce((sum, p) => sum + p.likes, 0),
-    uniqueUploaders: new Set(photos.map(p => p.uploaderName)).size,
+    uniqueUploaders: new Set(photos.map((p: any) => p.uploaderName)).size,
   };
 
 
@@ -778,7 +781,7 @@ export default function AdminPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {photos.map((photo) => (
+                          {photos.map((photo: any) => (
                             <TableRow key={photo.id} data-testid={`row-photo-${photo.id}`}>
                               <TableCell>
                                 <Checkbox
@@ -795,7 +798,17 @@ export default function AdminPage() {
                                   data-testid={`img-photo-${photo.id}`}
                                 />
                               </TableCell>
-                              <TableCell className="hidden md:table-cell">{photo.uploaderName}</TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                {(() => {
+                                  const userData = users[photo.uploaderName];
+                                  if (userData?.firstName) {
+                                    return userData.lastName 
+                                      ? `${userData.firstName} ${userData.lastName}` 
+                                      : userData.firstName;
+                                  }
+                                  return photo.uploaderName.split('@')[0];
+                                })()}
+                              </TableCell>
                               <TableCell className="hidden lg:table-cell">
                                 {photo.questId ? (
                                   <Badge variant="outline">
