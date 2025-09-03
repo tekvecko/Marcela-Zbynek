@@ -132,7 +132,7 @@ export default function PhotoGallery() {
           const response = await fetch(`/api/photos/${photo.id}/comments`);
           if (response.ok) {
             const comments = await response.json();
-            commentsMap[photo.id] = comments;
+            commentsMap[photo.id] = Array.isArray(comments) ? comments : [];
           } else {
             commentsMap[photo.id] = [];
           }
@@ -149,7 +149,8 @@ export default function PhotoGallery() {
 
   // Helper to get comments for a specific photo
   const getPhotoComments = (photoId: string) => {
-    return (allComments as Record<string, any[]>)[photoId] || [];
+    const comments = (allComments as Record<string, any[]>)[photoId] || [];
+    return Array.isArray(comments) ? comments : [];
   };
 
   // Use simple display names without fetching user data (since /api/users endpoint doesn't exist)
@@ -388,6 +389,9 @@ export default function PhotoGallery() {
     onSuccess: () => {
       setNewComment('');
       // Invalidate both the specific photo comments and all comments
+      if (selectedPhoto) {
+        queryClient.invalidateQueries({ queryKey: ["/api/photos", selectedPhoto.id, "comments"] });
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/photos/all-comments"] });
       toast({
         title: "✅ Komentář přidán",
