@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { z } from "zod";
-import { insertQuestChallengeSchema, registerSchema, loginSchema, uploadedPhotos, questChallenges, questProgress } from "@shared/schema";
+import { insertQuestChallengeSchema, registerSchema, loginSchema, uploadedPhotos, questChallenges, questProgress } from "../shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -13,7 +13,7 @@ import { verifyPhotoForChallenge, analyzePhotoContent, moderateContent } from ".
 import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "./middleware/auth";
 import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
-import { users } from "@shared/schema";
+import { users } from "../shared/schema";
 
 // Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -433,6 +433,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const photos = await storage.getUploadedPhotos();
 
+      // Get unique uploader emails to fetch user data
+      const uploaderEmails = [...new Set(photos.map(photo => photo.uploaderName))];
+      const users: Record<string, any> = {};
+
+      // Fetch user data for all uploaders
+      for (const email of uploaderEmails) {
+        try {
+          const userData = await storage.getUserByEmail(email);
+          if (userData) {
+            users[email] = {
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              profileImageUrl: userData.profileImageUrl
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to get user data for ${email}:`, error);
+        }
+      }
+
       // If user is authenticated, add userHasLiked status
       if (req.user?.email) {
         const photosWithLikeStatus = await Promise.all(
@@ -447,9 +467,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })
         );
-        res.json(photosWithLikeStatus);
+        res.json({ photos: photosWithLikeStatus, users });
       } else {
-        res.json(photos);
+        res.json({ photos, users });
       }
     } catch (error) {
       console.error("Failed to get photos:", error);
@@ -530,7 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Komentář nemůže být prázdný" });
       }
 
-      const comment = await storage.createPhotoComment({
+      const comment = await storage.addPhotoComment({
         photoId,
         commenterEmail: userEmail,
         commenterName: userName,
@@ -782,8 +802,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/debug", async (req, res) => {
     try {
       const challenges = await storage.getQuestChallenges();
-      const photos = await storage.getAllPhotos();
-      const users = await storage.getAllAuthUsers();
+      const photos = await storage.getUploadedPhotos();
+      const allUsers: any[] = []; // Admin stats don't require all users for now"
 
       res.json({
         status: "ok",

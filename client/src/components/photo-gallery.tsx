@@ -27,10 +27,14 @@ import HelpTooltip from "@/components/ui/help-tooltip";
 import VerificationTooltip from "@/components/ui/verification-tooltip";
 import { useAuth } from "@/contexts/auth-context";
 
-// Helper function to get display name - use firstName from user data or fallback to email
+// Helper function to get display name - use full name from user data or fallback to email
 const getDisplayName = (uploaderEmail: string, users?: Record<string, any>) => {
-  if (users?.[uploaderEmail]?.firstName) {
-    return users[uploaderEmail].firstName;
+  const userData = users?.[uploaderEmail];
+  if (userData?.firstName) {
+    const fullName = userData.lastName 
+      ? `${userData.firstName} ${userData.lastName}` 
+      : userData.firstName;
+    return fullName;
   }
   // Fallback to email part before @
   return uploaderEmail.split('@')[0];
@@ -110,9 +114,12 @@ export default function PhotoGallery() {
     };
   }, [selectedPhoto]);
 
-  const { data: photos = [], isLoading } = useQuery<ExtendedPhoto[]>({
+  const { data: photoData, isLoading } = useQuery({
     queryKey: ["/api/photos"],
   });
+
+  const photos = ((photoData as any)?.photos || photoData || []) as ExtendedPhoto[];
+  const users = (photoData as any)?.users || {};
 
   // Get comments for selected photo
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
@@ -153,8 +160,7 @@ export default function PhotoGallery() {
     return Array.isArray(comments) ? comments : [];
   };
 
-  // Use simple display names without fetching user data (since /api/users endpoint doesn't exist)
-  const users: Record<string, any> = {};
+  // Users data is now provided by the API endpoint
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
