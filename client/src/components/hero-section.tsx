@@ -1,4 +1,4 @@
-import flowerArchPhoto from '../assets/IMG-20250707-WA0007.jpg';
+import floralBackground from '../assets/floral-background.png';
 import { Link } from "wouter";
 import GlassButton from "@/components/ui/glass-button";
 
@@ -9,7 +9,7 @@ export default function HeroSection() {
       <div 
         className="fixed inset-0 z-0"
         style={{
-          backgroundImage: `url(${flowerArchPhoto})`,
+          backgroundImage: `url(${floralBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -34,7 +34,7 @@ export default function HeroSection() {
             <div 
               className="w-32 h-32 md:w-48 md:h-48 rounded-full mx-auto shadow-2xl border-4 border-white animate-fade-in bg-cover bg-center"
               style={{
-                backgroundImage: `url(${flowerArchPhoto})`,
+                backgroundImage: `url(${floralBackground})`,
               }}
             />
           </div>
