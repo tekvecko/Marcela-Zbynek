@@ -1,4 +1,5 @@
 import floralBackground from '../assets/floral-background.png';
+import logoMZ from '../assets/logoMZ.png';
 import { Link } from "wouter";
 import GlassButton from "@/components/ui/glass-button";
 
@@ -29,14 +30,15 @@ export default function HeroSection() {
         </div>
         
         <div className="text-center z-20 px-4 w-full mx-auto bg-white/80 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-2xl max-w-4xl mx-4">
-          {/* Wedding couple image - now as decorative overlay */}
+          {/* Wedding logo in white circle */}
           <div className="relative mb-8">
-            <div 
-              className="w-32 h-32 md:w-48 md:h-48 rounded-full mx-auto shadow-2xl border-4 border-white animate-fade-in bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${floralBackground})`,
-              }}
-            />
+            <div className="w-32 h-32 md:w-48 md:h-48 rounded-full mx-auto shadow-2xl border-4 border-white animate-fade-in bg-white flex items-center justify-center p-4">
+              <img 
+                src={logoMZ} 
+                alt="Marcela & Zbyněk Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
           
           <div className="flex flex-col items-center">
