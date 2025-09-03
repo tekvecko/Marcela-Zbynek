@@ -1,5 +1,5 @@
 import floralBackground from '../assets/floral-background.png';
-import logoMZ from '../assets/logoMZ.png';
+import logoMZ from '../assets/logomz_transparent.png';
 import { Link } from "wouter";
 import GlassButton from "@/components/ui/glass-button";
 
