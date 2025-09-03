@@ -222,4 +222,3 @@ async function verifyInitialization() {
     console.log("🔧 Pokračuji ve spuštění s možnými omezeními...");
   }
 }
-})();
