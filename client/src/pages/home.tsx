@@ -101,7 +101,6 @@ export default function Home() {
             </div>
             
             <div className="flex justify-center space-x-6 mb-8">
-              <a href="#countdown" className="text-charcoal hover:text-romantic transition-colors">Odpočet</a>
               <a href="#photo-quest" className="text-charcoal hover:text-romantic transition-colors">Photo Quest</a>
               <a href="#gallery" className="text-charcoal hover:text-romantic transition-colors">Galerie</a>
               <a href="#details" className="text-charcoal hover:text-romantic transition-colors">Detaily</a>
