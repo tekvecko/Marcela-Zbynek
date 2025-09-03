@@ -11,7 +11,7 @@ import { storage } from "./storage";
 import { initializeAdminUser } from "./init-admin-user";
 import { initializeQuestChallenges } from "./init-challenges";
 import { initializeMiniGames } from "./init-mini-games";
-import * as miniGamesStorage from "./mini-games-storage";
+import { getAllMiniGames } from "./mini-games-storage";
 
 const app = express();
 app.use(express.json({ limit: "50mb" }));
@@ -173,7 +173,7 @@ async function verifyInitialization() {
     }
 
     // Check mini games
-    const gamesCount = await miniGamesStorage.getAllMiniGames();
+    const gamesCount = await getAllMiniGames();
     if (gamesCount.length === 0) {
       issues.push("❌ Žádné mini-hry v databázi");
     } else {

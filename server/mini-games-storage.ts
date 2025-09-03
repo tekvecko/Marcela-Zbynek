@@ -130,3 +130,8 @@ export class MiniGamesStorage {
 }
 
 export const miniGamesStorage = new MiniGamesStorage();
+
+// Export the getAllMiniGames function for compatibility
+export async function getAllMiniGames() {
+  return await miniGamesStorage.getMiniGames();
+}
