@@ -728,9 +728,9 @@ export default function PhotoGallery() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <div className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
                           <MoreHorizontal size={20} className="text-gray-500" />
-                        </button>
+                        </div>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleDownload(photo)}>
@@ -759,7 +759,7 @@ export default function PhotoGallery() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-4">
-                      <button
+                      <div
                         onClick={(e) => {
                           if (!user) {
                             toast({
@@ -783,28 +783,27 @@ export default function PhotoGallery() {
                               ? 'bg-red-50 text-red-600 hover:bg-red-100' 
                               : 'hover:bg-gray-100 text-gray-600'
                         }`}
-                        disabled={likePhotoMutation.isPending}
                       >
                         <Heart className={`${photo.userHasLiked ? 'fill-current' : ''}`} size={20} />
                         <span className="font-medium">Líbí se mi</span>
-                      </button>
+                      </div>
 
-                      <button 
+                      <div 
                         onClick={() => setSelectedPhoto(photo)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer"
                       >
                         <MessageCircle size={20} />
                         <span className="font-medium">
                           Komentář ({getPhotoComments(photo.id).length})
                         </span>
-                      </button>
+                      </div>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                          <div className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer">
                             <Share size={20} />
                             <span className="font-medium">Sdílet</span>
-                          </button>
+                          </div>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
                           <DropdownMenuItem onClick={() => handleShare(photo, 'facebook')}>
@@ -878,12 +877,12 @@ export default function PhotoGallery() {
                         ))}
 
                         {getPhotoComments(photo.id).length > 2 && (
-                          <button
+                          <div
                             onClick={() => setSelectedPhoto(photo)}
-                            className="text-gray-500 text-sm hover:text-gray-700 transition-colors"
+                            className="text-gray-500 text-sm hover:text-gray-700 transition-colors cursor-pointer"
                           >
                             Zobrazit všech {getPhotoComments(photo.id).length} komentářů...
-                          </button>
+                          </div>
                         )}
                       </div>
                     </div>
