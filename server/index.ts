@@ -8,9 +8,6 @@ import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from ".
 import { initializeDatabase } from "./init-database";
 import { initializeSecrets } from "./init-secrets";
 import { storage } from "./storage";
-import { initializeAdminUser } from "./init-admin-user";
-import { initializeQuestChallenges } from "./init-challenges";
-import { initializeMiniGames } from "./init-mini-games";
 import { getAllMiniGames } from "./mini-games-storage";
 
 const app = express();
@@ -19,6 +16,27 @@ app.use(express.urlencoded({ extended: false }));
 
 // Initialize database on startup
 initializeDatabase().catch(console.error);
+
+// Initialize admin user
+async function initializeAdminUser() {
+  const adminEmail = process.env.ADMIN_EMAIL || `${process.env.REPL_OWNER}@admin.local` || 'zbkocian@seznam.com';
+  try {
+    const existingAdmin = await storage.getAuthUserByEmail(adminEmail);
+    if (!existingAdmin) {
+      await storage.createAuthUser({
+        email: adminEmail,
+        firstName: 'Admin',
+        lastName: 'User',
+        passwordHash: ''
+      });
+      console.log(`✅ Created admin account: ${adminEmail}`);
+    } else {
+      console.log(`✅ Admin account already exists: ${adminEmail}`);
+    }
+  } catch (error: any) {
+    console.error('Failed to initialize admin user:', error.message);
+  }
+}
 
 // Security headers middleware
 app.use((req, res, next) => {

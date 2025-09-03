@@ -4,13 +4,12 @@ import { drizzle as drizzleNode } from 'drizzle-orm/node-postgres';
 import pkg from 'pg';
 const { Pool: NodePool } = pkg;
 import ws from "ws";
-import * as schema from "@shared/schema";
+import * as schema from "../shared/schema";
 
 neonConfig.webSocketConstructor = ws;
-neonConfig.ssl = false; // Disable SSL verification for development
 
 interface DatabaseConnection {
-  pool: Pool | NodePool | null;
+  pool: Pool | InstanceType<typeof NodePool> | null;
   db: any;
   name: string;
 }
@@ -30,7 +29,7 @@ async function createDatabaseConnectionWithHealthCheck(): Promise<DatabaseConnec
       url: process.env.DATABASE_URL,
       condition: (url: string) => url && !url.includes('neon.tech'),
       createPool: (url: string) => new NodePool({ connectionString: url }),
-      createDb: (pool: NodePool) => drizzleNode(pool, { schema })
+      createDb: (pool: InstanceType<typeof NodePool>) => drizzleNode(pool, { schema })
     },
     {
       name: 'Supabase',
@@ -40,7 +39,7 @@ async function createDatabaseConnectionWithHealthCheck(): Promise<DatabaseConnec
         connectionString: url,
         ssl: { rejectUnauthorized: false }
       }),
-      createDb: (pool: NodePool) => drizzleNode(pool, { schema })
+      createDb: (pool: InstanceType<typeof NodePool>) => drizzleNode(pool, { schema })
     }
   ];
 
@@ -50,14 +49,14 @@ async function createDatabaseConnectionWithHealthCheck(): Promise<DatabaseConnec
     console.log(`🔗 Zkouším připojení k ${config.name}...`);
     try {
       const pool = config.createPool(config.url);
-      const db = config.createDb(pool);
+      const db = config.createDb(pool as any);
       
       // Health check
       await db.execute('SELECT 1');
       console.log(`✅ Úspěšně připojen k ${config.name}`);
       
       return { pool, db, name: config.name };
-    } catch (error) {
+    } catch (error: any) {
       console.warn(`⚠️ ${config.name} nedostupný:`, error.message);
       continue;
     }
@@ -82,7 +81,7 @@ function createDatabaseConnection(): DatabaseConnection {
         const nodeDb = drizzleNode(nodePool, { schema });
         return { pool: nodePool, db: nodeDb, name: 'Replit PostgreSQL' };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn("⚠️ Chyba při připojování k primární databázi:", error.message);
     }
   }
@@ -96,7 +95,7 @@ function createDatabaseConnection(): DatabaseConnection {
       });
       const supabaseDb = drizzleNode(supabasePool, { schema });
       return { pool: supabasePool, db: supabaseDb, name: 'Supabase' };
-    } catch (error) {
+    } catch (error: any) {
       console.warn("⚠️ Chyba při připojování k záložní databázi:", error.message);
     }
   }
@@ -121,7 +120,7 @@ export async function testDatabaseConnection(): Promise<boolean> {
     await db.execute('SELECT 1');
     console.log(`✅ Databázové připojení k ${dbName} je funkční`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`❌ Databázové připojení k ${dbName} selhalo:`, error.message);
     return false;
   }
@@ -147,7 +146,7 @@ export async function switchToFallbackDatabase(): Promise<boolean> {
     }
     
     return false;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Nepodařilo se přepnout na záložní databázi:', error);
     return false;
   }
