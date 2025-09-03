@@ -156,7 +156,7 @@ app.use((req, res, next) => {
   server.listen(port, host, () => {
     console.log(`8:39:08 PM [express] serving on port ${port}`);
   });
-}
+})();
 
 async function verifyInitialization() {
   console.log("🔍 Ověřuji kompletnost inicializace...");
