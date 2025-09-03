@@ -246,9 +246,11 @@ export default function PhotoGallery() {
       const previousPhotos = queryClient.getQueryData(["/api/photos"]);
 
       // Optimistically update - okamžitě aktualizuj UI podle aktuálního stavu
-      queryClient.setQueryData(["/api/photos"], (oldData: ExtendedPhoto[] | undefined) => {
+      queryClient.setQueryData(["/api/photos"], (oldData: any) => {
         if (!oldData) return oldData;
-        return oldData.map(photo => {
+        
+        const photosArray = oldData.photos || oldData || [];
+        const updatedPhotos = photosArray.map((photo: ExtendedPhoto) => {
           if (photo.id === photoId) {
             // For optimistic updates, we'll just increment/decrement likes
             // The actual userHasLiked state will be handled by the server
@@ -261,6 +263,9 @@ export default function PhotoGallery() {
           }
           return photo;
         });
+        
+        // Return the same format as we received
+        return oldData.photos ? { ...oldData, photos: updatedPhotos } : updatedPhotos;
       });
 
       // Také aktualizuj selectedPhoto pokud je to ta stejná fotka
@@ -286,9 +291,11 @@ export default function PhotoGallery() {
       });
 
       // Aktualizuj data s API odpovědí
-      queryClient.setQueryData(["/api/photos"], (oldData: ExtendedPhoto[] | undefined) => {
+      queryClient.setQueryData(["/api/photos"], (oldData: any) => {
         if (!oldData) return oldData;
-        return oldData.map(photo => 
+        
+        const photosArray = oldData.photos || oldData || [];
+        const updatedPhotos = photosArray.map((photo: ExtendedPhoto) => 
           photo.id === photoId 
             ? { 
                 ...photo, 
@@ -297,6 +304,9 @@ export default function PhotoGallery() {
               }
             : photo
         );
+        
+        // Return the same format as we received
+        return oldData.photos ? { ...oldData, photos: updatedPhotos } : updatedPhotos;
       });
 
       // Aktualizuj také selectedPhoto pokud je otevřená
@@ -319,8 +329,9 @@ export default function PhotoGallery() {
       // Vrátit zpět selectedPhoto při chybě
       if (selectedPhoto && selectedPhoto.id === photoId) {
         // Najdi původní stav z rollback dat
-        const originalPhotos = context?.previousPhotos as ExtendedPhoto[] | undefined;
-        const originalPhoto = originalPhotos?.find(p => p.id === photoId);
+        const previousData = context?.previousPhotos as any;
+        const originalPhotos = previousData?.photos || previousData || [];
+        const originalPhoto = originalPhotos.find((p: ExtendedPhoto) => p.id === photoId);
         if (originalPhoto) {
           setSelectedPhoto(prev => prev ? {
             ...prev,
