@@ -422,27 +422,27 @@ export default function Navigation({}: NavigationProps = {}) {
                         >
                           <div className="text-xs font-medium text-charcoal/60 mb-2">Skočit na:</div>
                           <div className="space-y-1">
-                            <button
+                            <div
                               onClick={() => { scrollToSection('ceremony'); setShowQuickNav(false); }}
-                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
+                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left cursor-pointer"
                             >
                               <Calendar size={14} />
                               Obřad
-                            </button>
-                            <button
+                            </div>
+                            <div
                               onClick={() => { scrollToSection('venue'); setShowQuickNav(false); }}
-                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
+                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left cursor-pointer"
                             >
                               <MapPin size={14} />
                               Místo konání
-                            </button>
-                            <button
+                            </div>
+                            <div
                               onClick={() => { scrollToSection('menu'); setShowQuickNav(false); }}
-                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left"
+                              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-romantic/10 text-sm text-left cursor-pointer"
                             >
                               <Utensils size={14} />
                               Menu
-                            </button>
+                            </div>
                           </div>
                         </motion.div>
                       )}
