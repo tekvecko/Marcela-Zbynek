@@ -17,7 +17,7 @@ import MiniGamePlayPage from './pages/mini-game-play';
 import LeaderboardsPage from './pages/leaderboards';
 import NotFoundPage from './pages/not-found';
 import VerificationDemoPage from './pages/verification-demo';
-import ErrorBoundary from './components/ui/error-boundary';
+import { ErrorBoundary } from './components/ui/error-boundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
