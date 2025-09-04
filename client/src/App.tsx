@@ -1,56 +1,68 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/contexts/auth-context";
-import PageTransition from "@/components/ui/page-transition";
-import Home from "@/pages/home";
-import LoginPage from "@/pages/login";
-import PhotoQuestPage from "@/pages/photo-quest";
-import ChallengePage from "@/pages/challenge";
-import GalleryPage from "@/pages/gallery";
-import DetailsPage from "@/pages/details";
-import AdminPage from "@/pages/admin";
-import VerificationDemoPage from "@/pages/verification-demo";
-import Profile from "@/pages/profile";
-import NotFound from "@/pages/not-found";
-import MiniGames from "@/pages/mini-games";
-import MiniGamePlay from "@/pages/mini-game-play";
-import LeaderboardsPage from "@/pages/leaderboards";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/auth-context';
+import { Toaster } from './components/ui/toaster';
+import Navigation from './components/navigation';
+import HomePage from './pages/home';
+import PhotoQuestPage from './pages/photo-quest';
+import GalleryPage from './pages/gallery';
+import ChallengePage from './pages/challenge';
+import DetailsPage from './pages/details';
+import AdminPage from './pages/admin';
+import LoginPage from './pages/login';
+import ProfilePage from './pages/profile';
+import MiniGamesPage from './pages/mini-games';
+import MiniGamePlayPage from './pages/mini-game-play';
+import LeaderboardsPage from './pages/leaderboards';
+import NotFoundPage from './pages/not-found';
+import VerificationDemoPage from './pages/verification-demo';
+import ErrorBoundary from './components/ui/error-boundary';
 
-function Router() {
-  return (
-    <PageTransition>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/login" component={LoginPage} />
-        <Route path="/photo-quest" component={PhotoQuestPage} />
-        <Route path="/challenge/:id" component={ChallengePage} />
-        <Route path="/gallery" component={GalleryPage} />
-        <Route path="/details" component={DetailsPage} />
-        <Route path="/admin" component={AdminPage} />
-        <Route path="/verification-demo" component={VerificationDemoPage} />
-        <Route path="/profile" component={Profile} />
-        <Route path="/mini-games" component={MiniGames} />
-        <Route path="/mini-games/:gameId" component={MiniGamePlay} />
-        <Route path="/leaderboards" component={LeaderboardsPage} />
-        <Route component={NotFound} />
-      </Switch>
-    </PageTransition>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50">
+              <Navigation />
+              <main className="container mx-auto px-4 py-8">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/photo-quest" element={<PhotoQuestPage />} />
+                  <Route path="/gallery" element={<GalleryPage />} />
+                  <Route path="/challenge/:id" element={<ChallengePage />} />
+                  <Route path="/details" element={<DetailsPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/mini-games" element={<MiniGamesPage />} />
+                  <Route path="/mini-game/:gameId" element={<MiniGamePlayPage />} />
+                  <Route path="/leaderboards" element={<LeaderboardsPage />} />
+                  <Route path="/verification-demo" element={<VerificationDemoPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </main>
+              <Toaster />
+            </div>
+          </Router>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
