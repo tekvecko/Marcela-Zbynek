@@ -852,7 +852,7 @@ function AdminPageContent() {
                               </TableCell>
                               <TableCell>
                                 <img
-                                  src={`/api/photos/${photo.filename}`}
+                                  src={`/uploads/${photo.filename}`}
                                   alt="Náhled"
                                   className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
                                   data-testid={`img-photo-${photo.id}`}
