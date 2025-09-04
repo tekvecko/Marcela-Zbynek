@@ -120,7 +120,7 @@ export default function SystemStatus() {
             Poslední aktualizace: {systemStatus ? new Date(systemStatus.timestamp).toLocaleString('cs-CZ') : 'Neznámá'}
           </p>
           <p className="text-sm text-muted-foreground">
-            Uptime: {systemStatus ? Math.floor(systemStatus.uptime / 3600)}h {Math.floor((systemStatus.uptime % 3600) / 60)}m
+            Uptime: {systemStatus ? `${Math.floor(systemStatus.uptime / 3600)}h ${Math.floor((systemStatus.uptime % 3600) / 60)}m` : 'Načítám...'}
           </p>
         </div>
         <Button onClick={handleRefresh} variant="outline" size="sm">
