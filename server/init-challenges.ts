@@ -363,10 +363,10 @@ export async function initializeDefaultChallenges() {
   try {
     console.log("🔄 Kontroluji existující fotovýzvy...");
 
-    // Pokud není databáze dostupná, přeskoč inicializaci
+    // Pokud není databáze dostupná, inicializuj in-memory storage
     if (!db) {
-      console.log("🔄 Databáze není dostupná, výzvy budou vytvořeny v in-memory storage");
-      return;
+      console.log("🔄 Databáze není dostupná, inicializuji in-memory storage...");
+      return await initializeInMemoryChallenges();
     }
 
     // Zkontroluj, zda tabulka existuje a zda již existují nějaké výzvy
@@ -375,9 +375,9 @@ export async function initializeDefaultChallenges() {
       existingChallenges = await db.select().from(questChallenges).limit(1);
     } catch (error: any) {
       if (error.code === '42P01') { // tabulka neexistuje
-        console.log("⚠️  Tabulka quest_challenges neexistuje. Spusťte prosím: npx drizzle-kit push");
-        console.log("🔄 Přepínám na in-memory storage...");
-        return;
+        console.log("⚠️  Tabulka quest_challenges neexistuje.");
+        console.log("🔄 Inicializuji in-memory storage...");
+        return await initializeInMemoryChallenges();
       }
       throw error;
     }
@@ -402,13 +402,39 @@ export async function initializeDefaultChallenges() {
 
     // Kontrola, zda je problém s databází
     if (error.message?.includes('endpoint has been disabled') || error.code === 'XX000') {
-      console.log("🔄 Databáze není dostupná, aplikace pokračuje v režimu bez databáze");
-      console.log("💡 Pro opravu: Vytvořte novou PostgreSQL databázi v Replit pomocí Database nástroje");
-      console.log("💡 Alternativně: Nastavte SUPABASE_DATABASE_URL pro záložní databázi");
+      console.log("🔄 Databáze není dostupná, inicializuji in-memory storage...");
+      return await initializeInMemoryChallenges();
+    }
+
+    // Pro ostatní chyby, inicializuj in-memory storage jako fallback
+    console.log("🔄 Použitím in-memory storage jako záložní řešení...");
+    return await initializeInMemoryChallenges();
+  }
+}
+
+async function initializeInMemoryChallenges() {
+  try {
+    console.log("🆕 Inicializuji výchozí fotovýzvy do in-memory storage...");
+    
+    // Import storage here to avoid circular dependency
+    const { storage } = await import('./storage');
+    
+    // Zkontroluj, zda již existují výzvy v in-memory storage
+    const existingChallenges = await storage.getQuestChallenges();
+    if (existingChallenges.length > 0) {
+      console.log("✅ In-memory fotovýzvy již existují, přeskakuji inicializaci");
       return;
     }
 
-    // Pro ostatní chyby, vyhoď exception
-    throw error;
+    // Vytvoř všechny výchozí výzvy v in-memory storage
+    for (const challenge of defaultChallenges) {
+      await storage.createQuestChallenge(challenge);
+      console.log(`   ✓ Vytvořena výzva (in-memory): ${challenge.title}`);
+    }
+
+    console.log(`🎉 Úspěšně vytvořeno ${defaultChallenges.length} fotovýzev do in-memory storage!`);
+  } catch (error) {
+    console.error("❌ Chyba při inicializaci in-memory výzev:", error);
+    // Pokračuj i při chybě - aplikace by měla fungovat i bez výzev
   }
 }

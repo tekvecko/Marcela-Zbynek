@@ -17,7 +17,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -145,7 +145,7 @@ app.use((req, res, next) => {
   // Ověř komponenty před inicializací
   const { verifyAllComponents } = await import("./verify-components");
   const componentsReady = await verifyAllComponents();
-  
+
   if (!componentsReady) {
     console.log("⚠️  Některé komponenty chybí, pokračuji s omezenou funkcionalitou");
   }
