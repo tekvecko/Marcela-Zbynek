@@ -92,6 +92,11 @@ function AdminPageContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("challenges");
 
+  const handleTabChange = (value: string) => {
+    console.log('Tab clicked:', value);
+    setActiveTab(value);
+  };
+
   // Bulk selection states
   const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
@@ -457,16 +462,6 @@ function AdminPageContent() {
                       </motion.p>
                     </CardContent>
 
-                    {/* Subtle glow effect */}
-                    <motion.div
-                      className="absolute inset-0 rounded-lg"
-                      style={{
-                        background: `radial-gradient(circle at center, ${stat.color.replace('text-', '').replace('-600', '')}/10, transparent 70%)`
-                      }}
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    />
                   </Card>
                 </motion.div>
               </motion.div>
@@ -475,29 +470,59 @@ function AdminPageContent() {
         </motion.div>
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="challenges" data-testid="tab-challenges">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6 relative z-10">
+            <TabsTrigger 
+              value="challenges" 
+              data-testid="tab-challenges"
+              onClick={() => handleTabChange('challenges')}
+              className="cursor-pointer"
+            >
               <Trophy className="h-4 w-4 mr-2" />
               Výzvy
             </TabsTrigger>
-            <TabsTrigger value="photos" data-testid="tab-photos">
+            <TabsTrigger 
+              value="photos" 
+              data-testid="tab-photos"
+              onClick={() => handleTabChange('photos')}
+              className="cursor-pointer"
+            >
               <Camera className="h-4 w-4 mr-2" />
               Fotky
             </TabsTrigger>
-            <TabsTrigger value="progress" data-testid="tab-progress">
+            <TabsTrigger 
+              value="progress" 
+              data-testid="tab-progress"
+              onClick={() => handleTabChange('progress')}
+              className="cursor-pointer"
+            >
               <Users className="h-4 w-4 mr-2" />
               Pokrok
             </TabsTrigger>
-            <TabsTrigger value="ai-analytics" data-testid="tab-ai-analytics">
+            <TabsTrigger 
+              value="ai-analytics" 
+              data-testid="tab-ai-analytics"
+              onClick={() => handleTabChange('ai-analytics')}
+              className="cursor-pointer"
+            >
               <Eye className="h-4 w-4 mr-2" />
               AI Analytics
             </TabsTrigger>
-            <TabsTrigger value="game-control" data-testid="tab-game-control">
+            <TabsTrigger 
+              value="game-control" 
+              data-testid="tab-game-control"
+              onClick={() => handleTabChange('game-control')}
+              className="cursor-pointer"
+            >
               <Settings className="h-4 w-4 mr-2" />
               Hra
             </TabsTrigger>
-            <TabsTrigger value="system-status" data-testid="tab-system-status">
+            <TabsTrigger 
+              value="system-status" 
+              data-testid="tab-system-status"
+              onClick={() => handleTabChange('system-status')}
+              className="cursor-pointer"
+            >
               <Shield className="h-4 w-4 mr-2" />
               Stav systému
             </TabsTrigger>
