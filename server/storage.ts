@@ -65,6 +65,7 @@ export interface IStorage {
   updateQuestProgress(id: string, photosUploaded: number, isCompleted?: boolean): Promise<QuestProgress | undefined>;
   getOrCreateQuestProgress(questId: string, participantName: string): Promise<QuestProgress>;
   getUnlockedChallenges(participantName: string): Promise<QuestChallenge[]>;
+  resetAllQuestProgress(): Promise<void>; // Admin function
 
   // Auth operations
   createAuthUser(userData: InsertAuthUser): Promise<AuthUser>;
@@ -815,6 +816,10 @@ export class MemStorage implements IStorage {
     });
   }
 
+  async resetAllQuestProgress(): Promise<void> {
+    this.questProgress.clear();
+  }
+
   // Auth methods
   async createAuthUser(userData: InsertAuthUser): Promise<AuthUser> {
     const id = randomUUID();
@@ -1280,30 +1285,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateQuestChallenge(id: string, challenge: InsertQuestChallenge): Promise<QuestChallenge | undefined> {
-    try {
-      if (!db) throw new Error("Database not available");
-      const [updatedChallenge] = await db
-        .update(questChallenges)
-        .set(challenge)
-        .where(eq(questChallenges.id, id))
-        .returning();
-      return updatedChallenge;
-    } catch (error) {
-      console.error(`Failed to update quest challenge ${id}:`, error);
-      return undefined;
-    }
+  async updateQuestChallenge(id: string, data: Partial<QuestChallenge>): Promise<QuestChallenge> {
+    const [updated] = await db
+      .update(questChallenges)
+      .set(data)
+      .where(eq(questChallenges.id, id))
+      .returning();
+    return updated;
   }
 
-  async deleteQuestChallenge(id: string): Promise<boolean> {
-    try {
-      if (!db) throw new Error("Database not available");
-      const result = await db.delete(questChallenges).where(eq(questChallenges.id, id));
-      return (result.rowCount ?? 0) > 0;
-    } catch (error) {
-      console.error(`Failed to delete quest challenge ${id}:`, error);
-      return false;
-    }
+  async deleteQuestChallenge(id: string): Promise<void> {
+    await db.delete(questChallenges).where(eq(questChallenges.id, id));
   }
 
   private async initializeDefaultChallenges(): Promise<void> {
@@ -1555,32 +1547,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updatePhotoVerification(id: string, isVerified: boolean): Promise<UploadedPhoto | undefined> {
-    try {
-      if (!db) throw new Error("Database not available");
-      const [updatedPhoto] = await db
-        .update(uploadedPhotos)
-        .set({ isVerified })
-        .where(eq(uploadedPhotos.id, id))
-        .returning();
-      return updatedPhoto;
-    } catch (error) {
-      console.error("Failed to update photo verification:", error);
-      return undefined;
-    }
+  async updatePhotoVerification(id: string, isVerified: boolean): Promise<void> {
+    await db
+      .update(uploadedPhotos)
+      .set({ isVerified })
+      .where(eq(uploadedPhotos.id, id));
   }
 
-  async deleteUploadedPhoto(id: string): Promise<boolean> {
-    try {
-      if (!db) throw new Error("Database not available");
-      // Delete related likes first
-      await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
-      const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
-      return (result.rowCount ?? 0) > 0;
-    } catch (error) {
-      console.error("Failed to delete uploaded photo:", error);
-      return false;
-    }
+  async deleteUploadedPhoto(id: string): Promise<void> {
+    await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
   }
 
   async getPhotoLikes(photoId: string): Promise<PhotoLike[]> {
@@ -1837,6 +1812,16 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Failed to get unlocked challenges:", error);
       return [];
+    }
+  }
+
+  async resetAllQuestProgress(): Promise<void> {
+    try {
+      if (!db) throw new Error("Database not available");
+      await db.delete(questProgress);
+    } catch (error) {
+      console.error("Failed to reset all quest progress:", error);
+      throw error;
     }
   }
 

@@ -1249,6 +1249,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Bulk delete challenges
+  app.post("/api/admin/challenges/bulk-delete", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { challengeIds } = req.body;
+      
+      if (!Array.isArray(challengeIds) || challengeIds.length === 0) {
+        return res.status(400).json({ message: "Žádné výzvy k smazání" });
+      }
+
+      let deletedCount = 0;
+      for (const id of challengeIds) {
+        try {
+          await storage.deleteQuestChallenge(id);
+          deletedCount++;
+        } catch (error) {
+          console.error(`Failed to delete challenge ${id}:`, error);
+        }
+      }
+
+      res.json({ 
+        message: `Úspěšně smazáno ${deletedCount} ze ${challengeIds.length} výzev`,
+        deleted: deletedCount,
+        total: challengeIds.length
+      });
+    } catch (error) {
+      console.error("Bulk delete challenges error:", error);
+      res.status(500).json({ message: "Chyba při mazání výzev" });
+    }
+  });
+
+  // Admin: Bulk delete photos
+  app.post("/api/admin/photos/bulk-delete", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { photoIds } = req.body;
+      
+      if (!Array.isArray(photoIds) || photoIds.length === 0) {
+        return res.status(400).json({ message: "Žádné fotky k smazání" });
+      }
+
+      let deletedCount = 0;
+      for (const id of photoIds) {
+        try {
+          await storage.deleteUploadedPhoto(id);
+          deletedCount++;
+        } catch (error) {
+          console.error(`Failed to delete photo ${id}:`, error);
+        }
+      }
+
+      res.json({ 
+        message: `Úspěšně smazáno ${deletedCount} ze ${photoIds.length} fotek`,
+        deleted: deletedCount,
+        total: photoIds.length
+      });
+    } catch (error) {
+      console.error("Bulk delete photos error:", error);
+      res.status(500).json({ message: "Chyba při mazání fotek" });
+    }
+  });
+
+  // Admin: Bulk verify photos
+  app.post("/api/admin/photos/bulk-verify", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { photoIds } = req.body;
+      
+      if (!Array.isArray(photoIds) || photoIds.length === 0) {
+        return res.status(400).json({ message: "Žádné fotky k ověření" });
+      }
+
+      let verifiedCount = 0;
+      for (const id of photoIds) {
+        try {
+          await storage.updatePhotoVerification(id, true);
+          verifiedCount++;
+        } catch (error) {
+          console.error(`Failed to verify photo ${id}:`, error);
+        }
+      }
+
+      res.json({ 
+        message: `Úspěšně ověřeno ${verifiedCount} ze ${photoIds.length} fotek`,
+        verified: verifiedCount,
+        total: photoIds.length
+      });
+    } catch (error) {
+      console.error("Bulk verify photos error:", error);
+      res.status(500).json({ message: "Chyba při ověřování fotek" });
+    }
+  });
+
+  // Admin: Mass control challenges
+  app.post("/api/admin/challenges/mass-activate", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const challenges = await storage.getQuestChallenges();
+      let activatedCount = 0;
+      
+      for (const challenge of challenges) {
+        if (!challenge.isActive) {
+          await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: true });
+          activatedCount++;
+        }
+      }
+
+      res.json({ 
+        message: `Aktivováno ${activatedCount} výzev`,
+        activated: activatedCount
+      });
+    } catch (error) {
+      console.error("Mass activate error:", error);
+      res.status(500).json({ message: "Chyba při aktivaci výzev" });
+    }
+  });
+
+  app.post("/api/admin/challenges/mass-deactivate", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const challenges = await storage.getQuestChallenges();
+      let deactivatedCount = 0;
+      
+      for (const challenge of challenges) {
+        if (challenge.isActive) {
+          await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: false });
+          deactivatedCount++;
+        }
+      }
+
+      res.json({ 
+        message: `Deaktivováno ${deactivatedCount} výzev`,
+        deactivated: deactivatedCount
+      });
+    } catch (error) {
+      console.error("Mass deactivate error:", error);
+      res.status(500).json({ message: "Chyba při deaktivaci výzev" });
+    }
+  });
+
+  // Admin: Reset all progress
+  app.post("/api/admin/progress/reset-all", requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      await storage.resetAllQuestProgress();
+      res.json({ message: "Pokrok všech hráčů byl resetován" });
+    } catch (error) {
+      console.error("Reset progress error:", error);
+      res.status(500).json({ message: "Chyba při resetování pokroku" });
+    }
+  });
+
   // Admin: Generate AI insights from behavior data
   app.post("/api/admin/generate-ai-insights", async (req, res) => {
     try {
