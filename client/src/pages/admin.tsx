@@ -132,24 +132,52 @@ function AdminPageContent() {
   // Mutations
   const createChallengeMutation = useMutation({
     mutationFn: (data: ChallengeFormData) =>
-      apiRequest("/api/admin/challenges", { method: "POST", body: JSON.stringify(data) }),
+      apiRequest("/api/admin/challenges", { 
+        method: "POST", 
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
       toast({ title: "Úspěch", description: "Výzva byla vytvořena" });
       setIsDialogOpen(false);
       form.reset();
     },
+    onError: (error: any) => {
+      console.error('Create challenge error:', error);
+      toast({ 
+        title: "Chyba", 
+        description: error.message || "Nepodařilo se vytvořit výzvu",
+        variant: "destructive"
+      });
+    },
   });
 
   const updateChallengeMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: ChallengeFormData }) =>
-      apiRequest(`/api/admin/challenges/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+      apiRequest(`/api/admin/challenges/${id}`, { 
+        method: "PUT", 
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
       toast({ title: "Úspěch", description: "Výzva byla aktualizována" });
       setIsDialogOpen(false);
       setEditingChallenge(null);
       form.reset();
+    },
+    onError: (error: any) => {
+      console.error('Update challenge error:', error);
+      toast({ 
+        title: "Chyba", 
+        description: error.message || "Nepodařilo se aktualizovat výzvu",
+        variant: "destructive"
+      });
     },
   });
 
@@ -251,6 +279,7 @@ function AdminPageContent() {
 
   // Handle form submission
   const onSubmit = (data: ChallengeFormData) => {
+    console.log('Submitting challenge data:', data);
     if (editingChallenge) {
       updateChallengeMutation.mutate({ id: editingChallenge.id, data });
     } else {
@@ -545,12 +574,12 @@ function AdminPageContent() {
                       Nová výzva
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]" aria-describedby="challenge-dialog-description">
+                  <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                       <DialogTitle>
                         {editingChallenge ? "Upravit výzvu" : "Nová výzva"}
                       </DialogTitle>
-                      <DialogDescription id="challenge-dialog-description">
+                      <DialogDescription>
                         {editingChallenge ? "Upravte existující výzvu" : "Vytvořte novou fotografickou výzvu"}
                       </DialogDescription>
                     </DialogHeader>
