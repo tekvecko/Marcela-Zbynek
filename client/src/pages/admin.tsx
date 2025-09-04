@@ -104,6 +104,13 @@ function AdminPageContent() {
   // Fetch data
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
     queryKey: ["/api/quest-challenges"],
+    queryFn: () => apiRequest("/api/quest-challenges"),
+    onSuccess: (data) => {
+      console.log('Admin challenges loaded:', data?.length || 0, 'challenges');
+    },
+    onError: (error) => {
+      console.error('Failed to load admin challenges:', error);
+    }
   });
 
   const { data: photoData, isLoading: photosLoading } = useQuery({
