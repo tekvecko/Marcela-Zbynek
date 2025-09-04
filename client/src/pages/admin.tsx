@@ -90,6 +90,7 @@ function AdminPageContent() {
   const queryClient = useQueryClient();
   const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("challenges");
 
   // Bulk selection states
   const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
@@ -474,7 +475,7 @@ function AdminPageContent() {
         </motion.div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="challenges" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="challenges" data-testid="tab-challenges">
               <Trophy className="h-4 w-4 mr-2" />
