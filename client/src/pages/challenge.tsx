@@ -50,6 +50,16 @@ export default function ChallengePage() {
     queryKey: user ? ["/api/quest-challenges/all-with-status"] : ["/api/quest-challenges"],
   });
 
+  // Debug logging
+  console.log('ChallengePage Debug:', {
+    challengeId,
+    match,
+    params,
+    challengesCount: challenges.length,
+    challengeIds: challenges.map(c => c.id),
+    challenge: challenges.find(c => c.id === challengeId)
+  });
+
   const challenge = challenges.find(c => c.id === challengeId);
 
   // Quest progress disabled without authentication
