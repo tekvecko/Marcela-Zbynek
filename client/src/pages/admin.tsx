@@ -26,6 +26,7 @@ import type { QuestChallenge, UploadedPhoto, User, QuestProgress } from "@shared
 import Navigation from "@/components/navigation";
 import { BehaviorAnalytics, AiInsightsDisplay, DynamicAiRecommendations } from "@/components/behavior-analytics";
 import SystemStatus from "@/components/system-status";
+import { useAuth } from "@/contexts/auth-context";
 
 
 
@@ -54,12 +55,40 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user } = useAuth();
 
   // Bulk selection states
   const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
-  // Admin access is now public - no authentication required
+  // Check admin access
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Přístup zamítnut</h1>
+          <p className="text-gray-600 mb-6">Pro přístup k admin sekci se musíte přihlásit.</p>
+          <Link href="/login">
+            <Button>Přihlásit se</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user.isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Přístup zamítnut</h1>
+          <p className="text-gray-600 mb-6">Nemáte oprávnění pro přístup k admin sekci.</p>
+          <Link href="/">
+            <Button>Zpět na domovskou stránku</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch data
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
@@ -262,7 +291,7 @@ export default function AdminPage() {
   };
 
   const selectAllPhotos = () => {
-    setSelectedPhotos(photos.map(p => p.id));
+    setSelectedPhotos(photos.map((p: UploadedPhoto) => p.id));
   };
 
   const clearPhotoSelection = () => {
@@ -333,7 +362,7 @@ export default function AdminPage() {
 
   const handleSelectAllPhotos = (checked: boolean) => {
     if (checked) {
-      setSelectedPhotos(photos.map(p => p.id));
+      setSelectedPhotos(photos.map((p: UploadedPhoto) => p.id));
     } else {
       setSelectedPhotos([]);
     }
@@ -344,8 +373,8 @@ export default function AdminPage() {
     totalChallenges: challenges.length,
     activeChallenges: challenges.filter(c => c.isActive).length,
     totalPhotos: photos.length,
-    verifiedPhotos: photos.filter(p => p.isVerified).length,
-    totalLikes: photos.reduce((sum, p) => sum + p.likes, 0),
+    verifiedPhotos: photos.filter((p: UploadedPhoto) => p.isVerified).length,
+    totalLikes: photos.reduce((sum: number, p: UploadedPhoto) => sum + p.likes, 0),
     uniqueUploaders: new Set(photos.map((p: any) => p.uploaderName)).size,
   };
 
@@ -485,12 +514,12 @@ export default function AdminPage() {
                       Nová výzva
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="sm:max-w-[425px]" aria-describedby="challenge-dialog-description">
                     <DialogHeader>
                       <DialogTitle>
                         {editingChallenge ? "Upravit výzvu" : "Nová výzva"}
                       </DialogTitle>
-                      <DialogDescription>
+                      <DialogDescription id="challenge-dialog-description">
                         {editingChallenge ? "Upravte existující výzvu" : "Vytvořte novou fotografickou výzvu"}
                       </DialogDescription>
                     </DialogHeader>
