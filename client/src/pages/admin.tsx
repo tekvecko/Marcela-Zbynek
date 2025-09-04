@@ -50,18 +50,10 @@ const PerformanceMonitor = () => {
   );
 };
 
-export default function AdminPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+// Admin access control component
+function AdminAccessControl({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-
-  // Bulk selection states
-  const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
-  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-
-  // Check admin access
+  
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center">
@@ -89,6 +81,19 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  return <>{children}</>;
+}
+
+function AdminPageContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [editingChallenge, setEditingChallenge] = useState<QuestChallenge | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Bulk selection states
+  const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
   // Fetch data
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
@@ -1273,5 +1278,13 @@ export default function AdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AdminAccessControl>
+      <AdminPageContent />
+    </AdminAccessControl>
   );
 }
