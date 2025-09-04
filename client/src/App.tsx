@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Router, Route, Switch } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/auth-context';
 import { Toaster } from './components/ui/toaster';
@@ -37,29 +37,27 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router>
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50">
-              <Navigation />
-              <main className="container mx-auto px-4 py-8">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/photo-quest" element={<PhotoQuestPage />} />
-                  <Route path="/gallery" element={<GalleryPage />} />
-                  <Route path="/challenge/:id" element={<ChallengePage />} />
-                  <Route path="/details" element={<DetailsPage />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/mini-games" element={<MiniGamesPage />} />
-                  <Route path="/mini-game/:gameId" element={<MiniGamePlayPage />} />
-                  <Route path="/leaderboards" element={<LeaderboardsPage />} />
-                  <Route path="/verification-demo" element={<VerificationDemoPage />} />
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </main>
-              <Toaster />
-            </div>
-          </Router>
+          <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50">
+            <Navigation />
+            <main className="container mx-auto px-4 py-8">
+              <Switch>
+                <Route path="/" component={HomePage} />
+                <Route path="/photo-quest" component={PhotoQuestPage} />
+                <Route path="/gallery" component={GalleryPage} />
+                <Route path="/challenge/:id" component={ChallengePage} />
+                <Route path="/details" component={DetailsPage} />
+                <Route path="/admin" component={AdminPage} />
+                <Route path="/login" component={LoginPage} />
+                <Route path="/profile" component={ProfilePage} />
+                <Route path="/mini-games" component={MiniGamesPage} />
+                <Route path="/mini-game/:gameId" component={MiniGamePlayPage} />
+                <Route path="/leaderboards" component={LeaderboardsPage} />
+                <Route path="/verification-demo" component={VerificationDemoPage} />
+                <Route component={NotFoundPage} />
+              </Switch>
+            </main>
+            <Toaster />
+          </div>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
