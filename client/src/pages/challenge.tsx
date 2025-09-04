@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Camera, Upload, ArrowLeft, HelpCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,24 +40,62 @@ export default function ChallengePage() {
   const [currentStep, setCurrentStep] = useState<string>("");
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [uploadSpeed, setUploadSpeed] = useState<number>(0);
+  const [challenges, setChallenges] = useState<QuestChallenge[]>([]);
+  const [challengesLoading, setChallengesLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadButtonRef = useRef<HTMLButtonElement>(null);
   const uploadProgressRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
-    queryKey: user ? ["/api/quest-challenges/all-with-status"] : ["/api/quest-challenges"],
-  });
+  // Direct fetch like photo-quest component
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        setChallengesLoading(true);
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(user ? '/api/quest-challenges/all-with-status' : '/api/quest-challenges', {
+          headers,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setChallenges(data || []);
+      } catch (err) {
+        console.error('Failed to fetch challenges:', err);
+        setChallenges([]);
+      } finally {
+        setChallengesLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, [user]);
 
   // Debug logging
   console.log('ChallengePage Debug:', {
     challengeId,
     match,
     params,
+    user: user,
+    userEmail: user?.email,
+    challengesLoading,
     challengesCount: challenges.length,
     challengeIds: challenges.map(c => c.id),
-    challenge: challenges.find(c => c.id === challengeId)
+    challenge: challenges.find(c => c.id === challengeId),
+    queryKey: user ? ["/api/quest-challenges/all-with-status"] : ["/api/quest-challenges"]
   });
 
   const challenge = challenges.find(c => c.id === challengeId);
