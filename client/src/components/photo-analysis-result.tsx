@@ -90,20 +90,15 @@ const AnimatedConfidence = ({
           </motion.div>
         )}
         
-        <motion.div 
-          className="group relative"
-          whileHover={{ scale: 1.1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="w-4 h-4 rounded-full bg-charcoal/20 flex items-center justify-center cursor-help">
-            <span className="text-[10px] text-charcoal/60 font-bold">i</span>
-          </div>
+        <div className="group relative">
           <motion.div 
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-charcoal text-white text-xs rounded-md px-3 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 pointer-events-none z-50"
-            initial={{ opacity: 0, y: 10 }}
-            whileHover={{ opacity: 1, y: 0 }}
+            className="w-4 h-4 rounded-full bg-charcoal/20 flex items-center justify-center cursor-help"
+            whileHover={{ scale: 1.1 }}
             transition={{ duration: 0.2 }}
           >
+            <span className="text-[10px] text-charcoal/60 font-bold">i</span>
+          </motion.div>
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-charcoal text-white text-xs rounded-md px-3 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
             <div className="text-center">
               <div className="font-medium mb-1">Spolehlivost AI hodnocení:</div>
               <div className="text-green-300">80-100%: Vysoká spolehlivost</div>
@@ -111,8 +106,8 @@ const AnimatedConfidence = ({
               <div className="text-red-300">0-59%: Nízká spolehlivost</div>
             </div>
             <div className="absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-charcoal rotate-45"></div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </motion.div>
       <div className="text-xs text-charcoal/50">Spolehlivost</div>
     </div>
