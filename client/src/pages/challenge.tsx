@@ -238,6 +238,8 @@ export default function ChallengePage() {
     onSuccess: (data: any) => {
       setAnalysisResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
+      // Invalidate photos cache so gallery updates immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
 
       if (data.isVerified) {
         toast({

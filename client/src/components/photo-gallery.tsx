@@ -115,8 +115,11 @@ export default function PhotoGallery() {
     };
   }, [selectedPhoto]);
 
-  const { data: photoData, isLoading } = useQuery({
+  const { data: photoData, isLoading, refetch } = useQuery({
     queryKey: ["/api/photos"],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: challengesData } = useQuery({
@@ -216,6 +219,9 @@ export default function PhotoGallery() {
         fileInputRef.current.value = "";
         fileInputRef.current.removeAttribute('capture');
       }
+      
+      // Force refresh photos immediately
+      refetch();
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
     },
     onError: (error: any) => {
