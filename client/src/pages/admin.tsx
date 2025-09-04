@@ -105,6 +105,8 @@ function AdminPageContent() {
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<QuestChallenge[]>({
     queryKey: ["/api/quest-challenges"],
     queryFn: () => apiRequest("/api/quest-challenges"),
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Obnovuj každých 30 sekund
     onSuccess: (data) => {
       console.log('Admin challenges loaded:', data?.length || 0, 'challenges');
     },
@@ -115,6 +117,8 @@ function AdminPageContent() {
 
   const { data: photoData, isLoading: photosLoading } = useQuery({
     queryKey: ["/api/photos"],
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Obnovuj každých 30 sekund
   });
 
   const photos = (photoData as any)?.photos || photoData || [];
@@ -122,6 +126,8 @@ function AdminPageContent() {
 
   const { data: progress = [], isLoading: progressLoading } = useQuery<QuestProgress[]>({
     queryKey: ["/api/quest-progress"],
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Obnovuj každých 30 sekund
   });
 
   // Form setup
@@ -202,6 +208,8 @@ function AdminPageContent() {
       apiRequest(`/api/admin/photos/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges/all-with-status"] });
       toast({ title: "Úspěch", description: "Fotka byla smazána" });
     },
   });
@@ -211,6 +219,8 @@ function AdminPageContent() {
       apiRequest(`/api/admin/photos/${id}/verify`, { method: "POST", body: JSON.stringify({ isVerified }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges/all-with-status"] });
       toast({ title: "Úspěch", description: "Stav ověření byl změněn" });
     },
   });
@@ -220,6 +230,9 @@ function AdminPageContent() {
       apiRequest("/api/admin/photos/bulk-delete", { method: "POST", body: JSON.stringify({ photoIds }) }),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges/all-with-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
       setSelectedPhotos([]);
       toast({
         title: "Hromadné mazání dokončeno",
@@ -261,6 +274,8 @@ function AdminPageContent() {
       apiRequest(`/api/admin/challenges/mass-${action}`, { method: "POST", body: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges/all-with-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       toast({ title: "Úspěch", description: "Operace byla dokončena" });
     },
   });
@@ -270,6 +285,8 @@ function AdminPageContent() {
       apiRequest("/api/admin/progress/reset-all", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges/all-with-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       toast({ title: "Úspěch", description: "Pokrok všech hráčů byl resetován" });
     },
   });
@@ -279,6 +296,9 @@ function AdminPageContent() {
       apiRequest("/api/admin/photos/bulk-verify", { method: "POST", body: JSON.stringify({ photoIds }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges/all-with-status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
       setSelectedPhotos([]);
       toast({ title: "Úspěch", description: "Fotky byly schváleny" });
     },
