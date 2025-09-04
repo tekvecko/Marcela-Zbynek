@@ -117,6 +117,25 @@ export default function PhotoGallery() {
 
   const { data: photoData, isLoading, refetch } = useQuery({
     queryKey: ["/api/photos"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = {};
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/photos", {
+        credentials: "include",
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    },
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -130,10 +149,6 @@ export default function PhotoGallery() {
   const users = (photoData as any)?.users || {};
   const challenges = (challengesData || []) as any[];
 
-  // Debug logging
-  console.log('PhotoData:', photoData);
-  console.log('Photos array:', photos);
-  console.log('Photos length:', photos.length);
 
   // Add quest title to photos
   const photosWithQuestInfo = photos.map(photo => ({
