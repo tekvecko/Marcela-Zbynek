@@ -103,7 +103,12 @@ export default function SystemStatus() {
                       <h4 className="font-medium">{check.name}</h4>
                       <p className="text-sm text-muted-foreground">{check.message}</p>
                       {check.details && (
-                        <p className="text-xs text-muted-foreground mt-1">{check.details}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {typeof check.details === 'string' 
+                            ? check.details 
+                            : JSON.stringify(check.details)
+                          }
+                        </p>
                       )}
                     </div>
                   </div>
