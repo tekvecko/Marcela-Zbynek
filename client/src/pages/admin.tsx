@@ -435,13 +435,20 @@ function AdminPageContent() {
     }
   };
 
+  const handleRefreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/quest-challenges"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/quest-progress"] });
+    toast({ title: "Data obnovena", description: "Všechna data byla znovu načtena ze serveru" });
+  };
+
   // Statistics
   const stats = {
     totalChallenges: challenges.length,
     activeChallenges: challenges.filter(c => c.isActive).length,
     totalPhotos: photos.length,
     verifiedPhotos: photos.filter((p: UploadedPhoto) => p.isVerified).length,
-    totalLikes: photos.reduce((sum: number, p: UploadedPhoto) => sum + p.likes, 0),
+    totalLikes: photos.reduce((sum: number, p: UploadedPhoto) => sum + (p.likes || 0), 0),
     uniqueUploaders: new Set(photos.map((p: any) => p.uploaderName)).size,
   };
 
@@ -450,13 +457,23 @@ function AdminPageContent() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Navigation />
       <div className="container mx-auto px-4 py-8 pt-24">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Administrace
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Správa výzev, fotek a uživatelů svatební platformy
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              Administrace
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Správa výzev, fotek a uživatelů svatební platformy
+            </p>
+          </div>
+          <Button
+            onClick={handleRefreshData}
+            variant="outline"
+            data-testid="button-refresh-data"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Obnovit data
+          </Button>
         </div>
 
         {/* Enhanced Statistics Cards with Animations */}
