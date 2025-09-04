@@ -29,10 +29,10 @@ const HelpTooltip = ({ content, side, className }: { content: string; side?: "to
 );
 
 export default function ChallengePage() {
-  const [, params] = useRoute("/challenge/:id");
+  const [match, params] = useRoute("/challenge/:id");
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const challengeId = params?.id;
+  const challengeId = match ? params?.id : null;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'analyzing' | 'verifying' | 'complete' | 'error'>('idle');
