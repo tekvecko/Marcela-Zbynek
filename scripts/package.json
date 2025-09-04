@@ -1,0 +1,12 @@
+{
+  "name": "wedding-website-migration-scripts",
+  "version": "1.0.0",
+  "description": "Scripts pro export/import dat Wedding Website aplikace",
+  "scripts": {
+    "export": "node export-data.js",
+    "import": "node import-data.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  }
+}
