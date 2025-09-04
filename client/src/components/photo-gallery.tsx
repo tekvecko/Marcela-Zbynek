@@ -21,6 +21,7 @@ import type { UploadedPhoto } from "@shared/schema";
 type ExtendedPhoto = UploadedPhoto & {
   userHasLiked?: boolean;
   questTitle?: string;
+  questDescription?: string;
 };
 import { Badge } from "@/components/ui/badge";
 import HelpTooltip from "@/components/ui/help-tooltip";
@@ -118,8 +119,19 @@ export default function PhotoGallery() {
     queryKey: ["/api/photos"],
   });
 
+  const { data: challengesData } = useQuery({
+    queryKey: ["/api/quest-challenges"],
+  });
+
   const photos = ((photoData as any)?.photos || photoData || []) as ExtendedPhoto[];
   const users = (photoData as any)?.users || {};
+  const challenges = (challengesData || []) as any[];
+
+  // Add quest title to photos
+  const photosWithQuestInfo = photos.map(photo => ({
+    ...photo,
+    questTitle: photo.questId ? challenges.find(c => c.id === photo.questId)?.title : undefined
+  }));
 
   // Get comments for selected photo
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
@@ -670,7 +682,7 @@ export default function PhotoGallery() {
 
 
         {/* Facebook-style Photo Posts */}
-        {photos.length === 0 ? (
+        {photosWithQuestInfo.length === 0 ? (
           <div className="text-center py-16">
             <div className="bg-white rounded-lg shadow-sm p-8">
               <Images size={64} className="mx-auto text-gray-400 mb-4" />
@@ -680,7 +692,7 @@ export default function PhotoGallery() {
           </div>
         ) : (
           <div className="space-y-4 pb-8">
-            {photos.map((photo) => (
+            {photosWithQuestInfo.map((photo) => (
               <Card key={photo.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Post Header */}
                 <div className="p-4 border-b border-gray-100">
@@ -836,6 +848,15 @@ export default function PhotoGallery() {
                       <span className="text-sm text-gray-600">
                         {photo.likes} {photo.likes === 1 ? 'osoba' : 'lidí'} to má rád
                       </span>
+                    </div>
+                  )}
+
+                  {/* Quest Challenge Info */}
+                  {photo.questTitle && (
+                    <div className="mt-2">
+                      <Badge variant="outline" className="bg-romantic/10 text-romantic border-romantic/30">
+                        📸 {photo.questTitle}
+                      </Badge>
                     </div>
                   )}
 
@@ -1142,7 +1163,7 @@ export default function PhotoGallery() {
                     <div className="flex flex-wrap gap-1 md:gap-2">
                       {selectedPhoto.questTitle && (
                         <Badge variant="secondary" className="bg-romantic/80 text-white text-xs md:text-sm px-2 py-1">
-                          {selectedPhoto.questTitle}
+                          📸 {selectedPhoto.questTitle}
                         </Badge>
                       )}
 

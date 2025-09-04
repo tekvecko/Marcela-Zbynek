@@ -432,6 +432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos", optionalAuth, async (req: AuthRequest, res) => {
     try {
       const photos = await storage.getUploadedPhotos();
+      const challenges = await storage.getQuestChallenges();
+
+      // Create challenge lookup map
+      const challengeMap = challenges.reduce((acc, challenge) => {
+        acc[challenge.id] = challenge;
+        return acc;
+      }, {} as Record<string, any>);
 
       // Get unique uploader emails to fetch user data
       const uploaderEmails = [...new Set(photos.map(photo => photo.uploaderName))];
@@ -453,10 +460,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Add quest information to photos
+      const photosWithQuestInfo = photos.map(photo => ({
+        ...photo,
+        questTitle: photo.questId ? challengeMap[photo.questId]?.title : undefined,
+        questDescription: photo.questId ? challengeMap[photo.questId]?.description : undefined
+      }));
+
       // If user is authenticated, add userHasLiked status
       if (req.user?.email) {
         const photosWithLikeStatus = await Promise.all(
-          photos.map(async (photo) => {
+          photosWithQuestInfo.map(async (photo) => {
             try {
               const likes = await storage.getPhotoLikes(photo.id);
               const userHasLiked = likes.some(like => like.voterName === req.user!.email);
@@ -467,9 +481,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })
         );
-        res.json({ photos: photosWithLikeStatus, users });
+        res.json({ photos: photosWithLikeStatus, users, challenges });
       } else {
-        res.json({ photos, users });
+        res.json({ photos: photosWithQuestInfo, users, challenges });
       }
     } catch (error) {
       console.error("Failed to get photos:", error);
