@@ -1,0 +1,1412 @@
+{
+  "metadata": {
+    "exportDate": "2025-09-04T18:57:06.102Z",
+    "version": "1.0.0",
+    "description": "Wedding Website - Complete Data Export"
+  },
+  "database": {
+    "users": [
+      {
+        "id": "c25992ff-d229-489f-bafb-2992e9e0b819",
+        "email": "zbkocian@seznam.com",
+        "first_name": "Admin",
+        "last_name": "Account",
+        "profile_image_url": null,
+        "password_hash": "$2b$12$1YUlvx7/khSOfedtFzcLo.iC9GHK1hnY0sDJKaiOz5ASwcnpHGOVW",
+        "is_admin": true,
+        "created_at": "2025-09-03T09:07:55.587Z",
+        "updated_at": "2025-09-03T09:07:55.587Z"
+      },
+      {
+        "id": "8d1e1a3a-25b7-447a-9ded-e876c2221568",
+        "email": "zbkocian@seznam.cz",
+        "first_name": "Marcela",
+        "last_name": "Jovsajová",
+        "profile_image_url": null,
+        "password_hash": "$2b$12$zvnCwkYJofZZ3FEUZbPv/OjU5GM2P6VpSkEwj.dFFMP1vEWnPQYGm",
+        "is_admin": false,
+        "created_at": "2025-09-03T09:12:49.627Z",
+        "updated_at": "2025-09-03T09:12:49.627Z"
+      },
+      {
+        "id": "ce1011fa-8871-41dd-8f19-36c1dfd53eb2",
+        "email": "wrlockdj@gmail.com",
+        "first_name": "Marcela",
+        "last_name": "Jovsajová",
+        "profile_image_url": null,
+        "password_hash": "$2b$12$Q8YhN2lpsCni3DQRd85UDuNmmegdbNl4w4qUYZCySHvChuzfFjDAi",
+        "is_admin": false,
+        "created_at": "2025-09-04T18:26:45.355Z",
+        "updated_at": "2025-09-04T18:26:45.355Z"
+      }
+    ],
+    "questChallenges": [
+      {
+        "id": "165b0f66-e3af-4af1-b290-41a755b29506",
+        "title": "Dekorace a výzdoba 🎀",
+        "description": "Svatební dekorace a výzdoba prostoru",
+        "target_photos": 1,
+        "points": 10,
+        "is_active": true,
+        "unlock_date": "2025-09-03T09:07:55.034Z",
+        "unlock_order": 1,
+        "created_at": "2025-09-03T09:07:55.611Z"
+      },
+      {
+        "id": "ac116205-26c7-400a-b9c9-310f8309420e",
+        "title": "Místo obřadu 🏰",
+        "description": "Zachyťte místo kde se koná svatební obřad",
+        "target_photos": 1,
+        "points": 10,
+        "is_active": true,
+        "unlock_date": "2025-09-03T09:07:55.034Z",
+        "unlock_order": 2,
+        "created_at": "2025-09-03T09:07:55.638Z"
+      },
+      {
+        "id": "8cb4af5e-b534-47a5-8c5d-b038c4655dae",
+        "title": "Výzdoba stolu 🍽️",
+        "description": "Krásně prostřený svatební stůl",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-09-03T09:07:55.034Z",
+        "unlock_order": 3,
+        "created_at": "2025-09-03T09:07:55.659Z"
+      },
+      {
+        "id": "8cf05f6b-c4fc-4153-a622-ed13a401d896",
+        "title": "Svatební šaty detail 👗",
+        "description": "Krásný detail svatebních šatů",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-04T00:00:00.000Z",
+        "unlock_order": 4,
+        "created_at": "2025-09-03T09:07:55.681Z"
+      },
+      {
+        "id": "8fc18e9e-feac-4d43-ac34-75b7478a8bcc",
+        "title": "Svatební boty 👠",
+        "description": "Detail svatebních bot nevěsty nebo ženicha",
+        "target_photos": 1,
+        "points": 10,
+        "is_active": true,
+        "unlock_date": "2025-10-04T00:00:00.000Z",
+        "unlock_order": 5,
+        "created_at": "2025-09-03T09:07:55.703Z"
+      },
+      {
+        "id": "807230cc-ec86-4b10-9a5c-f989047a9e3e",
+        "title": "Svatební kytice 💐",
+        "description": "Nevěstina kytice v plné kráse",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-04T00:00:00.000Z",
+        "unlock_order": 6,
+        "created_at": "2025-09-03T09:07:55.724Z"
+      },
+      {
+        "id": "ef98d0b0-239f-4152-84f5-a6df0a112e4d",
+        "title": "Svatební auto 🚗",
+        "description": "Auto nevěsty nebo ženicha s výzdobou",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-08T00:00:00.000Z",
+        "unlock_order": 7,
+        "created_at": "2025-09-03T09:07:55.745Z"
+      },
+      {
+        "id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "title": "Svatební dort 🍰",
+        "description": "Náš krásný svatební dort",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-08T00:00:00.000Z",
+        "unlock_order": 8,
+        "created_at": "2025-09-03T09:07:55.767Z"
+      },
+      {
+        "id": "9afaa53e-5934-489f-afc1-c8c88538d1a9",
+        "title": "Družička v akci 👭",
+        "description": "Družičky pomáhají nebo se baví",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-08T00:00:00.000Z",
+        "unlock_order": 9,
+        "created_at": "2025-09-03T09:07:55.789Z"
+      },
+      {
+        "id": "ce9b4a76-5686-4710-9016-1f8d2a8d014a",
+        "title": "Přípravy před obřadem 💄",
+        "description": "Nevěsta nebo ženich se připravují",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T06:00:00.000Z",
+        "unlock_order": 10,
+        "created_at": "2025-09-03T09:07:55.811Z"
+      },
+      {
+        "id": "f0da706a-942b-46f2-8073-9761c4ecb9cb",
+        "title": "Příprava ženicha 🤵",
+        "description": "Ženich se připravuje před obřadem",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T06:00:00.000Z",
+        "unlock_order": 11,
+        "created_at": "2025-09-03T09:07:55.832Z"
+      },
+      {
+        "id": "9d3ff5f5-5207-4406-9521-e44d4a4a7108",
+        "title": "Detail rukou 🤝",
+        "description": "Krásný detail propojených rukou novomanželů",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T08:00:00.000Z",
+        "unlock_order": 12,
+        "created_at": "2025-09-03T09:07:55.854Z"
+      },
+      {
+        "id": "8f5f2646-b760-4419-9914-2a033d9fc1e8",
+        "title": "Okamžik \"Ano\" 💍",
+        "description": "Zachyťte moment výměny slibů nebo \"ano\"",
+        "target_photos": 1,
+        "points": 25,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 13,
+        "created_at": "2025-09-03T09:07:55.876Z"
+      },
+      {
+        "id": "276fc8ee-c309-4866-86fe-8670cf45dfac",
+        "title": "První manželský polibek 💋",
+        "description": "Ten magický první polibek jako manželé",
+        "target_photos": 1,
+        "points": 25,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 14,
+        "created_at": "2025-09-03T09:07:55.898Z"
+      },
+      {
+        "id": "c6b2d6c2-555b-4e9f-a27f-6ce26934e758",
+        "title": "Výměna prstenů ✨",
+        "description": "Detail snubních prstenů na rukou",
+        "target_photos": 1,
+        "points": 20,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 15,
+        "created_at": "2025-09-03T09:07:55.920Z"
+      },
+      {
+        "id": "a26ba35e-0df5-4715-80b1-63f4fdb20529",
+        "title": "Svědci v akci 🤵‍♂️👰‍♀️",
+        "description": "Svědci během obřadu nebo při podpisu",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 16,
+        "created_at": "2025-09-03T09:07:55.942Z"
+      },
+      {
+        "id": "2b53cdbe-b57b-46a1-9b86-3efd61950757",
+        "title": "Svatební svíčky 🕯️",
+        "description": "Rituál se svatebními svíčkami",
+        "target_photos": 1,
+        "points": 18,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 17,
+        "created_at": "2025-09-03T09:07:55.963Z"
+      },
+      {
+        "id": "4e7fa04e-f3a2-4afc-a6aa-ae4dbf014b26",
+        "title": "Gratulace novomanželům 🎉",
+        "description": "Moment gratulací a objímání po obřadu",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T15:00:00.000Z",
+        "unlock_order": 18,
+        "created_at": "2025-09-03T09:07:55.985Z"
+      },
+      {
+        "id": "a028458a-6b92-4413-8b63-108df262f287",
+        "title": "Konfety a rýže 🎊",
+        "description": "Házení rýže, konfet nebo okvětních lístků",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T15:00:00.000Z",
+        "unlock_order": 19,
+        "created_at": "2025-09-03T09:07:56.007Z"
+      },
+      {
+        "id": "38b034b8-9763-470e-b909-1792670ce872",
+        "title": "Skupinové foto všech hostů 📸",
+        "description": "Všichni svatební hosté na jedné fotce",
+        "target_photos": 1,
+        "points": 20,
+        "is_active": true,
+        "unlock_date": "2025-10-11T15:30:00.000Z",
+        "unlock_order": 20,
+        "created_at": "2025-09-03T09:07:56.028Z"
+      },
+      {
+        "id": "90ddc789-85ae-4e67-8e16-a290307c7b3d",
+        "title": "Rodinné foto nevěsty 👨‍👩‍👧‍👦",
+        "description": "Rodina nevěsty pohromadě",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T16:00:00.000Z",
+        "unlock_order": 21,
+        "created_at": "2025-09-03T09:07:56.049Z"
+      },
+      {
+        "id": "fa5403bf-b7d9-451b-85de-576f141f1236",
+        "title": "Rodinné foto ženicha 👨‍👩‍👧‍👦",
+        "description": "Rodina ženicha pohromadě",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T16:00:00.000Z",
+        "unlock_order": 22,
+        "created_at": "2025-09-03T09:07:56.071Z"
+      },
+      {
+        "id": "94f23faf-107d-45e1-a8f9-fd3fab9f7764",
+        "title": "Generační foto 👴👵",
+        "description": "Tři generace na jedné fotce",
+        "target_photos": 1,
+        "points": 20,
+        "is_active": true,
+        "unlock_date": "2025-10-11T16:30:00.000Z",
+        "unlock_order": 23,
+        "created_at": "2025-09-03T09:07:56.092Z"
+      },
+      {
+        "id": "7fe68d22-160a-470c-8722-ab85506739e4",
+        "title": "Toast a přípitek 🥂",
+        "description": "Projevy a přípitek na novomanžele",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-11T18:00:00.000Z",
+        "unlock_order": 24,
+        "created_at": "2025-09-03T09:07:56.113Z"
+      },
+      {
+        "id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "title": "Krájení dortu 🎂",
+        "description": "Společné krájení svatebního dortu",
+        "target_photos": 1,
+        "points": 18,
+        "is_active": true,
+        "unlock_date": "2025-10-11T18:30:00.000Z",
+        "unlock_order": 25,
+        "created_at": "2025-09-03T09:07:56.134Z"
+      },
+      {
+        "id": "24e5ff9c-3349-4e2d-9c4e-3e3518c058c3",
+        "title": "První tanec 💃",
+        "description": "Náš speciální první tanec jako manželé",
+        "target_photos": 1,
+        "points": 20,
+        "is_active": true,
+        "unlock_date": "2025-10-11T19:00:00.000Z",
+        "unlock_order": 26,
+        "created_at": "2025-09-03T09:07:56.156Z"
+      },
+      {
+        "id": "b00bf716-9b50-48b2-ad67-130532c29b17",
+        "title": "Tanec s rodiči 👫",
+        "description": "Nevěsta s tatínkem nebo ženich s maminkou",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T19:30:00.000Z",
+        "unlock_order": 27,
+        "created_at": "2025-09-03T09:07:56.177Z"
+      },
+      {
+        "id": "0fbbab54-f018-4d55-9b7c-1631f3ff352d",
+        "title": "Zábava na parketu 🕺",
+        "description": "Hosté si užívají na tanečním parketu",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-11T20:00:00.000Z",
+        "unlock_order": 28,
+        "created_at": "2025-09-03T09:07:56.198Z"
+      },
+      {
+        "id": "3295cedd-2d47-4183-868e-26f39a00b18a",
+        "title": "Hudba živá 🎵",
+        "description": "Hudebníci nebo DJ při práci",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-11T20:00:00.000Z",
+        "unlock_order": 29,
+        "created_at": "2025-09-03T09:07:56.218Z"
+      },
+      {
+        "id": "e27103eb-84f9-4bd7-8acb-fd80bdff609a",
+        "title": "Děti na svatbě 👶",
+        "description": "Roztomilé momenty s dětmi hostů",
+        "target_photos": 1,
+        "points": 12,
+        "is_active": true,
+        "unlock_date": "2025-10-11T20:00:00.000Z",
+        "unlock_order": 30,
+        "created_at": "2025-09-03T09:07:56.239Z"
+      },
+      {
+        "id": "7cb84072-ae91-4000-bdfd-b072ec2f11b6",
+        "title": "Házen kytice 🎯",
+        "description": "Házení svatební kytice svobodným",
+        "target_photos": 1,
+        "points": 18,
+        "is_active": true,
+        "unlock_date": "2025-10-11T21:00:00.000Z",
+        "unlock_order": 31,
+        "created_at": "2025-09-03T09:07:56.260Z"
+      },
+      {
+        "id": "c04418e4-7d88-454e-9510-1193fc16c645",
+        "title": "Podvazek tradice 🎀",
+        "description": "Tradice s podvazkem",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T21:30:00.000Z",
+        "unlock_order": 32,
+        "created_at": "2025-09-03T09:07:56.281Z"
+      },
+      {
+        "id": "8b5974ab-c949-46a2-af19-164ebe6d734c",
+        "title": "Šťastné slzy 😭",
+        "description": "Emoce a dojetí během svatby",
+        "target_photos": 1,
+        "points": 20,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 33,
+        "created_at": "2025-09-03T09:07:56.303Z"
+      },
+      {
+        "id": "cf5dbdbf-6d2d-4180-ad95-e066637135ae",
+        "title": "Detox slz 😢",
+        "description": "Někdo se dojme až do slz štěstím",
+        "target_photos": 1,
+        "points": 18,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 34,
+        "created_at": "2025-09-03T09:07:56.326Z"
+      },
+      {
+        "id": "7cd20e97-5b96-477c-bc77-792e61d92429",
+        "title": "Smích a radost 😊",
+        "description": "Upřímné momenty štěstí a smíchu",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 35,
+        "created_at": "2025-09-03T09:07:56.347Z"
+      },
+      {
+        "id": "dbd13ec1-21c2-460d-a134-158abe1a458c",
+        "title": "Nečekané okamžiky 😄",
+        "description": "Vtipné, spontánní nebo nečekané situace",
+        "target_photos": 1,
+        "points": 15,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 36,
+        "created_at": "2025-09-03T09:07:56.369Z"
+      },
+      {
+        "id": "ffaffe7f-afc8-4a87-9000-d9cb63557a7d",
+        "title": "Černobílá klasika ⚫⚪",
+        "description": "Artistic černobílá fotka z jakéhokoliv momentu",
+        "target_photos": 1,
+        "points": 20,
+        "is_active": true,
+        "unlock_date": "2025-10-11T14:00:00.000Z",
+        "unlock_order": 37,
+        "created_at": "2025-09-03T09:07:56.391Z"
+      }
+    ],
+    "uploadedPhotos": [
+      {
+        "id": "777c61d7-cfcf-4c48-a59a-aafdbd802890",
+        "filename": "3635f42b0f8a2b43c5e1c964e06c9664",
+        "original_name": "70dc5d41-e1da-4201-a643-bbb2d86fc616-1_all_20028.png",
+        "mime_type": "image/png",
+        "size": 455806,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "dbd13ec1-21c2-460d-a134-158abe1a458c",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 80,
+        "ai_analysis": "Roztomilá fotka s miminkem na svatbě.",
+        "technical_quality": {
+          "sharpness": 0.95,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "nevěsta",
+          "ženich",
+          "miminko"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Upravit kontrast.",
+        "created_at": "2025-09-04T16:30:18.969Z"
+      },
+      {
+        "id": "9d1928d4-710b-4e76-b51f-d0474ae89cc1",
+        "filename": "c323f9aab62b39d759d3191ed978d9af",
+        "original_name": "70dc5d41-e1da-4201-a643-bbb2d86fc616-1_all_19848.jpg",
+        "mime_type": "image/jpeg",
+        "size": 76651,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "8f5f2646-b760-4419-9914-2a033d9fc1e8",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 95,
+        "ai_analysis": "Krásný detail zamilovaného páru po výměně slibů.",
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:21:31.247Z"
+      },
+      {
+        "id": "67797f69-d2b6-4f0b-91e7-bd01d6361e8a",
+        "filename": "e82ee6da92bab9938177b01305acc08f",
+        "original_name": "1000019079.jpg",
+        "mime_type": "image/jpeg",
+        "size": 427899,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": null,
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": null,
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:22:56.277Z"
+      },
+      {
+        "id": "4793cd4b-a383-4bfc-999a-274c8f0f5910",
+        "filename": "807b49a4f67eb16f8511b7837cc73848",
+        "original_name": "1000018703.png",
+        "mime_type": "image/png",
+        "size": 1104045,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "276fc8ee-c309-4866-86fe-8670cf45dfac",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 90,
+        "ai_analysis": "Krásný romantický okamžik.",
+        "technical_quality": {
+          "sharpness": 0.86,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "šaty",
+          "oblek",
+          "kytice"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Lepší osvětlení",
+        "created_at": "2025-09-04T05:30:25.920Z"
+      },
+      {
+        "id": "6a4198a7-c2a3-4bf9-8b61-2534e0be8159",
+        "filename": "4e07a013c33d66cfce16eb0048a14203",
+        "original_name": "1000019079.jpg",
+        "mime_type": "image/jpeg",
+        "size": 427899,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": null,
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": null,
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:25:50.284Z"
+      },
+      {
+        "id": "20d78897-cbed-4a99-95fb-17c203d47b58",
+        "filename": "61f9229ec1dd60d7bfad1793a56d758b",
+        "original_name": "1000013814.jpg",
+        "mime_type": "image/jpeg",
+        "size": 1090100,
+        "uploader_name": "zbkocian@seznam.cz",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "likes": 1,
+        "is_verified": false,
+        "verification_score": 95,
+        "ai_analysis": "Krásný čokoládový dort s bílou šlehačkou.",
+        "technical_quality": {
+          "sharpness": 0.75,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "dort"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Lepší osvětlení",
+        "created_at": "2025-09-03T14:09:59.817Z"
+      },
+      {
+        "id": "39129335-c65b-4d5d-a7ad-5a88aa5b4fdc",
+        "filename": "4ad258b90304817672fdf026a648e7c0",
+        "original_name": "1000002953.jpg",
+        "mime_type": "image/jpeg",
+        "size": 372049,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": "Krásný a detailní záběr svatebního dortu.",
+        "technical_quality": {
+          "sharpness": 0.95,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "svatební dort"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:27:25.753Z"
+      },
+      {
+        "id": "2c289eaf-4d07-440d-ae81-fbfdc889c9b1",
+        "filename": "6a0cffa821246c54b7ab61c43efda106",
+        "original_name": "1000018987.jpg",
+        "mime_type": "image/jpeg",
+        "size": 122263,
+        "uploader_name": "zbkocian@seznam.cz",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 0,
+        "ai_analysis": "Na obrázku není svatební dort.",
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Nahrajte jinou fotografii.",
+        "created_at": "2025-09-03T14:09:31.129Z"
+      },
+      {
+        "id": "c4521d8e-8713-4ea9-9d65-e2ba47180724",
+        "filename": "787933008fe81171b437f2b0e50c4f3a",
+        "original_name": "1000019045.jpg",
+        "mime_type": "image/jpeg",
+        "size": 86983,
+        "uploader_name": "zbkocian@seznam.cz",
+        "quest_id": "807230cc-ec86-4b10-9a5c-f989047a9e3e",
+        "likes": 1,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": "Nádherná kytice, krásné barvy.",
+        "technical_quality": {
+          "sharpness": 1,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "kytice"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Žádné.",
+        "created_at": "2025-09-03T09:13:50.347Z"
+      },
+      {
+        "id": "e58b99dd-d4eb-43a9-af02-d457131c781c",
+        "filename": "2d3ced1aa4374d12662b3f4e0649966f",
+        "original_name": "70dc5d41-e1da-4201-a643-bbb2d86fc616-1_all_19848.jpg",
+        "mime_type": "image/jpeg",
+        "size": 76651,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "ac116205-26c7-400a-b9c9-310f8309420e",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 80,
+        "ai_analysis": "Na snímku je vidět část exteriéru s dřevěnou pergolou a květinami, které naznačují venkovní obřad.",
+        "technical_quality": {
+          "sharpness": 0.75,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "kytice"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Více detailů místa",
+        "created_at": "2025-09-04T13:56:32.088Z"
+      },
+      {
+        "id": "7e0f1870-0ce8-4615-981e-10676b0ad0a5",
+        "filename": "82bf1c735fb286017fc36817d7819f52",
+        "original_name": "1000002950.jpg",
+        "mime_type": "image/jpeg",
+        "size": 359545,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 95,
+        "ai_analysis": "Krásný a detailní záběr svatebního dortu.",
+        "technical_quality": {
+          "sharpness": 0.95,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "dort"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Lepší osvětlení by zvýraznilo detaily.",
+        "created_at": "2025-09-04T13:58:36.006Z"
+      },
+      {
+        "id": "84de9497-4efb-4779-9ec9-25192bd577b0",
+        "filename": "883c80b1aea14e0fd8df787eecfef8b9",
+        "original_name": "1000019045.jpg",
+        "mime_type": "image/jpeg",
+        "size": 86983,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "807230cc-ec86-4b10-9a5c-f989047a9e3e",
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 95,
+        "ai_analysis": "Nádherná kytice s liliema a hydrangeou.",
+        "technical_quality": {
+          "sharpness": 0.99,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [
+          "kytice",
+          "svatební šaty"
+        ],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Lehce upravit kompozici.",
+        "created_at": "2025-09-04T14:53:12.351Z"
+      },
+      {
+        "id": "bf2ae508-7a74-44b7-9ca0-1ec6853650fe",
+        "filename": "526591a0dce5048ea0f531c714f54d14",
+        "original_name": "1000002970.jpg",
+        "mime_type": "image/jpeg",
+        "size": 279336,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 10,
+        "ai_analysis": "Obrázek nezobrazuje svatební dort.",
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Nahrajte relevantní fotografii.",
+        "created_at": "2025-09-04T14:56:39.087Z"
+      },
+      {
+        "id": "4d40467a-833c-4c5d-af1c-3a4381948319",
+        "filename": "206da88cb2a4564e81318360fd2bdf10",
+        "original_name": "1000002953.jpg",
+        "mime_type": "image/jpeg",
+        "size": 372049,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 10,
+        "ai_analysis": "Obrázek nezobrazuje krájení dortu.",
+        "technical_quality": {
+          "sharpness": 0.85,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Nahrajte relevantní fotografii.",
+        "created_at": "2025-09-04T14:56:56.209Z"
+      },
+      {
+        "id": "e79b2900-cb34-4845-b717-46f07aa6a3ed",
+        "filename": "979594c48011b2009dfdd8182372556a",
+        "original_name": "70dc5d41-e1da-4201-a643-bbb2d86fc616-1_all_581.jpg",
+        "mime_type": "image/jpeg",
+        "size": 745528,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 10,
+        "ai_analysis": "Na fotografii není svatební dort.",
+        "technical_quality": {
+          "sharpness": 0.99,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Jiná fotografie",
+        "created_at": "2025-09-04T14:57:24.106Z"
+      },
+      {
+        "id": "6fef2c1d-b9e0-40d8-8728-eb57a70924f1",
+        "filename": "756cc07b41c7d04a631b11939b6efe31",
+        "original_name": "1000019030.jpg",
+        "mime_type": "image/jpeg",
+        "size": 145000,
+        "uploader_name": "zbkocian@seznam.com",
+        "quest_id": "e27103eb-84f9-4bd7-8acb-fd80bdff609a",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 0,
+        "ai_analysis": "Obrázek nezobrazuje děti na svatbě.",
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Nahrajte relevantní fotografii.",
+        "created_at": "2025-09-04T15:08:43.448Z"
+      },
+      {
+        "id": "27151bee-3f46-4362-815d-d2f3e3e1a4fc",
+        "filename": "7c747fad232c1fb1c17d287ad3c5e5b8",
+        "original_name": "1000019036.jpg",
+        "mime_type": "image/jpeg",
+        "size": 137635,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": null,
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": null,
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:32:36.075Z"
+      },
+      {
+        "id": "7a3af35b-18db-4b2d-934e-05bfb6abf28b",
+        "filename": "8f854fa6eab913ccd164b81bc95f9c05",
+        "original_name": "1000018998.png",
+        "mime_type": "image/png",
+        "size": 2470280,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": null,
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": null,
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:36:23.408Z"
+      },
+      {
+        "id": "0f160795-3afd-46f2-9ce3-a9b889c95031",
+        "filename": "abe307266cef2d98a99e6b15ac4c4e56",
+        "original_name": "1000019079.jpg",
+        "mime_type": "image/jpeg",
+        "size": 427899,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": null,
+        "likes": 0,
+        "is_verified": true,
+        "verification_score": 100,
+        "ai_analysis": null,
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:37:06.569Z"
+      },
+      {
+        "id": "5e07e77b-c344-4dcf-89a2-d3f0672d60f7",
+        "filename": "482987784a6956aebff98134e8f20c8a",
+        "original_name": "1000009714.jpg",
+        "mime_type": "image/jpeg",
+        "size": 201352,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 10,
+        "ai_analysis": "Na obrázku není svatební dort.",
+        "technical_quality": {
+          "sharpness": 0.85,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Nahrajte jinou fotografii.",
+        "created_at": "2025-09-04T18:37:46.828Z"
+      },
+      {
+        "id": "77e7a9b5-7c71-47ea-b417-45fc393fff3e",
+        "filename": "3d078454ded5404a51e85465b7da54c7",
+        "original_name": "70dc5d41-e1da-4201-a643-bbb2d86fc616-1_all_1873.jpg",
+        "mime_type": "image/jpeg",
+        "size": 2367402,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "likes": 0,
+        "is_verified": false,
+        "verification_score": 10,
+        "ai_analysis": "Na snímku není svatební dort.",
+        "technical_quality": {
+          "sharpness": 0.75,
+          "composition": 0.7,
+          "lighting": 0.7,
+          "exposure": "dobrá"
+        },
+        "detected_objects": null,
+        "wedding_elements": [],
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": "Jiná fotografie",
+        "created_at": "2025-09-04T18:38:19.841Z"
+      },
+      {
+        "id": "735c4ed8-ce71-4947-a295-e83e37077edf",
+        "filename": "1a320b7c7db26ea2900db61edc9834d6",
+        "original_name": "1000018357.png",
+        "mime_type": "image/png",
+        "size": 1539984,
+        "uploader_name": "wrlockdj@gmail.com",
+        "quest_id": "ce9b4a76-5686-4710-9016-1f8d2a8d014a",
+        "likes": 1,
+        "is_verified": true,
+        "verification_score": 90,
+        "ai_analysis": "Ženich se připravuje na svatbu.",
+        "technical_quality": null,
+        "detected_objects": null,
+        "wedding_elements": null,
+        "atmosphere": null,
+        "people_count": null,
+        "location": null,
+        "emotions": null,
+        "category": null,
+        "tags": null,
+        "creative_tips": null,
+        "created_at": "2025-09-04T18:39:29.537Z"
+      }
+    ],
+    "photoComments": [
+      {
+        "id": "3af44450-17bf-4af5-8c51-8e28eef530ba",
+        "photo_id": "c4521d8e-8713-4ea9-9d65-e2ba47180724",
+        "commenter_email": "zbkocian@seznam.cz",
+        "commenter_name": "Marcela",
+        "content": "💐👍 řčžéaňď",
+        "created_at": "2025-09-03T09:22:27.452Z"
+      },
+      {
+        "id": "fee8456d-6516-4fe4-8bcc-6fbad6075798",
+        "photo_id": "c4521d8e-8713-4ea9-9d65-e2ba47180724",
+        "commenter_email": "zbkocian@seznam.cz",
+        "commenter_name": "Marcela",
+        "content": "💥⏭️",
+        "created_at": "2025-09-03T09:36:02.931Z"
+      },
+      {
+        "id": "8060476c-4a12-4aa1-aef4-9c00fd099a77",
+        "photo_id": "20d78897-cbed-4a99-95fb-17c203d47b58",
+        "commenter_email": "zbkocian@seznam.cz",
+        "commenter_name": "Marcela",
+        "content": "👍🤪",
+        "created_at": "2025-09-03T14:10:37.402Z"
+      }
+    ],
+    "photoLikes": [
+      {
+        "id": "e8cc35a7-8223-42d6-b231-1afce69413c4",
+        "photo_id": "c4521d8e-8713-4ea9-9d65-e2ba47180724",
+        "voter_name": "zbkocian@seznam.cz",
+        "created_at": "2025-09-03T09:35:50.445Z"
+      },
+      {
+        "id": "5f09e34c-3e83-412a-9acb-875e228b8a6a",
+        "photo_id": "20d78897-cbed-4a99-95fb-17c203d47b58",
+        "voter_name": "zbkocian@seznam.cz",
+        "created_at": "2025-09-03T14:10:27.573Z"
+      },
+      {
+        "id": "4385a3e2-d632-4af6-87c5-9742ab45dbc5",
+        "photo_id": "735c4ed8-ce71-4947-a295-e83e37077edf",
+        "voter_name": "wrlockdj@gmail.com",
+        "created_at": "2025-09-04T18:43:45.913Z"
+      }
+    ],
+    "questProgress": [
+      {
+        "id": "bb18a14a-535b-4cbc-974f-36ae9fedaa19",
+        "quest_id": "807230cc-ec86-4b10-9a5c-f989047a9e3e",
+        "participant_name": "zbkocian@seznam.cz",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-03T09:13:50.438Z",
+        "created_at": "2025-09-03T09:13:50.401Z"
+      },
+      {
+        "id": "0427d14e-c9f1-426a-a939-e91efb76e09e",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "participant_name": "zbkocian@seznam.cz",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-03T14:09:59.879Z",
+        "created_at": "2025-09-03T14:09:31.192Z"
+      },
+      {
+        "id": "e5231f7e-f879-41a8-9ad7-53ec8ef8e770",
+        "quest_id": "276fc8ee-c309-4866-86fe-8670cf45dfac",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T05:30:26.145Z",
+        "created_at": "2025-09-04T05:30:26.058Z"
+      },
+      {
+        "id": "5684c958-2fb0-4fee-9700-945faebe43c3",
+        "quest_id": "ac116205-26c7-400a-b9c9-310f8309420e",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T13:56:32.182Z",
+        "created_at": "2025-09-04T13:56:32.146Z"
+      },
+      {
+        "id": "71a4b7e8-31aa-4bf1-b02c-4088c42b3f81",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T13:58:36.094Z",
+        "created_at": "2025-09-04T13:58:36.058Z"
+      },
+      {
+        "id": "60880566-71e9-4fcd-8f48-478a2ad9abf0",
+        "quest_id": "807230cc-ec86-4b10-9a5c-f989047a9e3e",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T14:53:12.451Z",
+        "created_at": "2025-09-04T14:53:12.413Z"
+      },
+      {
+        "id": "eaa18924-a758-4384-8ea3-7eddaf12a2ea",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 0,
+        "is_completed": false,
+        "completed_at": null,
+        "created_at": "2025-09-04T14:56:39.141Z"
+      },
+      {
+        "id": "9e4c71da-8d99-48ce-b190-62cc6fe69869",
+        "quest_id": "e27103eb-84f9-4bd7-8acb-fd80bdff609a",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 0,
+        "is_completed": false,
+        "completed_at": null,
+        "created_at": "2025-09-04T15:08:43.498Z"
+      },
+      {
+        "id": "80510c5d-7bf9-4274-97d1-67b7c5e13315",
+        "quest_id": "dbd13ec1-21c2-460d-a134-158abe1a458c",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T16:30:19.072Z",
+        "created_at": "2025-09-04T16:30:19.027Z"
+      },
+      {
+        "id": "7d433e7b-8dcb-4820-9467-9aa65ea20b8b",
+        "quest_id": "8f5f2646-b760-4419-9914-2a033d9fc1e8",
+        "participant_name": "zbkocian@seznam.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T18:21:31.411Z",
+        "created_at": "2025-09-04T18:21:31.353Z"
+      },
+      {
+        "id": "f3da39f7-a28f-49e2-9248-b345111bddbb",
+        "quest_id": "c3b235d1-ed45-49e9-9347-ef50777f298c",
+        "participant_name": "wrlockdj@gmail.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T18:27:25.888Z",
+        "created_at": "2025-09-04T18:27:25.832Z"
+      },
+      {
+        "id": "f3b4cf7c-7331-4235-8de0-93c31c5b9f35",
+        "quest_id": "cce8038f-7f94-4d36-97ea-1810bf5480b7",
+        "participant_name": "wrlockdj@gmail.com",
+        "photos_uploaded": 0,
+        "is_completed": false,
+        "completed_at": null,
+        "created_at": "2025-09-04T18:37:46.911Z"
+      },
+      {
+        "id": "049e6541-653e-430d-83f1-1fd7e21847a0",
+        "quest_id": "ce9b4a76-5686-4710-9016-1f8d2a8d014a",
+        "participant_name": "wrlockdj@gmail.com",
+        "photos_uploaded": 1,
+        "is_completed": true,
+        "completed_at": "2025-09-04T18:39:29.677Z",
+        "created_at": "2025-09-04T18:39:29.619Z"
+      }
+    ],
+    "miniGames": [
+      {
+        "id": "06a2fb04-81a3-49f1-8849-1b9d9a11a5a0",
+        "title": "Svatební kvíz 💕",
+        "description": "Otázky o nevěstě a ženichovi - jak dobře je znáte?",
+        "game_type": "trivia",
+        "game_data": {
+          "questions": [
+            {
+              "answers": [
+                "V práci",
+                "Na univerzitě",
+                "Přes přátele",
+                "Na dovolené"
+              ],
+              "question": "Kde se Marcela a Zbyněk poznali poprvé?",
+              "explanation": "Poznali se přes společné přátele na párty!",
+              "correctAnswer": 2
+            },
+            {
+              "answers": [
+                "Pizza",
+                "Sushi",
+                "Pasta",
+                "Řízek"
+              ],
+              "question": "Jaké je nejoblíbenější jídlo nevěsty?",
+              "explanation": "Marcela miluje sushi!",
+              "correctAnswer": 1
+            },
+            {
+              "answers": [
+                "3 roky",
+                "5 let",
+                "7 let",
+                "10 let"
+              ],
+              "question": "Kolik let se znají Marcela a Zbyněk?",
+              "explanation": "Jsou spolu už 7 krásných let!",
+              "correctAnswer": 2
+            },
+            {
+              "answers": [
+                "Doma",
+                "V Praze",
+                "Na dovolené",
+                "V restauraci"
+              ],
+              "question": "Kde se zasnoubili?",
+              "explanation": "Zásnuby proběhly během romantické dovolené!",
+              "correctAnswer": 2
+            },
+            {
+              "answers": [
+                "Fotbal",
+                "Vaření",
+                "Programování",
+                "Cestování"
+              ],
+              "question": "Jaké je koníček ženicha?",
+              "explanation": "Zbyněk je programátor a miluje technologie!",
+              "correctAnswer": 2
+            }
+          ]
+        },
+        "points": 20,
+        "time_limit": 120,
+        "is_active": true,
+        "created_at": "2025-09-03T09:07:56.435Z"
+      },
+      {
+        "id": "3e0b2bff-29d5-4675-b51d-18e2e7f99872",
+        "title": "Pexeso lásky 💝",
+        "description": "Najděte páry svatebních symbolů v této hře na paměť",
+        "game_type": "memory",
+        "game_data": {
+          "pairs": [
+            {
+              "name": "Srdce",
+              "symbol": "💕"
+            },
+            {
+              "name": "Prsteny",
+              "symbol": "💍"
+            },
+            {
+              "name": "Kostel",
+              "symbol": "💒"
+            },
+            {
+              "name": "Kytice",
+              "symbol": "💐"
+            },
+            {
+              "name": "Přípitek",
+              "symbol": "🥂"
+            },
+            {
+              "name": "Dort",
+              "symbol": "🍰"
+            },
+            {
+              "name": "Nevěsta",
+              "symbol": "👰"
+            },
+            {
+              "name": "Ženich",
+              "symbol": "🤵"
+            }
+          ]
+        },
+        "points": 15,
+        "time_limit": 90,
+        "is_active": true,
+        "created_at": "2025-09-03T09:07:56.459Z"
+      },
+      {
+        "id": "011aa64a-0c6d-43a2-9825-1c1096e57b44",
+        "title": "Spojte slova 📝",
+        "description": "Spojte svatební pojmy s jejich významy",
+        "game_type": "word_match",
+        "game_data": {
+          "pairs": [
+            {
+              "word": "Závoj",
+              "match": "Doplněk nevěsty"
+            },
+            {
+              "word": "Družička",
+              "match": "Pomocnice nevěsty"
+            },
+            {
+              "word": "Svědek",
+              "match": "Pomocník ženicha"
+            },
+            {
+              "word": "Kytice",
+              "match": "Květiny pro nevěstu"
+            },
+            {
+              "word": "Prsteny",
+              "match": "Symbol věrnosti"
+            },
+            {
+              "word": "Dort",
+              "match": "Sladký vrchol"
+            }
+          ]
+        },
+        "points": 10,
+        "time_limit": 60,
+        "is_active": true,
+        "created_at": "2025-09-03T09:07:56.479Z"
+      },
+      {
+        "id": "c2ec157c-b2d2-432e-82cc-fcfc454ce863",
+        "title": "Rychlost reakce ⚡",
+        "description": "Rychle klikejte na správné symboly lásky!",
+        "game_type": "reaction_speed",
+        "game_data": {
+          "distractors": [
+            "💔",
+            "🖤",
+            "💜",
+            "💙",
+            "💚"
+          ],
+          "targetCount": 15,
+          "targetSymbol": "💕"
+        },
+        "points": 10,
+        "time_limit": 30,
+        "is_active": true,
+        "created_at": "2025-09-03T09:07:56.501Z"
+      }
+    ],
+    "miniGameScores": []
+  },
+  "secrets": {
+    "DATABASE_URL": "postgresql://neondb_owner:npg_tZyqmwck43Ju@ep-frosty-breeze-aepujbw6.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require",
+    "GEMINI_API_KEY": "AIzaSyCK5tGvcL-tL_0eXUJaSW6UYqx_feJV-qg",
+    "ADMIN_EMAIL": "zbkocian@seznam.com"
+  },
+  "uploadedFiles": []
+}
