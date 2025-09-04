@@ -57,6 +57,16 @@ function generateRandomPassword(): string {
 export async function initializeSecrets(): Promise<boolean> {
   console.log("🔐 Kontroluji SECRETS a komponenty...");
 
+  // Při remixování může trvat chvíli, než jsou SECRETS dostupné
+  // Počkáme trochu a zkusíme znovu načíst environment
+  const isRemixedEnvironment = !process.env.GEMINI_API_KEY && process.env.REPL_ID;
+  
+  if (isRemixedEnvironment) {
+    console.log("🔄 Detekován remixovaný projekt, čekám na načtení SECRETS...");
+    // Krátká pauza pro načtení SECRETS
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
   const missingRequired: RequiredSecret[] = [];
   const missingOptional: RequiredSecret[] = [];
 
@@ -85,8 +95,16 @@ export async function initializeSecrets(): Promise<boolean> {
 
   // Pokud chybí povinné SECRETS
   if (missingRequired.length > 0) {
-    console.log("\n🚨 CHYBÍ POVINNÉ SECRETS:");
-    console.log("=" .repeat(50));
+    const isRemixed = process.env.REPL_ID && !process.env.REPL_OWNER;
+    
+    if (isRemixed) {
+      console.log("\n🎉 VÍTEJTE V REMIXOVANÉ SVATEBNÍ APLIKACI!");
+      console.log("=" .repeat(50));
+      console.log("Pro spuštění potřebujete nastavit tyto SECRETS:");
+    } else {
+      console.log("\n🚨 CHYBÍ POVINNÉ SECRETS:");
+      console.log("=" .repeat(50));
+    }
 
     for (const secret of missingRequired) {
       console.log(`❌ ${secret.key}`);
@@ -102,6 +120,14 @@ export async function initializeSecrets(): Promise<boolean> {
     console.log("2. Klikněte 'New Secret'");
     console.log("3. Přidejte chybějící SECRETS podle výše uvedených názvů");
     console.log("4. Restartujte aplikaci (Stop → Run)");
+    
+    if (isRemixed) {
+      console.log("\n💡 TIPY PRO REMIXOVÁNÍ:");
+      console.log("- Nejdůležitější je GEMINI_API_KEY pro AI ověřování fotek");
+      console.log("- Ostatní SECRETS se vygenerují automaticky");
+      console.log("- Po nastavení se vytvoří všechny 37 fotografických výzev");
+    }
+    
     console.log("\n⚠️  Aplikace se nepustí bez povinných SECRETS!");
 
     return false;
