@@ -130,6 +130,11 @@ export default function PhotoGallery() {
   const users = (photoData as any)?.users || {};
   const challenges = (challengesData || []) as any[];
 
+  // Debug logging
+  console.log('PhotoData:', photoData);
+  console.log('Photos array:', photos);
+  console.log('Photos length:', photos.length);
+
   // Add quest title to photos
   const photosWithQuestInfo = photos.map(photo => ({
     ...photo,
