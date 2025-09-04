@@ -84,19 +84,6 @@ export default function ChallengePage() {
     fetchChallenges();
   }, [user]);
 
-  // Debug logging
-  console.log('ChallengePage Debug:', {
-    challengeId,
-    match,
-    params,
-    user: user,
-    userEmail: user?.email,
-    challengesLoading,
-    challengesCount: challenges.length,
-    challengeIds: challenges.map(c => c.id),
-    challenge: challenges.find(c => c.id === challengeId),
-    queryKey: user ? ["/api/quest-challenges/all-with-status"] : ["/api/quest-challenges"]
-  });
 
   const challenge = challenges.find(c => c.id === challengeId);
 
