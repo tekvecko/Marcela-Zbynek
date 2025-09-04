@@ -516,6 +516,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Toggle like status
       const result = await storage.togglePhotoLike(photoId, userEmail);
 
+      // Odeslat notifikaci o novém lajku
+      if (global.io && result.action === 'liked') {
+        const photo = await storage.getUploadedPhotoById(photoId);
+        if (photo) {
+          global.io.emit('photo-liked', {
+            photoId: photoId,
+            likerName: req.user?.firstName || req.user?.email?.split('@')[0] || 'Anonym',
+            totalLikes: result.likes,
+            photoFilename: photo.filename,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+
       res.json({
         userHasLiked: result.userHasLiked,
         likes: result.likes,
@@ -570,6 +584,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         commenterName: userName,
         content: content.trim()
       });
+
+      // Odeslat notifikaci o novém komentáři
+      if (global.io) {
+        const photo = await storage.getUploadedPhotoById(photoId);
+        if (photo) {
+          global.io.emit('comment-added', {
+            photoId: photoId,
+            commenterName: userName,
+            content: content.trim(),
+            photoFilename: photo.filename,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
 
       res.json(comment);
     } catch (error) {
@@ -702,6 +730,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const uploadedPhoto = await storage.createUploadedPhoto(photoData);
+
+      // Odeslat notifikaci o nové fotce
+      if (global.io) {
+        global.io.emit('photo-uploaded', {
+          id: uploadedPhoto.id,
+          uploaderName: req.user?.firstName || req.user?.email?.split('@')[0] || 'Anonym',
+          filename: uploadedPhoto.filename,
+          questId: uploadedPhoto.questId,
+          questTitle: questId ? (await storage.getQuestChallenge(questId))?.title : undefined,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       // Update quest progress if questId provided and user authenticated
       if (questId && req.user?.email) {

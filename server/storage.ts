@@ -1056,6 +1056,7 @@ export class MemStorage implements IStorage {
 
 export class DatabaseStorage implements IStorage {
   private memoryFallback: MemStorage | null = null;
+  private fallbackData = { uploadedPhotos: [] as UploadedPhoto[] }; // Placeholder for fallback data
 
   constructor() {
     // Pokud není databáze dostupná, použij memory storage
@@ -1493,18 +1494,18 @@ export class DatabaseStorage implements IStorage {
       return photos;
     } catch (error) {
       console.error("Failed to get uploaded photos:", error);
-      return [];
+      return this.fallbackData.uploadedPhotos;
     }
   }
 
-  async getUploadedPhoto(id: string): Promise<UploadedPhoto | undefined> {
+  async getUploadedPhotoById(id: string): Promise<UploadedPhoto | null> {
     try {
-      if (!db) throw new Error("Database not available");
-      const [photo] = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id)).limit(1);
-      return photo;
+      const result = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id)).limit(1);
+      return result[0] || null;
     } catch (error) {
-      console.error("Failed to get uploaded photo:", error);
-      return undefined;
+      console.error("Failed to get uploaded photo by ID:", error);
+      // Fallback to in-memory data
+      return this.fallbackData.uploadedPhotos.find(p => p.id === id) || null;
     }
   }
 
