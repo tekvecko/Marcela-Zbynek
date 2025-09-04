@@ -731,17 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const uploadedPhoto = await storage.createUploadedPhoto(photoData);
 
-      // Odeslat notifikaci o nové fotce
-      if (global.io) {
-        global.io.emit('photo-uploaded', {
-          id: uploadedPhoto.id,
-          uploaderName: req.user?.firstName || req.user?.email?.split('@')[0] || 'Anonym',
-          filename: uploadedPhoto.filename,
-          questId: uploadedPhoto.questId,
-          questTitle: questId ? (await storage.getQuestChallenge(questId))?.title : undefined,
-          timestamp: new Date().toISOString()
-        });
-      }
+      // Real-time notifications would go here (Socket.IO removed for now)
 
       // Update quest progress if questId provided and user authenticated
       if (questId && req.user?.email) {
@@ -872,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: {
           challengesCount: challenges.length,
           photosCount: photos.length,
-          usersCount: users.length
+          usersCount: allUsers.length
         },
         server: {
           uptime: Math.floor(process.uptime()),
@@ -1307,7 +1297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/challenges/bulk-delete", requireAdmin, async (req: AuthRequest, res) => {
     try {
       const { challengeIds } = req.body;
-      
+
       if (!Array.isArray(challengeIds) || challengeIds.length === 0) {
         return res.status(400).json({ message: "Žádné výzvy k smazání" });
       }
@@ -1337,7 +1327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/photos/bulk-delete", requireAdmin, async (req: AuthRequest, res) => {
     try {
       const { photoIds } = req.body;
-      
+
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return res.status(400).json({ message: "Žádné fotky k smazání" });
       }
@@ -1367,7 +1357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/photos/bulk-verify", requireAdmin, async (req: AuthRequest, res) => {
     try {
       const { photoIds } = req.body;
-      
+
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return res.status(400).json({ message: "Žádné fotky k ověření" });
       }
@@ -1398,7 +1388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const challenges = await storage.getQuestChallenges();
       let activatedCount = 0;
-      
+
       for (const challenge of challenges) {
         if (!challenge.isActive) {
           await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: true });
@@ -1420,7 +1410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const challenges = await storage.getQuestChallenges();
       let deactivatedCount = 0;
-      
+
       for (const challenge of challenges) {
         if (challenge.isActive) {
           await storage.updateQuestChallenge(challenge.id, { ...challenge, isActive: false });
