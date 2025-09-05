@@ -1,6 +1,4 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { createServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDefaultChallenges } from "./init-challenges";
@@ -13,16 +11,6 @@ import { storage } from "./storage";
 import { getAllMiniGames } from "./mini-games-storage";
 
 const app = express();
-const httpServer = createServer(app);
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-// Make io available globally for notifications
-global.io = io;
 
 // CORS configuration
 app.use((req, res, next) => {
@@ -189,7 +177,7 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app);
   } else {
     serveStatic(app);
   }
@@ -197,9 +185,8 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || "5000", 10);
   const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
 
-  httpServer.listen(port, host, () => {
+  app.listen(port, host, () => {
     console.log(`8:39:08 PM [express] serving on port ${port}`);
-    console.log(`📡 WebSocket server ready for real-time notifications`);
   });
 })();
 
