@@ -1279,13 +1279,19 @@ export default function PhotoGallery() {
                               }}
                               disabled={!commentInputs[selectedPhoto.id]?.trim() || addCommentMutation.isPending}
                               variant="primary"
-                              size="sm"
-                              className="self-end"
+                              size="md"
+                              className="self-end min-w-[100px] bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                             >
                               {addCommentMutation.isPending ? (
-                                <LoadingSpinner size="sm" />
+                                <>
+                                  <LoadingSpinner size="sm" />
+                                  <span className="ml-2">Odesílá...</span>
+                                </>
                               ) : (
-                                <Send className="w-4 h-4 md:w-5 md:h-5" />
+                                <>
+                                  <Send className="w-4 h-4 md:w-5 md:h-5" />
+                                  <span className="ml-2">Odeslat</span>
+                                </>
                               )}
                             </GlassButton>
                           </div>
