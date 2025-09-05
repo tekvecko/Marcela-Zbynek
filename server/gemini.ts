@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { geminiCache } from "./gemini-cache";
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -53,24 +54,30 @@ async function attemptGeminiVerification(
 ): Promise<PhotoVerificationResult> {
   const maxRetries = 2;
   
+  // Kontrola cache
+  const cachedResult = geminiCache.get(imagePath, challengeTitle);
+  if (cachedResult) {
+    return cachedResult;
+  }
+  
   try {
     const imageBytes = fs.readFileSync(imagePath);
     const mimeType = getMimeTypeFromPath(imagePath);
 
-    const systemPrompt = `Jste expert na hodnoceni svatebních fotografií. Analyzujte poskytnutou fotografii.
+    const systemPrompt = `Analyzujte svatební fotografii. Odpovězte POUZE JSON s těmito poli:
 
-Ukol: "${challengeTitle}"
-Popis: "${challengeDescription}"
+POVINNÉ:
+- isValid: true/false (odpovídá zadání?)
+- confidence: 0.0-1.0 (jistota)
+- explanation: max 60 znaků
 
-KRITICKÉ INSTRUKCE:
-- Odpovězte POUZE platným JSON objektem
-- ŽÁDNÝ text před nebo po JSON
-- Maximální délka: explanation 80 znaků, suggestedImprovements 60 znaků
-- Maximálně 3 prvky v každém array
-- Používejte pouze hodnoty 0-1 pro confidence a technicalQuality
+VOLITELNÉ (můžete vynechat):
+- suggestedImprovements: max 40 znaků
+- technicalQuality: {sharpness:0.0-1.0, composition:0.0-1.0, lighting:0.0-1.0, exposure:"text"}
 
-PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
-{"isValid":true,"confidence":0.85,"explanation":"Krásná svatební fotka","suggestedImprovements":"Více světla","technicalQuality":{"sharpness":0.8,"composition":0.9,"lighting":0.7,"exposure":"dobrá"},"detectedObjects":["nevěsta","ženich"],"weddingElements":["šaty","oblek"],"atmosphere":"romantická","peopleCount":2,"location":"kostel","emotions":["radost","láska"],"category":"portrét","tags":["elegantní"],"creativeTips":"Jiný úhel"}`;
+Úkol: "${challengeTitle}" - ${challengeDescription}
+
+PŘÍKLAD: {"isValid":true,"confidence":0.8,"explanation":"Pěkná svatební fotka"}`;
 
     const contents = [
       {
@@ -102,38 +109,18 @@ PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
                 lighting: { type: SchemaType.NUMBER },
                 exposure: { type: SchemaType.STRING }
               }
-            },
-            detectedObjects: {
-              type: SchemaType.ARRAY,
-              items: { type: SchemaType.STRING }
-            },
-            weddingElements: {
-              type: SchemaType.ARRAY,
-              items: { type: SchemaType.STRING }
-            },
-            atmosphere: { type: SchemaType.STRING },
-            peopleCount: { type: SchemaType.NUMBER },
-            location: { type: SchemaType.STRING },
-            emotions: {
-              type: SchemaType.ARRAY,
-              items: { type: SchemaType.STRING }
-            },
-            category: { type: SchemaType.STRING },
-            tags: {
-              type: SchemaType.ARRAY,
-              items: { type: SchemaType.STRING }
-            },
-            creativeTips: { type: SchemaType.STRING }
+            }
           },
           required: ["isValid", "confidence", "explanation"],
         },
-        maxOutputTokens: 1000,
+        maxOutputTokens: 400, // Sníženo pro rychlejší odpovědi
+        temperature: 0.3, // Nižší pro konzistentnější odpovědi
       },
     });
 
-    // Add timeout to prevent hanging - shorter timeout for better UX
+    // Optimized timeout for better UX
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Gemini API timeout')), 15000); // 15 second timeout
+      setTimeout(() => reject(new Error('Gemini API timeout')), 8000); // 8 second timeout
     });
 
     console.log('🤖 Sending request to Gemini AI...');
@@ -151,25 +138,12 @@ PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
 
     if (rawJson) {
       try {
-        // More aggressive JSON cleaning with better fallback handling
+        // Optimized JSON cleaning
         let cleanedJson = rawJson
-          // Remove all control characters and weird encoding
-          .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
-          .replace(/\r\n/g, ' ')
-          .replace(/\r/g, ' ')
-          .replace(/\n/g, ' ')
-          .replace(/\t+/g, ' ')  // Replace multiple tabs with single space
-          .replace(/\s+/g, ' ')
-          // Remove any non-printable characters but preserve Czech characters
-          .replace(/[^\x20-\x7E\u00C0-\u017F\u0100-\u024F\u1E00-\u1EFF]/g, '')
-          // Fix common Gemini malformed patterns
-          .replace(/,\s*,/g, ',')  // Remove double commas
-          .replace(/:\s*,/g, ': null,')  // Fix empty values
-          // Truncate extremely long arrays that break JSON
-          .replace(/"weddingElements":\s*\[([^\]]{500,})[^\]]*\]/g, '"weddingElements": []')
-          .replace(/"detectedObjects":\s*\[([^\]]{300,})[^\]]*\]/g, '"detectedObjects": []')
-          .replace(/"tags":\s*\[([^\]]{200,})[^\]]*\]/g, '"tags": []')
-          .replace(/"emotions":\s*\[([^\]]{150,})[^\]]*\]/g, '"emotions": []')
+          .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control chars
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/,\s*,/g, ',') // Fix double commas
+          .replace(/:\s*,/g, ': null,') // Fix empty values
           .trim();
         
         console.log('Raw response length:', rawJson.length);
@@ -306,68 +280,40 @@ PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
         
         const result: PhotoVerificationResult = JSON.parse(jsonString);
         
-        // Strict validation with defaults and better error handling
+        // Optimized validation - focus on essential fields only
         const validatedResult: PhotoVerificationResult = {
           isValid: typeof result.isValid === 'boolean' ? result.isValid : false,
           confidence: (() => {
             const conf = result.confidence;
             if (typeof conf === 'number' && !isNaN(conf) && isFinite(conf)) {
-              return Math.max(0, Math.min(1, conf));
+              return Math.round(Math.max(0, Math.min(1, conf)) * 100) / 100;
             }
-            return 0.7; // Default confidence when AI works
+            return 0.7;
           })(),
           explanation: (() => {
             const exp = result.explanation;
-            if (typeof exp === 'string' && exp.length > 0 && exp.length < 1000) {
-              // Clean up explanation text
-              return exp.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
+            if (typeof exp === 'string' && exp.length > 0 && exp.length < 200) {
+              return exp.trim();
             }
-            return "AI analýza fotky byla dokončena úspěšně.";
+            return "AI analýza dokončena.";
           })(),
-          suggestedImprovements: (() => {
-            const imp = result.suggestedImprovements;
-            if (typeof imp === 'string' && imp.length > 0 && imp.length < 500) {
-              return imp.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim();
-            }
-            return undefined;
-          })(),
+          suggestedImprovements: typeof result.suggestedImprovements === 'string' && result.suggestedImprovements.length > 0 
+            ? result.suggestedImprovements.trim() : undefined,
           technicalQuality: (() => {
             const tq = result.technicalQuality;
             if (tq && typeof tq === 'object') {
               return {
                 sharpness: typeof tq.sharpness === 'number' && isFinite(tq.sharpness) 
-                  ? Math.max(0, Math.min(1, tq.sharpness)) : 0.7,
+                  ? Math.round(Math.max(0, Math.min(1, tq.sharpness)) * 100) / 100 : 0.7,
                 composition: typeof tq.composition === 'number' && isFinite(tq.composition) 
-                  ? Math.max(0, Math.min(1, tq.composition)) : 0.7,
+                  ? Math.round(Math.max(0, Math.min(1, tq.composition)) * 100) / 100 : 0.7,
                 lighting: typeof tq.lighting === 'number' && isFinite(tq.lighting) 
-                  ? Math.max(0, Math.min(1, tq.lighting)) : 0.7,
+                  ? Math.round(Math.max(0, Math.min(1, tq.lighting)) * 100) / 100 : 0.7,
                 exposure: typeof tq.exposure === 'string' ? tq.exposure : "dobrá"
               };
             }
             return undefined;
-          })(),
-          detectedObjects: Array.isArray(result.detectedObjects) 
-            ? result.detectedObjects.slice(0, 15).filter(obj => typeof obj === 'string' && obj.length > 0)
-            : undefined,
-          weddingElements: Array.isArray(result.weddingElements) 
-            ? result.weddingElements.slice(0, 10).filter(elem => typeof elem === 'string' && elem.length > 0)
-            : undefined,
-          atmosphere: typeof result.atmosphere === 'string' && result.atmosphere.length < 200 
-            ? result.atmosphere : undefined,
-          peopleCount: typeof result.peopleCount === 'number' && isFinite(result.peopleCount) && result.peopleCount >= 0 
-            ? Math.floor(result.peopleCount) : undefined,
-          location: typeof result.location === 'string' && result.location.length < 100 
-            ? result.location : undefined,
-          emotions: Array.isArray(result.emotions) 
-            ? result.emotions.slice(0, 8).filter(emotion => typeof emotion === 'string' && emotion.length > 0)
-            : undefined,
-          category: typeof result.category === 'string' && result.category.length < 50 
-            ? result.category : undefined,
-          tags: Array.isArray(result.tags) 
-            ? result.tags.slice(0, 10).filter(tag => typeof tag === 'string' && tag.length > 0)
-            : undefined,
-          creativeTips: typeof result.creativeTips === 'string' && result.creativeTips.length < 300 
-            ? result.creativeTips.replace(/\t+/g, ' ').replace(/\s+/g, ' ').trim() : undefined
+          })()
         };
         
         console.log('Validated result:', { 
@@ -375,6 +321,9 @@ PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
           confidence: validatedResult.confidence,
           explanation: validatedResult.explanation?.substring(0, 100)
         });
+        
+        // Uložení do cache
+        geminiCache.set(imagePath, challengeTitle, validatedResult);
         
         return validatedResult;
         
@@ -417,7 +366,7 @@ PŘÍKLAD SPRÁVNÉ ODPOVĚDI:
                             
     if (retryCount < maxRetries && isRetryableError) {
       console.log(`Retrying Gemini verification (attempt ${retryCount + 2}/${maxRetries + 1})...`);
-      await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1))); // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Faster retry
       return attemptGeminiVerification(imagePath, challengeTitle, challengeDescription, retryCount + 1);
     }
     
