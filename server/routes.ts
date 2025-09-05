@@ -555,11 +555,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/photos/:photoId/comments", async (req, res) => {
     try {
       const { photoId } = req.params;
+      
+      if (!photoId || photoId.trim().length === 0) {
+        return res.status(400).json({ message: "Photo ID je povinný" });
+      }
+
+      console.log(`Getting comments for photo: ${photoId}`);
       const comments = await storage.getPhotoComments(photoId);
-      res.json(comments);
+      
+      // Ensure we always return an array
+      const safeComments = Array.isArray(comments) ? comments : [];
+      
+      console.log(`Returning ${safeComments.length} comments for photo ${photoId}`);
+      res.json(safeComments);
     } catch (error) {
       console.error("Failed to get photo comments:", error);
-      res.status(500).json({ message: "Chyba při načítání komentářů" });
+      res.json([]); // Return empty array instead of error
     }
   });
 

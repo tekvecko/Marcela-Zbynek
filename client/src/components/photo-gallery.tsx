@@ -58,8 +58,10 @@ export default function PhotoGallery() {
   const [selectedPhoto, setSelectedPhoto] = useState<ExtendedPhoto | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flyingHearts, setFlyingHearts] = useState<Array<{id: string, x: number, y: number}>>([]);
-  const [newComment, setNewComment] = useState("");
+  const [newComment, setNewComment] = useState(""); // This state is not used for individual comments in the dialog
   const [showComments, setShowComments] = useState(false);
+  // Initialize comment inputs for each photo (important if photo list is dynamic)
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
@@ -174,11 +176,15 @@ export default function PhotoGallery() {
           const response = await fetch(`/api/photos/${photo.id}/comments`);
           if (response.ok) {
             const comments = await response.json();
+            // Ensure it's always an array, even if the API returns something else
             commentsMap[photo.id] = Array.isArray(comments) ? comments : [];
           } else {
+            // If the response is not ok, or comments are missing, default to an empty array
             commentsMap[photo.id] = [];
           }
         } catch (error) {
+          // If there's a network error or parsing error, default to an empty array
+          console.error(`Error fetching comments for photo ${photo.id}:`, error);
           commentsMap[photo.id] = [];
         }
       }
@@ -186,12 +192,14 @@ export default function PhotoGallery() {
       return commentsMap;
     },
     enabled: photos.length > 0,
-    staleTime: 30 * 1000,
+    staleTime: 30 * 1000, // Cache for 30 seconds
   });
 
   // Helper to get comments for a specific photo
   const getPhotoComments = (photoId: string) => {
-    const comments = (allComments as Record<string, any[]>)[photoId] || [];
+    // Access comments from the 'allComments' query result
+    const comments = (allComments as Record<string, any[]>)[photoId];
+    // Ensure we always return an array
     return Array.isArray(comments) ? comments : [];
   };
 
@@ -239,7 +247,7 @@ export default function PhotoGallery() {
         fileInputRef.current.value = "";
         fileInputRef.current.removeAttribute('capture');
       }
-      
+
       // Force refresh photos immediately
       refetch();
       queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
@@ -286,7 +294,7 @@ export default function PhotoGallery() {
       // Optimistically update - okamžitě aktualizuj UI podle aktuálního stavu
       queryClient.setQueryData(["/api/photos"], (oldData: any) => {
         if (!oldData) return oldData;
-        
+
         const photosArray = oldData.photos || oldData || [];
         const updatedPhotos = photosArray.map((photo: ExtendedPhoto) => {
           if (photo.id === photoId) {
@@ -301,7 +309,7 @@ export default function PhotoGallery() {
           }
           return photo;
         });
-        
+
         // Return the same format as we received
         return oldData.photos ? { ...oldData, photos: updatedPhotos } : updatedPhotos;
       });
@@ -331,7 +339,7 @@ export default function PhotoGallery() {
       // Aktualizuj data s API odpovědí
       queryClient.setQueryData(["/api/photos"], (oldData: any) => {
         if (!oldData) return oldData;
-        
+
         const photosArray = oldData.photos || oldData || [];
         const updatedPhotos = photosArray.map((photo: ExtendedPhoto) => 
           photo.id === photoId 
@@ -342,7 +350,7 @@ export default function PhotoGallery() {
               }
             : photo
         );
-        
+
         // Return the same format as we received
         return oldData.photos ? { ...oldData, photos: updatedPhotos } : updatedPhotos;
       });
@@ -425,41 +433,52 @@ export default function PhotoGallery() {
   // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async ({ photoId, content }: { photoId: string; content: string }) => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Musíte být přihlášeni pro přidání komentáře');
+      }
+
+      if (!content.trim()) {
+        throw new Error('Komentář nemůže být prázdný');
+      }
+
       const response = await fetch(`/api/photos/${photoId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: content.trim() })
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to add comment');
+        throw new Error(error.message || 'Chyba při přidávání komentáře');
       }
 
       return response.json();
     },
-    onSuccess: () => {
-      setNewComment('');
-      // Invalidate both the specific photo comments and all comments
-      if (selectedPhoto) {
-        queryClient.invalidateQueries({ queryKey: ["/api/photos", selectedPhoto.id, "comments"] });
-      }
-      queryClient.invalidateQueries({ queryKey: ["/api/photos/all-comments"] });
+    onSuccess: (data, variables) => {
       toast({
-        title: "✅ Komentář přidán",
-        description: "Váš komentář byl úspěšně přidán.",
+        title: "Komentář přidán!",
+        description: "Váš komentář byl úspěšně přidán."
       });
+
+      // Refresh comments for this photo and all comments
+      queryClient.invalidateQueries({ queryKey: ["/api/photos", variables.photoId, "comments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/photos/all-comments"] });
+
+      // Clear the comment input
+      setCommentInputs(prev => ({ ...prev, [variables.photoId]: '' }));
     },
     onError: (error: Error) => {
+      console.error('Comment add error:', error);
       toast({
-        title: "❌ Chyba",
+        title: "Chyba při přidávání komentáře",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
-    },
+    }
   });
 
   // Share photo functionality
@@ -507,6 +526,9 @@ export default function PhotoGallery() {
   const handleDownload = async (photo: UploadedPhoto) => {
     try {
       const response = await fetch(`/uploads/${photo.filename}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch photo: ${response.statusText}`);
+      }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -522,6 +544,7 @@ export default function PhotoGallery() {
         description: "Fotka byla úspěšně stažena.",
       });
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "❌ Chyba při stahování",
         description: "Nepodařilo se stáhnout fotku. Zkuste to prosím znovu.",
@@ -1231,22 +1254,22 @@ export default function PhotoGallery() {
                         <div className="mb-4">
                           <div className="flex gap-2">
                             <Textarea
-                              value={newComment}
-                              onChange={(e) => setNewComment(e.target.value)}
+                              value={commentInputs[selectedPhoto.id] || ""}
+                              onChange={(e) => setCommentInputs(prev => ({ ...prev, [selectedPhoto.id]: e.target.value }))}
                               placeholder="Napište komentář..."
                               className="flex-1 min-h-[50px] md:min-h-[60px] resize-none bg-white/10 border-white/20 text-white placeholder:text-white/60 text-sm md:text-base"
                               disabled={addCommentMutation.isPending}
                             />
                             <GlassButton
                               onClick={() => {
-                                if (newComment.trim() && selectedPhoto) {
+                                if (selectedPhoto && commentInputs[selectedPhoto.id]?.trim()) {
                                   addCommentMutation.mutate({
                                     photoId: selectedPhoto.id,
-                                    content: newComment.trim()
+                                    content: commentInputs[selectedPhoto.id].trim()
                                   });
                                 }
                               }}
-                              disabled={!newComment.trim() || addCommentMutation.isPending}
+                              disabled={!commentInputs[selectedPhoto.id]?.trim() || addCommentMutation.isPending}
                               variant="primary"
                               size="sm"
                               className="self-end"
@@ -1268,7 +1291,7 @@ export default function PhotoGallery() {
                       {/* Comments List */}
                       {(comments as any[]).length > 0 ? (
                           (comments as any[]).map((comment: any) => (
-                            <div key={comment.id} className="bg-white/10 rounded-lg p-2 md:p-3">
+                            <div key={comment.id} className="bg-white/10 rounded-lg p-2 md:p-3 mb-2"> {/* Added mb-2 for spacing */}
                               <div className="flex items-start gap-2">
                                 <div className="w-6 h-6 md:w-7 md:h-7 bg-white/20 rounded-full flex items-center justify-center text-xs md:text-sm font-bold">
                                   {comment.commenterName?.charAt(0)?.toUpperCase() || '?'}
@@ -1302,7 +1325,7 @@ export default function PhotoGallery() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Fullscreen overlay info (hidden by default, shows on hover/tap) */}
                     {isFullscreen && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 p-4 sm:p-6">
