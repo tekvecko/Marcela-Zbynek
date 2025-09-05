@@ -1009,7 +1009,7 @@ export default function PhotoGallery() {
               isFullscreen
                 ? 'max-w-full w-screen max-h-screen h-screen p-0 m-0 rounded-none'
                 : 'max-w-5xl w-[95vw] md:w-[90vw] lg:w-[85vw] h-[95vh] md:max-h-[95vh] p-0'
-            } bg-black/95 border-none transition-all duration-500 ease-in-out transform overflow-hidden
+            } bg-white border border-gray-200 shadow-2xl transition-all duration-500 ease-in-out transform overflow-hidden
             animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-4`}
             onInteractOutside={(e) => {
               // Zavřít dialog při kliknutí mimo obsah
@@ -1036,7 +1036,7 @@ export default function PhotoGallery() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsFullscreen(!isFullscreen)}
-                      className="text-white hover:bg-white/20 p-2 md:p-3"
+                      className="text-gray-600 hover:bg-gray-100 p-2 md:p-3 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm"
                     >
                       <Maximize2 className="w-4 h-4 md:w-5 md:h-5" />
                     </GlassButton>
@@ -1048,7 +1048,7 @@ export default function PhotoGallery() {
                         setSelectedPhoto(null);
                         setIsFullscreen(false);
                       }}
-                      className="text-white hover:bg-white/20 p-2 md:p-3"
+                      className="text-gray-600 hover:bg-gray-100 p-2 md:p-3 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm"
                     >
                       <X className="w-4 h-4 md:w-5 md:h-5" />
                     </GlassButton>
@@ -1068,7 +1068,7 @@ export default function PhotoGallery() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsFullscreen(false)}
-                        className="text-white hover:bg-white/20 p-3"
+                        className="text-gray-600 hover:bg-gray-100 p-3 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm"
                       >
                         <Minimize2 className="w-5 h-5" />
                       </GlassButton>
@@ -1080,18 +1080,18 @@ export default function PhotoGallery() {
                           setSelectedPhoto(null);
                           setIsFullscreen(false);
                         }}
-                        className="text-white hover:bg-white/20 p-3"
+                        className="text-gray-600 hover:bg-gray-100 p-3 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm"
                       >
                         <X className="w-5 h-5" />
                       </GlassButton>
                     </div>
 
-                    {/* Centr ovaná fotka */}
-                    <div className="w-full h-full flex items-center justify-center p-4 transition-transform duration-300">
+                    {/* Centrovaná fotka */}
+                    <div className="w-full h-full flex items-center justify-center p-4 transition-transform duration-300 bg-gray-50">
                       <img
                         src={`/uploads/${selectedPhoto.filename}`}
                         alt={selectedPhoto.aiAnalysis || "Wedding photo"}
-                        className="max-w-full max-h-full object-contain cursor-pointer transition-all duration-500 ease-out hover:scale-105"
+                        className="max-w-full max-h-full object-contain cursor-pointer transition-all duration-500 ease-out hover:scale-105 shadow-lg rounded-lg"
                         onClick={(e) => {
                           e.stopPropagation();
                         }}
@@ -1104,7 +1104,7 @@ export default function PhotoGallery() {
                   <div className="flex flex-col h-full overflow-hidden">
                     {/* Foto sekce */}
                     <div
-                      className="flex-shrink-0 h-[40vh] md:h-[50vh] lg:h-[55vh] flex items-center justify-center p-2 md:p-4 pt-12 md:pt-16"
+                      className="flex-shrink-0 h-[40vh] md:h-[50vh] lg:h-[55vh] flex items-center justify-center p-2 md:p-4 pt-12 md:pt-16 bg-gray-50"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div 
@@ -1118,18 +1118,18 @@ export default function PhotoGallery() {
                         <OptimizedImage
                           src={`/uploads/${selectedPhoto.filename}`}
                           alt={selectedPhoto.aiAnalysis || "Wedding photo"}
-                          className="max-w-full max-h-full object-contain"
+                          className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
                         />
                       </div>
                     </div>
 
                     {/* Scrollovatelná informační sekce */}
                     <div className="flex-1 overflow-y-auto">
-                      <div className="bg-black/80 p-3 md:p-4 lg:p-6">
-                        <div className="text-white space-y-3 md:space-y-4">
+                      <div className="bg-white border-t border-gray-200 p-3 md:p-4 lg:p-6">
+                        <div className="text-gray-900 space-y-3 md:space-y-4">
                           <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
                             <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
-                              <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-white/20 rounded-full flex items-center justify-center text-sm md:text-base lg:text-lg font-bold flex-shrink-0 overflow-hidden">
+                              <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-blue-500 rounded-full flex items-center justify-center text-sm md:text-base lg:text-lg font-bold flex-shrink-0 overflow-hidden text-white">
                                 {users[selectedPhoto.uploaderName]?.profileImageUrl ? (
                                   <img 
                                     src={users[selectedPhoto.uploaderName].profileImageUrl} 
@@ -1141,8 +1141,8 @@ export default function PhotoGallery() {
                                 )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h3 className="text-sm md:text-lg lg:text-xl font-semibold truncate">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
-                                <p className="text-white/80 text-xs md:text-sm">
+                                <h3 className="text-sm md:text-lg lg:text-xl font-semibold truncate text-gray-900">{getDisplayName(selectedPhoto.uploaderName, users)}</h3>
+                                <p className="text-gray-600 text-xs md:text-sm">
                                   {new Date(selectedPhoto.createdAt).toLocaleDateString('cs-CZ', {
                                     day: 'numeric',
                                     month: 'short',
@@ -1178,10 +1178,10 @@ export default function PhotoGallery() {
                               disabled={likePhotoMutation.isPending}
                               className={`p-2 transition-all duration-300 ${
                                 !user 
-                                  ? 'text-gray-400 hover:bg-white/10 cursor-pointer' 
+                                  ? 'text-gray-400 hover:bg-gray-100 cursor-pointer' 
                                   : selectedPhoto.userHasLiked 
-                                    ? 'text-red-400 cursor-default bg-red-500/20 animate-pulse-once' 
-                                    : 'text-white hover:bg-red-500/30 hover:text-red-200 hover:scale-110'
+                                    ? 'text-red-500 cursor-default bg-red-50 animate-pulse-once' 
+                                    : 'text-gray-600 hover:bg-red-50 hover:text-red-500 hover:scale-110'
                               } ${likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === selectedPhoto.id ? 'animate-bounce' : ''}`}
                             >
                               <div className="flex items-center gap-1">
@@ -1193,15 +1193,15 @@ export default function PhotoGallery() {
                                   }`} />
                                 )}
                                 <span className={`text-xs sm:text-sm font-medium transition-all duration-300 ${
-                                  selectedPhoto.userHasLiked ? 'text-red-300 font-bold' : 'text-white'
+                                  selectedPhoto.userHasLiked ? 'text-red-500 font-bold' : 'text-gray-600'
                                 }`}>
                                   {selectedPhoto.likes || 0}
                                 </span>
                                 {selectedPhoto.userHasLiked && user && (
-                                  <span className="text-xs text-red-400 font-bold animate-bounce">✓</span>
+                                  <span className="text-xs text-red-500 font-bold animate-bounce">✓</span>
                                 )}
                                 {likePhotoMutation.isPending && likePhotoMutation.variables?.photoId === selectedPhoto.id && (
-                                  <LoadingSpinner size="sm" className="text-white ml-1" />
+                                  <LoadingSpinner size="sm" className="text-gray-600 ml-1" />
                                 )}
                               </div>
                             </GlassButton>
@@ -1241,18 +1241,18 @@ export default function PhotoGallery() {
                     </div>
 
                     {selectedPhoto.aiAnalysis && (
-                      <div className="bg-black/50 rounded-lg p-3 md:p-4 border border-white/10">
-                        <h4 className="font-medium mb-2 flex items-center text-sm md:text-base">
+                      <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-200">
+                        <h4 className="font-medium mb-2 flex items-center text-sm md:text-base text-blue-900">
                           <span className="mr-2">🤖</span>
                           AI Analýza fotky
                         </h4>
-                        <p className="text-white/90 leading-relaxed text-xs md:text-sm">{selectedPhoto.aiAnalysis}</p>
+                        <p className="text-blue-800 leading-relaxed text-xs md:text-sm">{selectedPhoto.aiAnalysis}</p>
                       </div>
                     )}
 
                     {/* Comments Section */}
-                    <div className="bg-black/50 rounded-lg p-3 md:p-4 border border-white/10">
-                      <h4 className="font-medium mb-3 flex items-center text-sm md:text-base">
+                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200">
+                      <h4 className="font-medium mb-3 flex items-center text-sm md:text-base text-gray-900">
                         <MessageCircle className="mr-2" size={16} />
                         Komentáře ({(comments as any[]).length})
                       </h4>
@@ -1265,7 +1265,7 @@ export default function PhotoGallery() {
                               value={commentInputs[selectedPhoto.id] || ""}
                               onChange={(e) => setCommentInputs(prev => ({ ...prev, [selectedPhoto.id]: e.target.value }))}
                               placeholder="Napište komentář..."
-                              className="flex-1 min-h-[50px] md:min-h-[60px] resize-none bg-white/10 border-white/20 text-white placeholder:text-white/60 text-sm md:text-base"
+                              className="flex-1 min-h-[50px] md:min-h-[60px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 text-sm md:text-base"
                               disabled={addCommentMutation.isPending}
                             />
                             <GlassButton
@@ -1297,8 +1297,8 @@ export default function PhotoGallery() {
                           </div>
                         </div>
                       ) : (
-                        <div className="mb-4 p-3 bg-white/10 rounded-lg text-center">
-                          <p className="text-white/80 text-xs md:text-sm">Přihlaste se pro přidání komentáře</p>
+                        <div className="mb-4 p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
+                          <p className="text-blue-800 text-xs md:text-sm">Přihlaste se pro přidání komentáře</p>
                         </div>
                       )}
 
@@ -1306,21 +1306,21 @@ export default function PhotoGallery() {
                       {commentsLoading ? (
                         <div className="text-center py-4">
                           <LoadingSpinner size="sm" />
-                          <p className="text-white/60 text-xs md:text-sm mt-2">Načítají se komentáře...</p>
+                          <p className="text-gray-600 text-xs md:text-sm mt-2">Načítají se komentáře...</p>
                         </div>
                       ) : comments.length > 0 ? (
                           comments.map((comment: any) => (
-                            <div key={comment.id} className="bg-white/10 rounded-lg p-2 md:p-3 mb-2">
+                            <div key={comment.id} className="bg-white rounded-lg p-2 md:p-3 mb-2 border border-gray-200">
                               <div className="flex items-start gap-2">
-                                <div className="w-6 h-6 md:w-7 md:h-7 bg-white/20 rounded-full flex items-center justify-center text-xs md:text-sm font-bold">
+                                <div className="w-6 h-6 md:w-7 md:h-7 bg-gray-200 rounded-full flex items-center justify-center text-xs md:text-sm font-bold text-gray-600">
                                   {comment.commenterName?.charAt(0)?.toUpperCase() || '?'}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-white font-medium text-xs md:text-sm">
+                                    <span className="text-gray-900 font-medium text-xs md:text-sm">
                                       {comment.commenterName}
                                     </span>
-                                    <span className="text-white/60 text-xs">
+                                    <span className="text-gray-500 text-xs">
                                       {new Date(comment.createdAt).toLocaleDateString('cs-CZ', {
                                         day: 'numeric',
                                         month: 'short',
@@ -1329,7 +1329,7 @@ export default function PhotoGallery() {
                                       })}
                                     </span>
                                   </div>
-                                  <p className="text-white/90 text-xs md:text-sm leading-relaxed">
+                                  <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
                                     {comment.content}
                                   </p>
                                 </div>
@@ -1337,7 +1337,7 @@ export default function PhotoGallery() {
                             </div>
                           ))
                         ) : (
-                          <p className="text-white/60 text-xs md:text-sm text-center py-4">
+                          <p className="text-gray-600 text-xs md:text-sm text-center py-4">
                             Zatím zde nejsou žádné komentáře
                           </p>
                         )}
