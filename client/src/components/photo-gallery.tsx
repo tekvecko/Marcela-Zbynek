@@ -161,6 +161,14 @@ export default function PhotoGallery() {
   // Get comments for selected photo
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
+    queryFn: async () => {
+      if (!selectedPhoto?.id) return [];
+      const response = await fetch(`/api/photos/${selectedPhoto.id}/comments`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
+    },
     enabled: !!selectedPhoto?.id,
   });
 
@@ -1289,9 +1297,14 @@ export default function PhotoGallery() {
                       )}
 
                       {/* Comments List */}
-                      {(comments as any[]).length > 0 ? (
-                          (comments as any[]).map((comment: any) => (
-                            <div key={comment.id} className="bg-white/10 rounded-lg p-2 md:p-3 mb-2"> {/* Added mb-2 for spacing */}
+                      {commentsLoading ? (
+                        <div className="text-center py-4">
+                          <LoadingSpinner size="sm" />
+                          <p className="text-white/60 text-xs md:text-sm mt-2">Načítají se komentáře...</p>
+                        </div>
+                      ) : comments.length > 0 ? (
+                          comments.map((comment: any) => (
+                            <div key={comment.id} className="bg-white/10 rounded-lg p-2 md:p-3 mb-2">
                               <div className="flex items-start gap-2">
                                 <div className="w-6 h-6 md:w-7 md:h-7 bg-white/20 rounded-full flex items-center justify-center text-xs md:text-sm font-bold">
                                   {comment.commenterName?.charAt(0)?.toUpperCase() || '?'}
