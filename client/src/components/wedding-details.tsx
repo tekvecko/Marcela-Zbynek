@@ -1,11 +1,9 @@
-
-import { Calendar, MapPin, Clock, Utensils, Music, Copy, Share2, ChevronDown, Anchor } from "lucide-react";
+import { Calendar, MapPin, Clock, Copy, Share2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 
 export default function WeddingDetails() {
   const { toast } = useToast();
@@ -44,12 +42,10 @@ export default function WeddingDetails() {
     }
   };
 
-  
-
   return (
-    <section className="py-20 bg-gradient-to-br from-cream via-blush to-cream">
+    <section id="ceremony" className="py-20 bg-gradient-to-br from-cream via-blush to-cream">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -58,18 +54,15 @@ export default function WeddingDetails() {
           className="text-center mb-12"
         >
           <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-4">
-            Detaily svatby <span className="heart-decoration">💒</span>
+            Svatební obřad <span className="heart-decoration">💒</span>
           </h2>
           <p className="text-lg text-charcoal/70 max-w-3xl mx-auto mb-8">
-            Vše, co potřebujete vědět o našem velkém dni
+            Začátek našeho společného příběhu
           </p>
         </motion.div>
 
-        
-
         {/* Obřad */}
-        <motion.section
-          id="ceremony"
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -81,7 +74,7 @@ export default function WeddingDetails() {
                 <div className="p-3 bg-romantic/20 rounded-full">
                   <Calendar className="text-romantic" size={24} />
                 </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal">Svatební obřad</h3>
+                <h3 className="font-display text-2xl font-bold text-charcoal">Datum, čas a místo</h3>
               </div>
 
               <div className="grid md:grid-cols-2 gap-8">
@@ -93,7 +86,7 @@ export default function WeddingDetails() {
                       <p className="text-charcoal/70">Sobota, 11. října 2025</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Clock className="text-gold" size={20} />
                     <div>
@@ -109,63 +102,8 @@ export default function WeddingDetails() {
                       <p className="text-charcoal/70">Stará Pošta, Kovalovice 109</p>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-charcoal mb-3">Přidat do kalendáře</h4>
-                  <div className="space-y-3">
-                    <Button 
-                      onClick={openGoogleCalendar}
-                      className="w-full bg-romantic hover:bg-romantic/90 text-white"
-                    >
-                      <Calendar className="mr-2" size={16} />
-                      Google Calendar
-                    </Button>
-                    
-                    <Button 
-                      onClick={openAppleCalendar}
-                      variant="outline"
-                      className="w-full border-romantic text-romantic hover:bg-romantic/10"
-                    >
-                      <Calendar className="mr-2" size={16} />
-                      Apple Calendar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.section>
-
-        {/* Místo konání */}
-        <motion.section
-          id="venue"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-16"
-        >
-          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gold/20 rounded-full">
-                  <MapPin className="text-gold" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal">Místo konání</h3>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-charcoal mb-2">Stará Pošta</h4>
-                    <p className="text-charcoal/70 mb-4">
-                      Historická budova v srdci Kovalovic, která poskytuje romantickou atmosféru 
-                      pro náš velký den. Krásné prostory s venkovní zahradou.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold text-charcoal mb-2">Adresa</h4>
+                  <div className="mt-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Input 
                         value="Kovalovice 109, 664 07 Kovalovice" 
@@ -184,7 +122,27 @@ export default function WeddingDetails() {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
+                  <h4 className="font-semibold text-charcoal mb-3">Přidat do kalendáře</h4>
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={openGoogleCalendar}
+                      className="w-full bg-romantic hover:bg-romantic/90 text-white"
+                    >
+                      <Calendar className="mr-2" size={16} />
+                      Google Calendar
+                    </Button>
+
+                    <Button 
+                      onClick={openAppleCalendar}
+                      variant="outline"
+                      className="w-full border-romantic text-romantic hover:bg-romantic/10"
+                    >
+                      <Calendar className="mr-2" size={16} />
+                      Apple Calendar
+                    </Button>
+                  </div>
+
+                  <div className="mt-6">
                     <h4 className="font-semibold text-charcoal mb-3">Navigace</h4>
                     <div className="space-y-2">
                       <Button 
@@ -194,7 +152,7 @@ export default function WeddingDetails() {
                         <MapPin className="mr-2" size={16} />
                         Mapy.cz
                       </Button>
-                      
+
                       <Button 
                         variant="outline"
                         className="w-full border-gold text-gold hover:bg-gold/10"
@@ -205,139 +163,17 @@ export default function WeddingDetails() {
                       </Button>
                     </div>
                   </div>
-
-                  <div>
-                    <h4 className="font-semibold text-charcoal mb-2">Parkování</h4>
-                    <p className="text-charcoal/70 text-sm">
-                      K dispozici je parkoviště přímo u objektu. 
-                      Doporučujeme příjezd 15 minut před začátkem obřadu.
-                    </p>
-                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </motion.section>
-
-
-        {/* Občerstvení */}
-        <motion.section
-          id="menu"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-16"
-        >
-          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-sage/20 rounded-full">
-                  <Utensils className="text-sage" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal">Občerstvení</h3>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h4 className="font-semibold text-charcoal mb-4">Hlavní menu</h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Předkrm</p>
-                      <p className="text-charcoal/70 text-sm">Carpaccio z hovězího s parmazánem</p>
-                    </div>
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Hlavní chod</p>
-                      <p className="text-charcoal/70 text-sm">Pečená kachna s červeným zelím a knedlíky</p>
-                    </div>
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Dezert</p>
-                      <p className="text-charcoal/70 text-sm">Svatební dort a zmrzlinový pohár</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-charcoal mb-4">Nápoje a další</h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Aperitiv</p>
-                      <p className="text-charcoal/70 text-sm">Prosecco, víno, nealko</p>
-                    </div>
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">K hostině</p>
-                      <p className="text-charcoal/70 text-sm">Moravská vína, pivo, nealko nápoje</p>
-                    </div>
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Vegetariánská varianta</p>
-                      <p className="text-charcoal/70 text-sm">Dostupná na požádání</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.section>
-
-        {/* Hudba */}
-        <motion.section
-          id="music"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mb-16"
-        >
-          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-romantic/20 rounded-full">
-                  <Music className="text-romantic" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal">Hudba a zábava</h3>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h4 className="font-semibold text-charcoal mb-4">Hudební program</h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Obřad</p>
-                      <p className="text-charcoal/70 text-sm">Klasická hudba a svatební písně</p>
-                    </div>
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Hostina</p>
-                      <p className="text-charcoal/70 text-sm">Jemná background music</p>
-                    </div>
-                    <div className="p-3 bg-white/30 rounded-lg">
-                      <p className="font-medium text-charcoal">Večerní zábava</p>
-                      <p className="text-charcoal/70 text-sm">DJ mix - hity všech generací</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-charcoal mb-4">Hudební přání</h4>
-                  <p className="text-charcoal/70 mb-4">
-                    Máte oblíbenou písničku, při které se radi bavíte? 
-                    Napište nám ji do komentáře na svatební fotografii v galerii!
-                  </p>
-                  
-                  <div className="p-4 bg-white/30 rounded-lg">
-                    <p className="text-charcoal/70 text-sm italic">
-                      "Hudba spojuje srdce a vytváří nezapomenutelné okamžiky. 
-                      Těšíme se, až si s vámi zatancujeme!"
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.section>
+        </motion.div>
 
         {/* Sdílení */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center"
         >
           <Card className="bg-gradient-to-r from-romantic/10 to-love/10 rounded-3xl shadow-lg border border-romantic/20 max-w-md mx-auto">
