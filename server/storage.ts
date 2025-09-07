@@ -1680,14 +1680,21 @@ export class DatabaseStorage implements IStorage {
   // Photo comments operations
   async getPhotoComments(photoId: string): Promise<PhotoComment[]> {
     try {
-      if (!db) throw new Error("Database not available");
-      const comments = await db.select().from(photoComments)
+      if (!photoId) {
+        console.warn("Photo ID is required for getting comments");
+        return [];
+      }
+
+      const comments = await db.select()
+        .from(photoComments)
         .where(eq(photoComments.photoId, photoId))
         .orderBy(desc(photoComments.createdAt));
-      return comments;
+
+      console.log(`Retrieved ${comments.length} comments for photo ${photoId}`);
+      return comments || [];
     } catch (error) {
-      console.error("Failed to get photo comments:", error);
-      return [];
+      console.error("Error getting photo comments:", error);
+      return []; // Return empty array instead of throwing
     }
   }
 

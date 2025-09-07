@@ -1,4 +1,3 @@
-import Navigation from "@/components/navigation";
 import PhotoQuest from "@/components/photo-quest";
 import AuthForm from "@/components/auth-form";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,7 +20,6 @@ export default function PhotoQuestPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Navigation />
       <PhotoQuest />
       
       {/* Footer */}

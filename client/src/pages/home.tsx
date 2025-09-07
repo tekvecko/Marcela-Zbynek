@@ -1,4 +1,3 @@
-import Navigation from "@/components/navigation";
 import HeroSection from "@/components/hero-section";
 import CountdownTimer from "@/components/countdown-timer";
 
@@ -10,7 +9,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <Navigation />
       <HeroSection />
       
       {/* Content that scrolls over the hero background */}

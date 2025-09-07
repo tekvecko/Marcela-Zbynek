@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { useEffect } from "react";
 import AuthForm from "@/components/auth-form";
 import LoadingSpinner from "@/components/ui/loading-spinner";
-import Navigation from "@/components/navigation";
 
 export default function LoginPage() {
   const { user, login, isLoading } = useAuth();
@@ -35,7 +34,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-love">
-      <Navigation />
       <div className="flex items-center justify-center p-4 pt-24">
         <AuthForm onSuccess={(userData, token) => {
           login(userData, token);

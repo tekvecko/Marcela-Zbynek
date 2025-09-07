@@ -65,12 +65,12 @@ const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
       if (rippleColor) return rippleColor;
       
       switch (variant) {
-        case "primary": return "rgba(255, 255, 255, 0.6)";
-        case "secondary": return "rgba(255, 255, 255, 0.4)";
-        case "outline": return "rgba(45, 45, 45, 0.2)";
-        case "ghost": return "rgba(255, 255, 255, 0.3)";
+        case "primary": return "rgba(238, 130, 130, 0.6)"; // Romantická růžová
+        case "secondary": return "rgba(238, 130, 130, 0.4)";
+        case "outline": return "rgba(155, 119, 148, 0.3)"; // Jemnější růžová
+        case "ghost": return "rgba(238, 130, 130, 0.3)";
         case "accent": return "rgba(135, 160, 121, 0.4)";
-        default: return "rgba(255, 255, 255, 0.6)";
+        default: return "rgba(238, 130, 130, 0.6)";
       }
     };
 
