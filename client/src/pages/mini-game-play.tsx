@@ -19,7 +19,6 @@ import { WordMatchGame } from "@/components/mini-games/word-match-game";
 import { CoupleFactsGame } from "@/components/mini-games/couple-facts-game";
 import { ReactionSpeedGame } from "@/components/mini-games/reaction-speed-game";
 import { apiRequest } from "@/lib/queryClient";
-import Navigation from "@/components/navigation";
 
 interface MiniGame {
   id: string;
@@ -143,7 +142,6 @@ export default function MiniGamePlay() {
   if (gameLoading || !game) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-        <Navigation />
         <div className="max-w-4xl mx-auto pt-24">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-romantic"></div>
@@ -156,7 +154,6 @@ export default function MiniGamePlay() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-      <Navigation />
       <div className="max-w-4xl mx-auto space-y-6 pt-24">
 
         {/* Header */}

@@ -28,8 +28,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false }));
 
-// Initialize database on startup
-initializeDatabase().catch(console.error);
+// Database initialization is handled in the main async function
 
 // Initialize admin user
 async function initializeAdminUser() {
@@ -173,21 +172,35 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app);
-  } else {
+  // Setup static files in production
+  if (app.get("env") !== "development") {
     serveStatic(app);
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '0.0.0.0';
 
-  app.listen(port, host, () => {
-    console.log(`8:39:08 PM [express] serving on port ${port}`);
+  const server = app.listen(port, host, (error?: Error) => {
+    if (error) {
+      console.error(`❌ Failed to start server on port ${port}:`, error.message);
+      process.exit(1);
+    }
+    console.log(`✅ Server running on http://${host}:${port}`);
   });
+
+  server.on('error', (error: any) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use. Please stop other processes using this port or set a different PORT environment variable.`);
+    } else {
+      console.error('❌ Server error:', error);
+    }
+    process.exit(1);
+  });
+
+  // Setup Vite in development mode with both app and server
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  }
 })();
 
 async function verifyInitialization() {

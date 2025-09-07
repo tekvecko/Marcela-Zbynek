@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import Navigation from "@/components/navigation";
 import WeddingDetails from "@/components/wedding-details";
 import WeddingTimeline from "@/components/wedding-timeline";
 import OurStory from "@/components/our-story";
@@ -12,7 +11,6 @@ export default function DetailsPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Navigation />
       <WeddingDetails />
       <OurStory />
       
