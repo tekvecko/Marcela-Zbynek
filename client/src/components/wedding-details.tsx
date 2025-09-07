@@ -98,7 +98,7 @@ export default function WeddingDetails() {
                     <Clock className="text-gold" size={20} />
                     <div>
                       <p className="font-semibold text-charcoal">Čas</p>
-                      <p className="text-charcoal/70">14:00 - začátek obřadu</p>
+                      <p className="text-charcoal/70">12:00 - začátek obřadu</p>
                     </div>
                   </div>
 
@@ -219,55 +219,13 @@ export default function WeddingDetails() {
           </Card>
         </motion.section>
 
-        {/* Program dne */}
-        <motion.section
-          id="timeline"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-16"
-        >
-          <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
-            <CardContent className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-love/20 rounded-full">
-                  <Clock className="text-love" size={24} />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-charcoal">Program svatebního dne</h3>
-              </div>
-
-              <div className="space-y-6">
-                {[
-                  { time: "13:30", event: "Sraz hostů", description: "Přivítání a registrace hostů" },
-                  { time: "14:00", event: "Svatební obřad", description: "Oficiální začátek naší cesty" },
-                  { time: "14:30", event: "Gratulace a focení", description: "Společné fotky s hosty" },
-                  { time: "15:00", event: "Raut a občerstvení", description: "Aperitiv a lehké občerstvení" },
-                  { time: "16:00", event: "Svatební hostina", description: "Hlavní jídlo a proslovy" },
-                  { time: "18:00", event: "Krájení dortu", description: "Tradiční krájení svatebního dortu" },
-                  { time: "19:00", event: "První tanec", description: "Náš první tanec jako manželé" },
-                  { time: "19:30", event: "Zábava a tanec", description: "Hudba a tanec do pozdních hodin" }
-                ].map((item, index) => (
-                  <div key={index} className="flex gap-4 items-start">
-                    <div className="bg-love/20 text-love px-3 py-1 rounded-full text-sm font-semibold min-w-[60px] text-center">
-                      {item.time}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-charcoal">{item.event}</h4>
-                      <p className="text-charcoal/70 text-sm">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.section>
 
         {/* Občerstvení */}
         <motion.section
           id="menu"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-16"
         >
           <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
@@ -325,7 +283,7 @@ export default function WeddingDetails() {
           id="music"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
           className="mb-16"
         >
           <Card className="bg-white/20 backdrop-blur-md rounded-3xl shadow-xl border border-white/20">
@@ -379,7 +337,7 @@ export default function WeddingDetails() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center"
         >
           <Card className="bg-gradient-to-r from-romantic/10 to-love/10 rounded-3xl shadow-lg border border-romantic/20 max-w-md mx-auto">
