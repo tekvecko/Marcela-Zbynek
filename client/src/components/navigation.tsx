@@ -30,11 +30,12 @@ export default function Navigation({}: NavigationProps = {}) {
   const { toast } = useToast();
   const [activeDetailSection, setActiveDetailSection] = useState<string>('');
 
-  // Sekce detailů svatby
+  // Sekce detailů svatby - pořadí odpovídá skutečnému pořadí na stránce
   const detailSections = [
     { id: 'ceremony', title: 'Obřad', icon: Calendar },
-    { id: 'venue', title: 'Místo', icon: MapPin },
+    { id: 'story', title: 'Náš příběh', icon: Star },
     { id: 'timeline', title: 'Program', icon: Clock },
+    { id: 'venue', title: 'Místo', icon: MapPin },
     { id: 'menu', title: 'Menu', icon: Utensils },
     { id: 'music', title: 'Hudba', icon: Music }
   ];
