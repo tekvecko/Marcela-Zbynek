@@ -17,6 +17,10 @@ import { users } from "../shared/schema";
 import { LevelSystem } from "./level-system";
 import { AchievementSystem } from "./achievement-system";
 
+// Initialize gamification systems
+const levelSystem = new LevelSystem();
+const achievementSystem = new AchievementSystem();
+
 // Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
@@ -762,6 +766,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (error) {
           console.error('Failed to update quest progress:', error);
+        }
+      }
+
+      // Add experience points and check achievements for photo uploads
+      if (req.user?.email) {
+        try {
+          if (photoData.isVerified) {
+            // Award experience for verified photo upload
+            await levelSystem.addExperience(req.user.email, 20, 'ověřená fotka');
+            console.log(`🌟 Added 20 XP to ${req.user.email} for verified photo upload`);
+          } else {
+            // Award smaller experience for unverified photo attempt
+            await levelSystem.addExperience(req.user.email, 5, 'pokus o fotku');
+            console.log(`🌟 Added 5 XP to ${req.user.email} for photo upload attempt`);
+          }
+
+          // Check for new achievements
+          const newAchievements = await achievementSystem.checkUserAchievements(req.user.email);
+          if (newAchievements.length > 0) {
+            console.log(`🏆 ${newAchievements.length} new achievements unlocked for ${req.user.email}`);
+          }
+        } catch (error) {
+          console.error('Failed to update gamification systems:', error);
         }
       }
 
