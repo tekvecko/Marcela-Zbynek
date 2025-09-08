@@ -1,523 +1,67 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/auth-context";
-import { useIsMobile } from "@/hooks/use-mobile";
-
-import { Trophy, Star, Mail, Lock, User, Loader2, Menu, LogOut, Calendar, MapPin, Clock, Utensils, Music, Sparkles } from "lucide-react";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { UserAvatar } from "@/components/ui/user-avatar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import AuthForm from "@/components/auth-form";
 
-interface NavigationProps {}
+export default function Navigation() {
+  const { user } = useAuth();
 
-export default function Navigation({}: NavigationProps = {}) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [currentScrollY, setCurrentScrollY] = useState(0);
-  const [location] = useLocation();
-  const { user, logout, login } = useAuth();
-  const isMobile = useIsMobile();
-  const { toast } = useToast();
-  const [activeDetailSection, setActiveDetailSection] = useState<string>('');
-
-  // Sekce detailů svatby - pořadí odpovídá skutečnému pořadí na stránce
-  const detailSections = [
-    { id: 'ceremony', title: 'Obřad', icon: Calendar },
-    { id: 'story', title: 'Náš příběh', icon: Star },
-    { id: 'timeline', title: 'Program', icon: Clock },
-    { id: 'venue', title: 'Místo', icon: MapPin },
-    { id: 'menu', title: 'Menu', icon: Utensils },
-    { id: 'music', title: 'Hudba', icon: Music }
-  ];
-
-  // Sledování aktivní sekce při scrollování na stránce detailů - optimalizováno s throttling
-  useEffect(() => {
-    if (location === '/details') {
-      let ticking = false;
-      
-      const handleScroll = () => {
-        if (!ticking) {
-          requestAnimationFrame(() => {
-            const sections = detailSections.map(section => section.id);
-            let currentSection = '';
-
-            for (const sectionId of sections) {
-              const element = document.getElementById(sectionId);
-              if (element) {
-                const rect = element.getBoundingClientRect();
-                if (rect.top <= 150 && rect.bottom >= 150) {
-                  currentSection = sectionId;
-                  break;
-                }
-              }
-            }
-
-            if (currentSection && currentSection !== activeDetailSection) {
-              setActiveDetailSection(currentSection);
-            }
-            ticking = false;
-          });
-          ticking = true;
-        }
-      };
-
-      window.addEventListener('scroll', handleScroll, { passive: true });
-
-      // Check initial position
-      const timer = setTimeout(handleScroll, 100);
-
-      return () => {
-        window.removeEventListener('scroll', handleScroll);
-        clearTimeout(timer);
-      };
-    }
-  }, [location, activeDetailSection]);
-
-  // Funkce pro scrollování na sekci
-  const scrollToSection = (sectionId: string, smooth: boolean = true) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const navHeight = 120; // Adjust based on your navigation height
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - navHeight;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: smooth ? 'smooth' : 'auto'
-      });
-
-      setActiveDetailSection(sectionId);
-    }
+  const handleLogout = () => {
+    window.location.href = '/api/logout';
   };
-
-  // Navigation items - simplified
-  const navigationItems = [
-    { href: '/', label: 'Domů', icon: '🏠', exact: true },
-    { href: '/photo-quest', label: 'Foto výzvy', icon: '📸', exact: true },
-    { href: '/gallery', label: 'Galerie', icon: '🖼️', exact: true },
-    { href: '/details', label: 'Detaily', icon: '💒', exact: true },
-    { href: '/profile', label: 'Profil', icon: '⭐', exact: true },
-    ...(user?.isAdmin ? [{ href: '/admin', label: 'Admin', icon: '⚙️', exact: true }] : [])
-  ];
-
-  // Login form state
-  const [loginFormData, setLoginFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
-
-  // Login schema
-  const loginSchema = z.object({
-    email: z.string().email("Neplatný e-mail"),
-    password: z.string().min(6, "Heslo musí mít alespoň 6 znaků"),
-  });
-
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (data: typeof loginFormData) => {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      const token = data.token;
-      localStorage.setItem("auth_token", token);
-      localStorage.setItem("auth_user", JSON.stringify(data.user));
-      login(data.user, token);
-      setIsLoginDropdownOpen(false);
-      setLoginFormData({ email: "", password: "" });
-      setLoginErrors({});
-      toast({
-        title: "Přihlášení úspěšné!",
-        description: `Vítejte${data.user.firstName ? `, ${data.user.firstName}` : ""}!`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Chyba přihlášení",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // User level removed from navigation - not needed for display
-
-  // Scroll-based navigation hiding - optimized
-  useEffect(() => {
-    let previousScrollY = window.scrollY;
-    let ticking = false;
-    let timeout: NodeJS.Timeout;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const scrollDiff = Math.abs(scrollY - previousScrollY);
-
-          // Only update if significant scroll change
-          if (scrollDiff > 5) {
-            if (scrollY > previousScrollY && scrollY > 100) {
-              setIsVisible(false);
-            } else {
-              setIsVisible(true);
-            }
-            previousScrollY = scrollY;
-          }
-          
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    // Debounce scroll events slightly
-    const debouncedHandleScroll = () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(handleScroll, 10);
-    };
-
-    setIsVisible(true);
-    window.addEventListener('scroll', debouncedHandleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', debouncedHandleScroll);
-      clearTimeout(timeout);
-    };
-  }, []);
-
-  // Handle login form input changes
-  const handleLoginInputChange = (field: string, value: string) => {
-    setLoginFormData(prev => ({ ...prev, [field]: value }));
-    if (loginErrors[field]) {
-      setLoginErrors(prev => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  // Handle login form submission
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const validatedData = loginSchema.parse(loginFormData);
-      await loginMutation.mutateAsync(validatedData);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setLoginErrors(fieldErrors);
-      }
-    }
-  };
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setIsMenuOpen(false);
-      toast({
-        title: "Odhlášení úspěšné",
-        description: "Byly jste úspěšně odhlášeni.",
-      });
-    } catch (error) {
-      toast({
-        title: "Chyba při odhlášení",
-        description: "Došlo k chybě při odhlášení.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Toggle login dropdown
-  const handleLoginDropdownToggle = () => {
-    setIsLoginDropdownOpen(!isLoginDropdownOpen);
-  };
-
-  const [showLoginDropdown, setShowLoginDropdown] = useState(false); // State for login dialog
-
-  // Mobile menu state management
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(prev => !prev);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
-
 
   return (
-    <>
-      {/* Modern Floating Navigation */}
-      <motion.nav
-        className="sticky top-0 z-50 w-full"
-        animate={{
-          y: isVisible ? 0 : -100
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 25
-        }}
-      >
-        <div className="bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200">
-          {/* Main Navigation Bar */}
-          <div className="flex items-center justify-between px-6 py-4">
-            {/* Mobile Menu and Title */}
-            <div className="flex items-center space-x-4">
-              {/* Mobile Menu Button */}
-              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="lg:hidden p-2"
-                    data-testid="nav-mobile-trigger"
-                  >
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80 bg-white/95 backdrop-blur-md">
-                  <SheetHeader>
-                    <SheetTitle className="text-charcoal flex items-center gap-2">
-                      <Sparkles className="text-blush" size={20} />
-                      Svatební menu
-                    </SheetTitle>
-                  </SheetHeader>
-
-                  <div className="mt-6 space-y-2">
-                    {navigationItems.map(({ href, label, icon, exact }) => {
-                      const isActive = exact ? location === href : location.startsWith(href);
-                      return (
-                        <a
-                          key={href}
-                          href={href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                            isActive
-                              ? 'bg-romantic text-white'
-                              : 'text-charcoal hover:bg-romantic/10'
-                          }`}
-                          data-testid={`mobile-nav-${href.replace('/', '') || 'home'}`}
-                        >
-                          <span className="text-lg">{icon}</span>
-                          <span className="font-medium">{label}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    {user ? (
-                      <>
-                        <div className="flex items-center space-x-3 mb-4">
-                          <div>
-                            <div className="font-medium text-charcoal">
-                              {user.firstName} {user.lastName}
-                            </div>
-                            <div className="text-sm text-charcoal/60">{user.email}</div>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={handleLogout}
-                          variant="outline"
-                          className="w-full"
-                          data-testid="mobile-nav-logout"
-                        >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          Odhlásit se
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setShowLoginDropdown(true);
-                        }}
-                        variant="outline"
-                        className="w-full"
-                        data-testid="mobile-nav-login"
-                      >
-                        <Lock className="h-4 w-4 mr-2" />
-                        Přihlásit se
-                      </Button>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
-
-              <div className="font-script text-2xl text-romantic font-bold tracking-wide">
-                Marcela ❤️ Zbyněk
-              </div>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map(({ href, label, icon, exact }) => {
-                const isActive = exact ? location === href : location.startsWith(href);
-                return (
-                  <motion.a
-                    key={href}
-                    href={href}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-romantic text-white shadow-lg'
-                        : 'text-charcoal hover:bg-romantic/10 hover:text-romantic'
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    data-testid={`nav-${href.replace('/', '') || 'home'}`}
-                  >
-                    <span>{icon}</span>
-                    <span>{label}</span>
-                  </motion.a>
-                );
-              })}
-            </div>
-
-            {/* User Section with Useful Features */}
-            <div className="flex items-center space-x-3">
-              {user ? (
-                <div className="flex items-center space-x-3">
-
-                  <div className="hidden md:block">
-                    <div className="text-sm font-medium text-charcoal">
-                      {user.firstName} {user.lastName}
-                    </div>
-                  </div>
-                  <motion.button
-                    onClick={handleLogout}
-                    className="p-2 rounded-full hover:bg-red-100 transition-colors"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    data-testid="nav-logout-btn"
-                  >
-                    <LogOut className="h-5 w-5 text-red-500" />
-                  </motion.button>
-                </div>
-              ) : (
-                <Button
-                  onClick={() => setShowLoginDropdown(true)} // Use dialog state
-                  variant="outline"
-                  size="sm"
-                  data-testid="nav-login-btn"
-                >
-                  Přihlásit se
-                </Button>
-              )}
-            </div>
+    <nav className="bg-card border-b border-border px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <h1 className="text-2xl font-bold text-primary">
+            <i className="fas fa-gamepad mr-2"></i>
+            Gaming Platform
+          </h1>
+          <div className="hidden md:flex space-x-4">
+            <a href="/" className="text-foreground hover:text-primary transition-colors" data-testid="link-dashboard">
+              Dashboard
+            </a>
+            <a href="/profile" className="text-muted-foreground hover:text-primary transition-colors" data-testid="link-profile">
+              Profil
+            </a>
+            <a href="#" className="text-muted-foreground hover:text-primary transition-colors" data-testid="link-challenges">
+              Výzvy
+            </a>
+            <a href="#" className="text-muted-foreground hover:text-primary transition-colors" data-testid="link-minigames">
+              Mini-hry
+            </a>
+            <a href="#" className="text-muted-foreground hover:text-primary transition-colors" data-testid="link-leaderboard">
+              Žebříček
+            </a>
           </div>
         </div>
-
-        {/* Dodatečná navigace pro detaily svatby - pouze na stránce /details */}
-        <AnimatePresence>
-          {location === '/details' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white/90 backdrop-blur-md border-t border-gray-200/50"
-            >
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <div className="flex items-center justify-center">
-                  {/* Mobile scrollable menu */}
-                  <div className="lg:hidden flex overflow-x-auto space-x-2 scrollbar-hide w-full">
-                    {detailSections.map((section) => {
-                      const Icon = section.icon;
-                      const isActive = activeDetailSection === section.id;
-                      return (
-                        <motion.button
-                          key={section.id}
-                          onClick={() => scrollToSection(section.id)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                            isActive
-                              ? 'bg-romantic text-white shadow-md'
-                              : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Icon size={16} />
-                          <span>{section.title}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Desktop centered menu */}
-                  <div className="hidden lg:flex items-center space-x-2">
-                    {detailSections.map((section) => {
-                      const Icon = section.icon;
-                      const isActive = activeDetailSection === section.id;
-                      return (
-                        <motion.button
-                          key={section.id}
-                          onClick={() => scrollToSection(section.id)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                            isActive
-                              ? 'bg-romantic text-white shadow-lg scale-105'
-                              : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Icon size={16} />
-                          <span>{section.title}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
-
-
-
-
-      {/* Login Dialog for non-authenticated users */}
-      {!user && (
-        <Dialog open={showLoginDropdown} onOpenChange={setShowLoginDropdown}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-script text-charcoal text-center">
-                Přihlášení
-              </DialogTitle>
-              <DialogDescription className="text-charcoal/60 text-center">
-                Přihlaste se pro přístup k fotovýzvám a galerii
-              </DialogDescription>
-            </DialogHeader>
-            <AuthForm onSuccess={login} />
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+        <div className="flex items-center space-x-4">
+          {/* Notification Bell */}
+          <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors" data-testid="button-notifications">
+            <i className="fas fa-bell text-lg"></i>
+            <span className="absolute -top-1 -right-1 bg-destructive text-xs rounded-full px-1.5 py-0.5 pulse-notification" data-testid="text-notification-count">
+              
+            </span>
+          </button>
+          
+          {/* User Avatar */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center" data-testid="img-avatar">
+              {(user as any)?.profileImageUrl ? (
+                <img 
+                  src={(user as any).profileImageUrl} 
+                  alt="Profile" 
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <i className="fas fa-user text-sm text-primary-foreground"></i>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout} data-testid="button-logout">
+              Odhlásit se
+            </Button>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 }
