@@ -1,10 +1,10 @@
-
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Navigation from "@/components/navigation";
 import { 
   Trophy, 
@@ -20,29 +20,74 @@ import {
 } from "lucide-react";
 
 export default function Profile() {
-  // Fetch user level
-  const { data: userLevel, isLoading: levelLoading } = useQuery({
-    queryKey: ["/api/user/level"],
-    staleTime: 30 * 1000, // 30 seconds
-  });
-
-  // Fetch user achievements
-  const { data: userAchievements = [], isLoading: achievementsLoading } = useQuery({
-    queryKey: ["/api/user/achievements"],
-    staleTime: 60 * 1000, // 1 minute
-  });
-
-  // Fetch all achievements for comparison
-  const { data: allAchievements = [], isLoading: allAchievementsLoading } = useQuery({
-    queryKey: ["/api/achievements"],
+  // Fetch user level with optimized caching
+  const { data: userLevel, isLoading: levelLoading, error: levelError } = useQuery({
+    queryKey: ["user", "level"],
+    queryFn: () => fetch("/api/user/level").then(res => res.json()),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
+    enabled: true,
   });
 
-  // Fetch user streaks
-  const { data: userStreaks, isLoading: streaksLoading } = useQuery({
-    queryKey: ["/api/user/streaks"],
-    staleTime: 30 * 1000, // 30 seconds
+  // Fetch user achievements with optimized caching
+  const { data: userAchievements = [], isLoading: achievementsLoading, error: achievementsError } = useQuery({
+    queryKey: ["user", "achievements"],
+    queryFn: () => fetch("/api/user/achievements").then(res => res.json()),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
+    enabled: true,
   });
+
+  // Fetch all achievements in parallel - remove dependency
+  const { data: allAchievements = [], isLoading: allAchievementsLoading } = useQuery({
+    queryKey: ["achievements", "all"],
+    queryFn: () => fetch("/api/achievements").then(res => res.json()),
+    staleTime: 30 * 60 * 1000, // 30 minutes - static data
+    gcTime: 60 * 60 * 1000, // 1 hour
+    retry: 1,
+    refetchOnWindowFocus: false,
+    enabled: true,
+  });
+
+  // Fetch user streaks with optimized caching
+  const { data: userStreaks, isLoading: streaksLoading, error: streaksError } = useQuery({
+    queryKey: ["user", "streaks"],
+    queryFn: () => fetch("/api/user/streaks").then(res => res.json()),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
+    enabled: true,
+  });
+
+  // Memoized calculations to avoid re-computation
+  const { experienceProgress, unlockedAchievements, lockedAchievements } = useMemo(() => {
+    const progress = userLevel?.experienceToNext && userLevel?.experience
+      ? ((userLevel.experience % 1000) / 1000) * 100 
+      : 0;
+
+    const unlockedIds = Array.isArray(userAchievements) 
+      ? userAchievements.map((ua: any) => ua.achievementId).filter(Boolean)
+      : [];
+
+    const unlocked = Array.isArray(allAchievements) 
+      ? allAchievements.filter((a: any) => a && a.id && unlockedIds.includes(a.id))
+      : [];
+
+    const locked = Array.isArray(allAchievements)
+      ? allAchievements.filter((a: any) => a && a.id && !unlockedIds.includes(a.id))
+      : [];
+
+    return {
+      experienceProgress: progress,
+      unlockedAchievements: unlocked,
+      lockedAchievements: locked
+    };
+  }, [userLevel, userAchievements, allAchievements]);
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -64,10 +109,36 @@ export default function Profile() {
     }
   };
 
-  if (levelLoading || achievementsLoading || streaksLoading) {
+  // Only show full loading for critical data
+  const isCriticalLoading = levelLoading && achievementsLoading && streaksLoading;
+
+  // Show error state only if ALL critical queries fail
+  if (levelError && achievementsError && streaksError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto pt-20 md:pt-24">
+          <div className="text-center py-12">
+            <Trophy size={48} className="text-charcoal/30 mx-auto mb-4" />
+            <p className="text-charcoal/70 mb-4">Nepodařilo se načíst profil</p>
+            <p className="text-charcoal/50 text-sm mb-4">
+              {levelError && `Úroveň: ${levelError.message}`}<br/>
+              {achievementsError && `Achievementy: ${achievementsError.message}`}<br/>
+              {streaksError && `Série: ${streaksError.message}`}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Zkusit znovu
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading only if ALL critical data is loading
+  if (isCriticalLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
+        <div className="max-w-6xl mx-auto pt-20 md:pt-24">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-romantic"></div>
             <p className="mt-4 text-charcoal/70">Načítání profilu...</p>
@@ -77,32 +148,18 @@ export default function Profile() {
     );
   }
 
-  const experienceProgress = userLevel?.experienceToNext 
-    ? ((userLevel.experience % 1000) / 1000) * 100 
-    : 0;
-
-  const unlockedAchievementIds = Array.isArray(userAchievements) 
-    ? userAchievements.map((ua: any) => ua.achievementId)
-    : [];
-  const unlockedAchievements = Array.isArray(allAchievements) 
-    ? allAchievements.filter((a: any) => unlockedAchievementIds.includes(a.id))
-    : [];
-  const lockedAchievements = Array.isArray(allAchievements)
-    ? allAchievements.filter((a: any) => !unlockedAchievementIds.includes(a.id))
-    : [];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage">
       <Navigation />
       <div className="max-w-6xl mx-auto space-y-8 p-4 md:p-8 pt-20 md:pt-24">
-        
+
         {/* Profile Header */}
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-white/30">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-24 h-24 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center">
               <span className="text-4xl">{userLevel?.badge || "🌟"}</span>
             </div>
-            
+
             <div className="flex-1 text-center md:text-left">
               <h1 className="font-display text-3xl font-bold text-charcoal mb-2">
                 {userLevel?.title || "Svatební nováček"}
@@ -110,13 +167,19 @@ export default function Profile() {
               <p className="text-lg text-charcoal/70 mb-4">
                 Úroveň {userLevel?.level || 1} • {userLevel?.experience || 0} XP
               </p>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-charcoal/60">
                   <span>Pokrok k další úrovni</span>
-                  <span>{userLevel?.experienceToNext || 0} XP zbývá</span>
+                  <span>
+                    {levelLoading ? (
+                      <div className="h-4 w-20 bg-charcoal/10 rounded animate-pulse inline-block"></div>
+                    ) : (
+                      `${userLevel?.experienceToNext || 0} XP zbývá`
+                    )}
+                  </span>
                 </div>
-                <Progress value={experienceProgress} className="w-full" />
+                <Progress value={levelLoading ? 0 : experienceProgress} className="w-full" />
               </div>
             </div>
 
@@ -164,21 +227,21 @@ export default function Profile() {
                 <CardContent className="space-y-4">
                   {unlockedAchievements.map((achievement: any) => (
                     <div key={achievement.id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gold/10 to-yellow-400/10 rounded-lg border border-gold/20">
-                      <span className="text-2xl">{achievement.icon}</span>
+                      <span className="text-2xl">{achievement.icon || "🏆"}</span>
                       <div className="flex-1">
-                        <h4 className="font-medium text-charcoal">{achievement.title}</h4>
-                        <p className="text-sm text-charcoal/60">{achievement.description}</p>
+                        <h4 className="font-medium text-charcoal">{achievement.title || "Neznámý achievement"}</h4>
+                        <p className="text-sm text-charcoal/60">{achievement.description || "Popis není k dispozici"}</p>
                         <div className="flex items-center gap-2 mt-2">
-                          {getTypeIcon(achievement.type)}
-                          <Badge className={getRarityColor(achievement.rarity)}>
-                            {achievement.rarity}
+                          {getTypeIcon(achievement.type || "special")}
+                          <Badge className={getRarityColor(achievement.rarity || "common")}>
+                            {achievement.rarity || "common"}
                           </Badge>
-                          <span className="text-xs text-gold">+{achievement.points} bodů</span>
+                          <span className="text-xs text-gold">+{achievement.points || 0} bodů</span>
                         </div>
                       </div>
                     </div>
                   ))}
-                  
+
                   {unlockedAchievements.length === 0 && (
                     <div className="text-center py-8">
                       <Trophy size={48} className="text-charcoal/30 mx-auto mb-4" />
@@ -198,22 +261,29 @@ export default function Profile() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {lockedAchievements.slice(0, 8).map((achievement: any) => (
-                    <div key={achievement.id} className="flex items-center gap-4 p-4 bg-white/50 rounded-lg border border-white/30 opacity-70">
-                      <span className="text-2xl grayscale">{achievement.icon}</span>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-charcoal">{achievement.title}</h4>
-                        <p className="text-sm text-charcoal/60">{achievement.description}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          {getTypeIcon(achievement.type)}
-                          <Badge variant="outline" className="text-xs">
-                            {achievement.rarity}
-                          </Badge>
-                          <span className="text-xs text-charcoal/50">+{achievement.points} bodů</span>
+                  {allAchievementsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-charcoal/30"></div>
+                      <p className="mt-2 text-charcoal/60 text-sm">Načítání achievementů...</p>
+                    </div>
+                  ) : (
+                    lockedAchievements.slice(0, 8).map((achievement: any) => (
+                      <div key={achievement.id} className="flex items-center gap-4 p-4 bg-white/50 rounded-lg border border-white/30 opacity-70">
+                        <span className="text-2xl grayscale">{achievement.icon || "🏆"}</span>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-charcoal">{achievement.title || "Neznámý achievement"}</h4>
+                          <p className="text-sm text-charcoal/60">{achievement.description || "Popis není k dispozici"}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            {getTypeIcon(achievement.type || "special")}
+                            <Badge variant="outline" className="text-xs">
+                              {achievement.rarity || "common"}
+                            </Badge>
+                            <span className="text-xs text-charcoal/50">+{achievement.points || 0} bodů</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </CardContent>
               </Card>
             </div>

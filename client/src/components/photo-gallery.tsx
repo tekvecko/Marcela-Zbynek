@@ -794,24 +794,6 @@ export default function PhotoGallery() {
                         size="sm"
                       />
                     )}
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <div className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-                          <MoreHorizontal size={20} className="text-gray-500" />
-                        </div>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleDownload(photo)}>
-                          <Download size={16} className="mr-2" />
-                          Stáhnout fotku
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Flag size={16} className="mr-2" />
-                          Nahlásit fotku
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -1214,6 +1196,28 @@ export default function PhotoGallery() {
                                 : "Klikněte pro lajk"}
                           </TooltipContent>
                         </Tooltip>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <GlassButton
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 hover:bg-gray-100 transition-colors"
+                            >
+                              <MoreHorizontal size={20} className="text-gray-500" />
+                            </GlassButton>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleDownload(selectedPhoto)}>
+                              <Download size={16} className="mr-2" />
+                              Stáhnout fotku
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Flag size={16} className="mr-2" />
+                              Nahlásit fotku
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
 
