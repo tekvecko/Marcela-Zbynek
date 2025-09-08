@@ -1,269 +1,73 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import { initializeDefaultChallenges } from "./init-challenges";
-import { initializeDefaultMiniGames } from "./init-mini-games";
-import { authenticateUser as authenticateToken } from "./middleware/auth";
-import { testDatabaseConnection, dbName, startDatabaseHealthMonitoring } from "./db";
-import { initializeDatabase } from "./init-database";
-import { initializeSecrets } from "./init-secrets";
-import { storage } from "./storage";
-import { getAllMiniGames } from "./mini-games-storage";
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { router } from './routes';
+import { storage } from './storage';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
-// CORS configuration
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+// API routes
+app.use(router);
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: false }));
-
-// Database initialization is handled in the main async function
-
-// Initialize admin user
-async function initializeAdminUser() {
-  const adminEmail = process.env.ADMIN_EMAIL || `${process.env.REPL_OWNER}@admin.local` || 'zbkocian@seznam.com';
+// Initialize default challenges
+async function initializeDefaultChallenges() {
   try {
-    const existingAdmin = await storage.getAuthUserByEmail(adminEmail);
-    if (!existingAdmin) {
-      await storage.createAuthUser({
-        email: adminEmail,
-        firstName: 'Admin',
-        lastName: 'User',
-        passwordHash: ''
-      });
-      console.log(`✅ Created admin account: ${adminEmail}`);
-    } else {
-      console.log(`✅ Admin account already exists: ${adminEmail}`);
+    const existingChallenges = await storage.getChallenges();
+    if (existingChallenges.length === 0) {
+      console.log('Initializing default challenges...');
+      
+      const defaultChallenges = [
+        {
+          title: 'Golden Hour Magic',
+          description: 'Capture the perfect golden hour shot showcasing dramatic lighting and warm tones. Focus on the interplay between light and shadow.',
+          points: 500,
+          imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=300',
+          daysLeft: 3,
+          participants: 234,
+          submissions: 89,
+        },
+        {
+          title: 'Urban Stories',
+          description: 'Document life in the city through candid street photography. Capture authentic moments and human connections in urban environments.',
+          points: 750,
+          imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=300',
+          daysLeft: 7,
+          participants: 156,
+          submissions: 67,
+        },
+        {
+          title: 'Macro Wonders',
+          description: 'Explore the tiny world through macro photography. Discover intricate details and patterns in nature\'s smallest subjects.',
+          points: 300,
+          imageUrl: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=300',
+          daysLeft: 5,
+          participants: 98,
+          submissions: 43,
+        },
+      ];
+
+      for (const challenge of defaultChallenges) {
+        await storage.createChallenge(challenge);
+      }
+
+      console.log('Default challenges initialized successfully!');
     }
-  } catch (error: any) {
-    console.error('Failed to initialize admin user:', error.message);
+  } catch (error) {
+    console.error('Failed to initialize default challenges:', error);
   }
 }
 
-// Security headers middleware
-app.use((req, res, next) => {
-  // Force HTTPS in production
-  if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
-    return res.redirect(`https://${req.header('host')}${req.url}`);
-  }
-
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-
-  // Content Security Policy
-  res.setHeader('Content-Security-Policy', [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: https:",
-    "connect-src 'self'"
-  ].join('; '));
-
-  next();
+// Serve React app for all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-
-      // Only log response data in development and sanitize sensitive data
-      if (capturedJsonResponse && process.env.NODE_ENV === 'development') {
-        const sanitizedResponse = { ...capturedJsonResponse };
-
-        // Remove sensitive fields from logs
-        if (sanitizedResponse.email) sanitizedResponse.email = '***@***.***';
-        if (sanitizedResponse.access_token) sanitizedResponse.access_token = '[REDACTED]';
-        if (sanitizedResponse.refresh_token) sanitizedResponse.refresh_token = '[REDACTED]';
-        if (sanitizedResponse.id && sanitizedResponse.id.length > 10) {
-          sanitizedResponse.id = sanitizedResponse.id.substring(0, 6) + '***';
-        }
-
-        logLine += ` :: ${JSON.stringify(sanitizedResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`Server running on port ${PORT}`);
+  await initializeDefaultChallenges();
 });
-
-(async () => {
-  // Zkontroluj a inicializuj SECRETS
-  const secretsReady = await initializeSecrets();
-  if (!secretsReady) {
-    console.log("❌ Server se nespustí bez povinných SECRETS");
-    process.exit(1);
-  }
-
-  await registerRoutes(app);
-
-  // Test databázového připojení
-  const dbConnected = await testDatabaseConnection();
-  if (dbConnected) {
-    console.log(`🗄️  Databáze (${dbName}) je připravena`);
-  } else {
-    console.log("🗄️  Databáze není dostupná, používám in-memory storage");
-  }
-
-  // Spustit monitoring databáze pro automatické přepínání
-  startDatabaseHealthMonitoring();
-
-  // Ověř komponenty před inicializací
-  const { verifyAllComponents } = await import("./verify-components");
-  const componentsReady = await verifyAllComponents();
-
-  if (!componentsReady) {
-    console.log("⚠️  Některé komponenty chybí, pokračuji s omezenou funkcionalitou");
-  }
-
-  // Inicializuj výchozí fotovýzvy a mini-hry
-  try {
-    await initializeDefaultChallenges();
-    console.log("✅ Fotovýzvy inicializovány");
-    await initializeDefaultMiniGames();
-    console.log("✅ Mini-hry inicializovány");
-  } catch (error) {
-    console.error("❌ Chyba při inicializaci:", error);
-    console.log("⚠️  Inicializace se nezdařila, aplikace bude fungovat s omezenou funkcionalitou");
-  }
-
-  // Kompletní verifikace inicializace
-  await verifyInitialization();
-
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // Setup static files in production
-  if (app.get("env") !== "development") {
-    serveStatic(app);
-  }
-
-  const port = parseInt(process.env.PORT || "5000", 10);
-  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '0.0.0.0';
-
-  const server = app.listen(port, host, (error?: Error) => {
-    if (error) {
-      console.error(`❌ Failed to start server on port ${port}:`, error.message);
-      process.exit(1);
-    }
-    console.log(`✅ Server running on http://${host}:${port}`);
-  });
-
-  server.on('error', (error: any) => {
-    if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${port} is already in use. Please stop other processes using this port or set a different PORT environment variable.`);
-    } else {
-      console.error('❌ Server error:', error);
-    }
-    process.exit(1);
-  });
-
-  // Setup Vite in development mode with both app and server
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  }
-})();
-
-async function verifyInitialization() {
-  console.log("🔍 Ověřuji kompletnost inicializace...");
-
-  const issues = [];
-
-  try {
-    // Check database connection
-    const challengesCount = await storage.getQuestChallenges();
-    if (challengesCount.length === 0) {
-      issues.push("❌ Žádné fotovýzvy v databázi");
-    } else {
-      console.log(`✅ Fotovýzvy: ${challengesCount.length} načteno`);
-    }
-
-    // Check mini games
-    const gamesCount = await getAllMiniGames();
-    if (gamesCount.length === 0) {
-      issues.push("❌ Žádné mini-hry v databázi");
-    } else {
-      console.log(`✅ Mini-hry: ${gamesCount.length} načteno`);
-    }
-
-    // Check admin user
-    const adminEmail = process.env.ADMIN_EMAIL || `${process.env.REPL_OWNER}@admin.local`;
-    const adminUser = await storage.getAuthUserByEmail(adminEmail);
-    if (!adminUser) {
-      issues.push("❌ Admin uživatel neexistuje");
-    } else {
-      console.log(`✅ Admin uživatel: ${adminEmail}`);
-    }
-
-    // Check upload directory
-    const fs = await import('fs');
-    const path = await import('path');
-    const uploadsDir = path.join(process.cwd(), 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-      console.log("✅ Upload složka vytvořena");
-    } else {
-      console.log("✅ Upload složka existuje");
-    }
-
-    // Check client build
-    const clientDir = path.join(process.cwd(), 'client');
-    if (!fs.existsSync(clientDir)) {
-      issues.push("❌ Client složka neexistuje");
-    } else {
-      console.log("✅ Client aplikace je dostupná");
-    }
-
-    if (issues.length > 0) {
-      console.log("\n⚠️  Nalezeny problémy při inicializaci:");
-      issues.forEach(issue => console.log(issue));
-      console.log("\n🔧 Pokračuji ve spuštění, ale některé funkce nemusí fungovat...");
-    } else {
-      console.log("\n🎉 Všechny komponenty úspěšně inicializovány!");
-      console.log("📱 Aplikace je připravena k použití");
-    }
-
-  } catch (error) {
-    console.error("❌ Chyba při verifikaci inicializace:", error);
-    console.log("🔧 Pokračuji ve spuštění s možnými omezeními...");
-  }
-}
