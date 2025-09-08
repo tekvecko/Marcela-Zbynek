@@ -1,120 +1,312 @@
-import { pgTable, text, integer, timestamp, boolean, serial, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, index, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  avatar: text("avatar"),
-  points: integer("points").default(0).notNull(),
-  level: integer("level").default(1).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  passwordHash: varchar("password_hash"),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const challenges = pgTable("challenges", {
-  id: serial("id").primaryKey(),
+
+
+export const questChallenges = pgTable("quest_challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  points: integer("points").notNull(),
-  imageUrl: text("image_url").notNull(),
-  daysLeft: integer("days_left").notNull(),
-  participants: integer("participants").default(0).notNull(),
-  submissions: integer("submissions").default(0).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  targetPhotos: integer("target_photos").notNull().default(1),
+  points: integer("points").notNull().default(10),
+  isActive: boolean("is_active").notNull().default(true),
+  unlockDate: timestamp("unlock_date"),
+  unlockOrder: integer("unlock_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-export const submissions = pgTable("submissions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  challengeId: integer("challenge_id").notNull().references(() => challenges.id),
-  title: text("title").notNull(),
-  description: text("description"),
-  imageUrl: text("image_url").notNull(),
-  camera: text("camera"),
+export const uploadedPhotos = pgTable("uploaded_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  uploaderName: text("uploader_name").notNull(),
+  questId: varchar("quest_id").references(() => questChallenges.id),
+  likes: integer("likes").notNull().default(0),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationScore: integer("verification_score").default(0), // 0-100
+  aiAnalysis: text("ai_analysis"),
+  // Rozšířená AI metadata
+  technicalQuality: json("technical_quality"),
+  detectedObjects: json("detected_objects"),
+  weddingElements: json("wedding_elements"),
+  atmosphere: text("atmosphere"),
+  peopleCount: integer("people_count"),
   location: text("location"),
-  points: integer("points").default(0).notNull(),
-  isApproved: boolean("is_approved").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  emotions: json("emotions"),
+  category: text("category"),
+  tags: json("tags"),
+  creativeTips: text("creative_tips"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_photos_created_at").on(table.createdAt),
+  index("idx_photos_quest_id").on(table.questId),
+  index("idx_photos_uploader").on(table.uploaderName),
+  index("idx_photos_verified").on(table.isVerified),
+]);
+
+export const photoComments = pgTable("photo_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  photoId: varchar("photo_id").notNull().references(() => uploadedPhotos.id, { onDelete: "cascade" }),
+  commenterEmail: text("commenter_email").notNull(),
+  commenterName: text("commenter_name").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_comments_photo_id").on(table.photoId),
+  index("idx_comments_created_at").on(table.createdAt),
+]);
+
+export const photoLikes = pgTable("photo_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  photoId: varchar("photo_id").notNull().references(() => uploadedPhotos.id),
+  voterName: text("voter_name").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-export const achievements = pgTable("achievements", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // 'first_submission', 'streak', 'community_favorite'
+export const questProgress = pgTable("quest_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  questId: varchar("quest_id").notNull().references(() => questChallenges.id),
+  participantName: text("participant_name").notNull(),
+  photosUploaded: integer("photos_uploaded").notNull().default(0),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_progress_participant").on(table.participantName),
+  index("idx_progress_quest_participant").on(table.questId, table.participantName),
+  index("idx_progress_completed").on(table.isCompleted),
+]);
+
+// Mini-games tables
+export const miniGames = pgTable("mini_games", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
-  points: integer("points").notNull(),
-  icon: text("icon").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  description: text("description").notNull(),
+  gameType: varchar("game_type").notNull(), // 'trivia', 'memory', 'word_match', 'couple_facts'
+  gameData: jsonb("game_data").notNull(), // Questions, answers, pairs, etc.
+  points: integer("points").notNull().default(10),
+  timeLimit: integer("time_limit").default(60), // seconds
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-export const userStats = pgTable("user_stats", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  week: text("week").notNull(), // Format: YYYY-WW
-  photosSubmitted: integer("photos_submitted").default(0).notNull(),
-  challengesJoined: integer("challenges_joined").default(0).notNull(),
-  pointsEarned: integer("points_earned").default(0).notNull(),
-  rankChange: integer("rank_change").default(0).notNull(),
-});
+export const miniGameScores = pgTable("mini_game_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  gameId: varchar("game_id").notNull().references(() => miniGames.id),
+  playerEmail: text("player_email").notNull(),
+  playerName: text("player_name").notNull(),
+  score: integer("score").notNull().default(0),
+  maxScore: integer("max_score").notNull(),
+  timeSpent: integer("time_spent"), // seconds
+  gameData: jsonb("game_data"), // Player's answers, choices, etc.
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_game_scores_game").on(table.gameId),
+  index("idx_game_scores_player").on(table.playerEmail),
+  index("idx_game_scores_score").on(table.score),
+]);
 
-// Zod schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+});
+export const upsertUserSchema = createInsertSchema(users).omit({
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertChallengeSchema = createInsertSchema(challenges).omit({
+export const insertQuestChallengeSchema = createInsertSchema(questChallenges).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertSubmissionSchema = createInsertSchema(submissions).omit({
+export const insertUploadedPhotoSchema = createInsertSchema(uploadedPhotos).omit({
   id: true,
   createdAt: true,
-  points: true,
-  isApproved: true,
+  likes: true,
 });
 
-export const insertAchievementSchema = createInsertSchema(achievements).omit({
+export const insertPhotoLikeSchema = createInsertSchema(photoLikes).omit({
+  id: true,
+  createdAt: true,
+}).refine((data) => {
+  // Additional validation for voter name
+  return data.voterName && data.voterName.length <= 255 && data.voterName.includes('@');
+}, {
+  message: "Valid email address required for voter name"
+});
+
+export const insertQuestProgressSchema = createInsertSchema(questProgress).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export const insertAuthUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  profileImageUrl: true,
+  isAdmin: true,
+});
+
+export const insertPhotoCommentSchema = createInsertSchema(photoComments).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertUserStatsSchema = createInsertSchema(userStats).omit({
-  id: true,
+export const loginSchema = z.object({
+  email: z.string().email("Neplatný e-mail"),
+  password: z.string().min(6, "Heslo musí mít alespoň 6 znaků"),
 });
 
-// Types
+export const registerSchema = z.object({
+  email: z.string().email("Neplatný e-mail"),
+  password: z.string().min(6, "Heslo musí mít alespoň 6 znaků"),
+  firstName: z.string().min(1, "Jméno je povinné"),
+  lastName: z.string().min(1, "Příjmení je povinné"),
+});
+
+export const insertMiniGameSchema = createInsertSchema(miniGames).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMiniGameScoreSchema = createInsertSchema(miniGameScores).omit({
+  id: true,
+  createdAt: true,
+});
+
+// User behavior tracking for AI learning
+export const userBehaviorLogs = pgTable("user_behavior_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userEmail: text("user_email").notNull(),
+  actionType: text("action_type").notNull(),
+  details: text("details"),
+  pointsEarned: integer("points_earned").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  achievementId: text("achievement_id").notNull(),
+  unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+  progress: integer("progress").default(0),
+});
+
+export const userStreaks = pgTable("user_streaks", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastActivityDate: timestamp("last_activity_date").defaultNow().notNull(),
+  streakType: text("streak_type").notNull(), // 'photo', 'login', 'challenge'
+});
+
+export const userLevels = pgTable("user_levels", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  level: integer("level").default(1),
+  experience: integer("experience").default(0),
+  title: text("title").default("Začátečník"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// AI learning insights generated from user behavior
+export const aiLearningInsights = pgTable("ai_learning_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  insightType: varchar("insight_type").notNull(), // 'photo_preference', 'challenge_difficulty', 'user_pattern'
+  category: varchar("category").notNull(), // 'technical_quality', 'emotional_content', 'composition'
+  insightData: jsonb("insight_data").notNull(), // Learned patterns and preferences
+  confidence: integer("confidence").notNull().default(0), // 0-100
+  sampleSize: integer("sample_size").notNull().default(0), // Number of data points used
+  lastUpdated: timestamp("last_updated").notNull().default(sql`now()`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => [
+  index("idx_insights_type").on(table.insightType),
+  index("idx_insights_category").on(table.category),
+  index("idx_insights_updated").on(table.lastUpdated),
+]);
+
+export const insertUserBehaviorLogSchema = createInsertSchema(userBehaviorLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAiLearningInsightSchema = createInsertSchema(aiLearningInsights).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true,
+});
+
+// Auth session table for custom authentication
+export const authSessions = pgTable("auth_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  sessionToken: varchar("session_token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertAuthSessionSchema = createInsertSchema(authSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-
-export type Challenge = typeof challenges.$inferSelect;
-export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
-
-export type Submission = typeof submissions.$inferSelect;
-export type InsertSubmission = z.infer<typeof insertSubmissionSchema>;
-
-export type Achievement = typeof achievements.$inferSelect;
-export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
-
-export type UserStats = typeof userStats.$inferSelect;
-export type InsertUserStats = z.infer<typeof insertUserStatsSchema>;
-
-// Extended types for API responses
-export type UserWithProgress = User & {
-  nextLevelProgress: number;
-  pointsToNextLevel: number;
-};
-
-export type ChallengeWithSubmissions = Challenge & {
-  userSubmission?: Submission;
-  hasSubmitted: boolean;
-};
-
-export type LeaderboardEntry = {
-  rank: number;
-  user: User;
-  weeklyStats?: UserStats;
-};
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type AuthUser = User;
+export type InsertAuthUser = z.infer<typeof insertAuthUserSchema>;
+export type AuthSession = typeof authSessions.$inferSelect;
+export type InsertAuthSession = z.infer<typeof insertAuthSessionSchema>;
+export type QuestChallenge = typeof questChallenges.$inferSelect;
+export type InsertQuestChallenge = z.infer<typeof insertQuestChallengeSchema>;
+export type UploadedPhoto = typeof uploadedPhotos.$inferSelect;
+export type InsertUploadedPhoto = z.infer<typeof insertUploadedPhotoSchema>;
+export type PhotoLike = typeof photoLikes.$inferSelect;
+export type InsertPhotoLike = z.infer<typeof insertPhotoLikeSchema>;
+export type QuestProgress = typeof questProgress.$inferSelect;
+export type InsertQuestProgress = z.infer<typeof insertQuestProgressSchema>;
+export type MiniGame = typeof miniGames.$inferSelect;
+export type InsertMiniGame = z.infer<typeof insertMiniGameSchema>;
+export type MiniGameScore = typeof miniGameScores.$inferSelect;
+export type InsertMiniGameScore = z.infer<typeof insertMiniGameScoreSchema>;
+export type UserBehaviorLog = typeof userBehaviorLogs.$inferSelect;
+export type InsertUserBehaviorLog = z.infer<typeof insertUserBehaviorLogSchema>;
+export type AiLearningInsight = typeof aiLearningInsights.$inferSelect;
+export type InsertAiLearningInsight = z.infer<typeof insertAiLearningInsightSchema>;
+export type PhotoComment = typeof photoComments.$inferSelect;
+export type InsertPhotoComment = z.infer<typeof insertPhotoCommentSchema>;
