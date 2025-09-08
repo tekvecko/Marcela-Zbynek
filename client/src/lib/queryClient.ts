@@ -94,9 +94,10 @@ export const queryClient = new QueryClient({
       },
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes for better caching
-      gcTime: 10 * 60 * 1000, // 10 minutes cache retention (TanStack Query v5)
-      retry: 2,
+      staleTime: 2 * 60 * 1000, // 2 minutes for user data
+      gcTime: 10 * 60 * 1000, // 10 minutes cache retention
+      retry: 1, // Reduce retries for faster response
+      retryDelay: 500, // Faster retry delay
     },
     mutations: {
       retry: 1,
