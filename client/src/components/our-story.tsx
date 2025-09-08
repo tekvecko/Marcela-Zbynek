@@ -1,4 +1,3 @@
-
 import { Heart, Calendar, MapPin, Star, Camera, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -76,7 +75,7 @@ const storyMilestones: StoryMilestone[] = [
 
 export default function OurStory() {
   return (
-    <section className="py-20 bg-gradient-to-br from-cream via-blush to-cream">
+    <section id="story" className="py-20 bg-gradient-to-br from-cream via-blush to-cream">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <motion.div
