@@ -1,5 +1,11 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+interface RequestOptions {
+  method?: string;
+  body?: any;
+  headers?: Record<string, string>;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -7,20 +13,36 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+export async function apiRequest<T = any>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  // Get auth token from localStorage
+  const token = localStorage.getItem('auth_token');
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
   });
 
-  await throwIfResNotOk(res);
-  return res;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+    throw new Error(errorData.message || 'Request failed');
+  }
+
+  return response.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -44,14 +66,41 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: async ({ queryKey }) => {
+        const token = localStorage.getItem("auth_token");
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(queryKey.join("/") as string, {
+          credentials: "include",
+          headers
+        });
+
+        if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("auth_user");
+          window.location.reload();
+          return null;
+        }
+
+        await throwIfResNotOk(response);
+        return await response.json();
+      },
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 2 * 60 * 1000, // 2 minutes for user data
+      gcTime: 10 * 60 * 1000, // 10 minutes cache retention
+      retry: 1, // Reduce retries for faster response
+      retryDelay: 500, // Faster retry delay
     },
     mutations: {
-      retry: false,
+      retry: 1,
     },
   },
 });

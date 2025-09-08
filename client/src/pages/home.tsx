@@ -1,152 +1,118 @@
-import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Navigation from "@/components/navigation";
-import { StatsGrid } from "@/components/profile/stats-grid";
+import HeroSection from "@/components/hero-section";
+import CountdownTimer from "@/components/countdown-timer";
 
-interface Challenge {
-  id: string;
-  title: string;
-  description: string;
-  points: number;
-  category: string;
-}
-
-interface UserStats {
-  totalPoints: number;
-  level: number;
-  currentLevelPoints: number;
-  nextLevelPoints: number;
-  completedChallenges: number;
-  unlockedAchievements: number;
-  totalAchievements: number;
-  miniGamesPlayed: number;
-  bestMiniGameScore: number;
-}
+import { Link } from "wouter";
+import { Camera, Heart, MapPin, Users } from "lucide-react";
+import GlassButton from "@/components/ui/glass-button";
 
 export default function Home() {
-  const { user } = useAuth();
-
-  const { data: challenges, isLoading: challengesLoading } = useQuery<Challenge[]>({
-    queryKey: ['/api/challenges'],
-  });
-
-  const { data: stats, isLoading: statsLoading } = useQuery<UserStats>({
-    queryKey: ['/api/user/stats'],
-  });
-
-  const handleLogout = () => {
-    window.location.href = '/api/logout';
-  };
-
-  if (challengesLoading || statsLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="bg-card h-32 rounded-lg"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-card h-24 rounded-lg"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navigation />
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">
-            Vítej zpět, {(user as any)?.displayName || 'Hráči'}! 👋
-          </h2>
-          <p className="text-muted-foreground">
-            Jsi na Level {stats?.level || 1} s {stats?.totalPoints || 0} body. Pokračuj ve svých výzvách!
-          </p>
-        </div>
-
-        {/* Stats Overview */}
-        {stats && <StatsGrid stats={stats} />}
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-          {/* Available Challenges */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <i className="fas fa-target text-emerald-500 mr-2"></i>
-                Dostupné výzvy
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {challenges?.slice(0, 3).map((challenge) => (
-                  <div key={challenge.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div>
-                      <h4 className="font-semibold text-sm">{challenge.title}</h4>
-                      <p className="text-xs text-muted-foreground">{challenge.description}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-primary font-semibold">{challenge.points} XP</div>
-                      <Button size="sm" variant="outline" className="mt-1" data-testid={`button-challenge-${challenge.id}`}>
-                        Začít
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full" data-testid="button-view-all-challenges">
-                  Zobrazit všechny výzvy
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Progress */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <i className="fas fa-clock text-blue-500 mr-2"></i>
-                Poslední aktivita
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-xs">
-                    <i className="fas fa-check text-white"></i>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm">Systém sleduje tvůj pokrok</p>
-                    <p className="text-xs text-muted-foreground">Dokončuj výzvy pro získání bodů</p>
-                  </div>
+    <div className="min-h-screen">
+      <HeroSection />
+      
+      {/* Content that scrolls over the hero background */}
+      <div className="relative z-20 bg-cream">
+        <CountdownTimer />
+        
+        {/* Quick Navigation Cards */}
+        <section className="py-24 bg-gradient-to-br from-cream to-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-charcoal mb-6">
+              Objevte naši svatbu
+            </h2>
+            <p className="text-xl text-charcoal/60 max-w-2xl mx-auto">
+              Vyberte si jednu ze sekcí a začněte prozzkumávat
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <Link href="/photo-quest" className="group block touch-manipulation">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-romantic to-love rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Camera className="text-white" size={24} />
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-xs">
-                    <i className="fas fa-trophy text-white"></i>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm">Achievementy se automaticky odemykají</p>
-                    <p className="text-xs text-muted-foreground">Pokračuj v hraní pro více odměn</p>
-                  </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Photo Quest</h3>
+                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
+                  Plňte fotografické úkoly a pomozte nám zachytit naši svatbu z různých úhlů
+                </p>
+                <div className="flex justify-center">
+                  <GlassButton variant="primary" size="md">
+                    <Camera size={16} />
+                    Začít quest
+                  </GlassButton>
                 </div>
-
-                <Button variant="outline" className="w-full" data-testid="button-view-profile">
-                  Zobrazit profil
-                </Button>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </div>
-            </CardContent>
-          </Card>
+            </Link>
+            
+            <Link href="/gallery" className="group block touch-manipulation">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Heart className="text-white" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Galerie</h3>
+                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
+                  Prohlédněte si fotky ze svatby a dejte like těm nejkrásnějším
+                </p>
+                <div className="flex justify-center">
+                  <GlassButton variant="secondary" size="md">
+                    <Heart size={16} />
+                    Zobrazit galerii
+                  </GlassButton>
+                </div>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              </div>
+            </Link>
+            
+            <Link href="/details" className="group block touch-manipulation">
+              <div className="relative bg-white/20 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border border-white/20 hover:border-white/30">
+                <div className="w-16 h-16 bg-gradient-to-br from-sage to-green-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <MapPin className="text-white" size={24} />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-charcoal mb-4 text-center">Detaily</h3>
+                <p className="text-charcoal/60 text-center leading-relaxed mb-6">
+                  Všechny důležité informace o naší svatbě - místo, čas, program
+                </p>
+                <div className="flex justify-center">
+                  <GlassButton variant="outline" size="md">
+                    <MapPin size={16} />
+                    Zobrazit detaily
+                  </GlassButton>
+                </div>
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              </div>
+            </Link>
+          </div>
         </div>
+        </section>
+        
+        {/* Footer */}
+        <footer className="romantic-gradient py-16">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="mb-8">
+              <h3 className="font-script text-4xl text-charcoal mb-4">
+                Marcela <span className="heart-decoration text-5xl">❤️</span> Zbyněk
+              </h3>
+              <p className="text-charcoal/70 text-lg">11. října 2025 • Kovalovice</p>
+            </div>
+            
+            <div className="flex justify-center space-x-6 mb-8">
+              <a href="#photo-quest" className="text-charcoal hover:text-romantic transition-colors">Photo Quest</a>
+              <a href="#gallery" className="text-charcoal hover:text-romantic transition-colors">Galerie</a>
+              <a href="#details" className="text-charcoal hover:text-romantic transition-colors">Detaily</a>
+            </div>
+            
+            <div className="border-t border-gold/20 pt-8">
+              <p className="text-charcoal/60">
+                Vytvořeno s <span className="heart-decoration">❤️</span> pro náš svatební den
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
+
     </div>
   );
 }
