@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Navigation from "@/components/navigation";
 import { 
   Trophy, 
@@ -23,34 +24,37 @@ export default function Profile() {
   // Fetch user level with optimized caching
   const { data: userLevel, isLoading: levelLoading, error: levelError } = useQuery({
     queryKey: ["/api/user/level"],
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch user achievements with optimized caching
   const { data: userAchievements = [], isLoading: achievementsLoading, error: achievementsError } = useQuery({
     queryKey: ["/api/user/achievements"],
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch all achievements only when user achievements are loaded
+  // Fetch all achievements in parallel - remove dependency
   const { data: allAchievements = [], isLoading: allAchievementsLoading } = useQuery({
     queryKey: ["/api/achievements"],
-    staleTime: 10 * 60 * 1000, // 10 minutes - static data
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    enabled: !achievementsLoading && !achievementsError,
+    staleTime: 30 * 60 * 1000, // 30 minutes - static data
+    gcTime: 60 * 60 * 1000, // 1 hour
     retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch user streaks with optimized caching
   const { data: userStreaks, isLoading: streaksLoading, error: streaksError } = useQuery({
     queryKey: ["/api/user/streaks"],
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 
   // Memoized calculations to avoid re-computation
@@ -90,11 +94,11 @@ export default function Profile() {
     }
   };
 
-  // Show loading only for critical data
-  const isMainLoading = levelLoading || achievementsLoading || streaksLoading;
+  // Only show full loading for critical data
+  const isCriticalLoading = levelLoading && achievementsLoading && streaksLoading;
   
-  // Show error state if any critical query fails
-  if (levelError || achievementsError || streaksError) {
+  // Show error state only if ALL critical queries fail
+  if (levelError && achievementsError && streaksError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
         <Navigation />
@@ -102,14 +106,22 @@ export default function Profile() {
           <div className="text-center py-12">
             <Trophy size={48} className="text-charcoal/30 mx-auto mb-4" />
             <p className="text-charcoal/70 mb-4">Nepodařilo se načíst profil</p>
-            <p className="text-charcoal/50 text-sm">Zkuste obnovit stránku</p>
+            <p className="text-charcoal/50 text-sm mb-4">
+              {levelError && `Úroveň: ${levelError.message}`}<br/>
+              {achievementsError && `Achievementy: ${achievementsError.message}`}<br/>
+              {streaksError && `Série: ${streaksError.message}`}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Zkusit znovu
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (isMainLoading) {
+  // Show loading only if ALL critical data is loading
+  if (isCriticalLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
         <Navigation />
@@ -146,9 +158,15 @@ export default function Profile() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-charcoal/60">
                   <span>Pokrok k další úrovni</span>
-                  <span>{userLevel?.experienceToNext || 0} XP zbývá</span>
+                  <span>
+                    {levelLoading ? (
+                      <div className="h-4 w-16 bg-charcoal/10 rounded animate-pulse"></div>
+                    ) : (
+                      `${userLevel?.experienceToNext || 0} XP zbývá`
+                    )}
+                  </span>
                 </div>
-                <Progress value={experienceProgress} className="w-full" />
+                <Progress value={levelLoading ? 0 : experienceProgress} className="w-full" />
               </div>
             </div>
 
