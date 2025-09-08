@@ -4,14 +4,6 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
-    screens: {
-      'xs': '475px',
-      'sm': '640px',
-      'md': '768px',
-      'lg': '1024px',
-      'xl': '1280px',
-      '2xl': '1536px',
-    },
     extend: {
       borderRadius: {
         lg: "var(--radius)",
@@ -69,21 +61,11 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
-        // Wedding theme colors
-        blush: "var(--blush)",
-        gold: "var(--gold)",
-        romantic: "var(--romantic)",
-        cream: "var(--cream)",
-        charcoal: "var(--charcoal)",
-        love: "var(--love)",
-        sage: "var(--sage)",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
-        script: ['"Dancing Script"', 'cursive'],
-        display: ['"Playfair Display"', 'serif'],
       },
       keyframes: {
         "accordion-down": {
@@ -102,25 +84,10 @@ export default {
             height: "0",
           },
         },
-        heartBeat: {
-          '0%, 50%, 100%': { transform: 'scale(1)' },
-          '25%, 75%': { transform: 'scale(1.2)' },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
-        },
-        fadeIn: {
-          from: { opacity: '0', transform: 'translateY(20px)' },
-          to: { opacity: '1', transform: 'translateY(0)' },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "heart-beat": "heartBeat 1.5s ease-in-out infinite",
-        "float": "float 3s ease-in-out infinite",
-        "fade-in": "fadeIn 0.8s ease-out",
       },
     },
   },
