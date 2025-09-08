@@ -14,6 +14,8 @@ import { authenticateUser, optionalAuth, requireAdmin, type AuthRequest } from "
 import { generateToken } from "./utils/jwt";
 import { miniGamesStorage } from "./mini-games-storage";
 import { users } from "../shared/schema";
+import { LevelSystem } from "./level-system";
+import { AchievementSystem } from "./achievement-system";
 
 // Simple rate limiting middleware with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -517,10 +519,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.togglePhotoLike(photoId, userEmail);
 
       // Odeslat notifikaci o novém lajku
-      if (global.io && result.action === 'liked') {
-        const photo = await storage.getUploadedPhotoById(photoId);
+      if ((global as any).io && result.action === 'liked') {
+        const photo = await storage.getUploadedPhoto(photoId);
         if (photo) {
-          global.io.emit('photo-liked', {
+          (global as any).io.emit('photo-liked', {
             photoId: photoId,
             likerName: req.user?.firstName || req.user?.email?.split('@')[0] || 'Anonym',
             totalLikes: result.likes,
@@ -597,10 +599,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Odeslat notifikaci o novém komentáři
-      if (global.io) {
-        const photo = await storage.getUploadedPhotoById(photoId);
+      if ((global as any).io) {
+        const photo = await storage.getUploadedPhoto(photoId);
         if (photo) {
-          global.io.emit('comment-added', {
+          (global as any).io.emit('comment-added', {
             photoId: photoId,
             commenterName: userName,
             content: content.trim(),
