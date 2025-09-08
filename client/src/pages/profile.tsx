@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,56 +23,72 @@ import {
 export default function Profile() {
   // Fetch user level with optimized caching
   const { data: userLevel, isLoading: levelLoading, error: levelError } = useQuery({
-    queryKey: ["/api/user/level"],
+    queryKey: ["user", "level"],
+    queryFn: () => fetch("/api/user/level").then(res => res.json()),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     retry: 2,
     refetchOnWindowFocus: false,
+    enabled: true,
   });
 
   // Fetch user achievements with optimized caching
   const { data: userAchievements = [], isLoading: achievementsLoading, error: achievementsError } = useQuery({
-    queryKey: ["/api/user/achievements"],
+    queryKey: ["user", "achievements"],
+    queryFn: () => fetch("/api/user/achievements").then(res => res.json()),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     retry: 2,
     refetchOnWindowFocus: false,
+    enabled: true,
   });
 
   // Fetch all achievements in parallel - remove dependency
   const { data: allAchievements = [], isLoading: allAchievementsLoading } = useQuery({
-    queryKey: ["/api/achievements"],
+    queryKey: ["achievements", "all"],
+    queryFn: () => fetch("/api/achievements").then(res => res.json()),
     staleTime: 30 * 60 * 1000, // 30 minutes - static data
     gcTime: 60 * 60 * 1000, // 1 hour
     retry: 1,
     refetchOnWindowFocus: false,
+    enabled: true,
   });
 
   // Fetch user streaks with optimized caching
   const { data: userStreaks, isLoading: streaksLoading, error: streaksError } = useQuery({
-    queryKey: ["/api/user/streaks"],
+    queryKey: ["user", "streaks"],
+    queryFn: () => fetch("/api/user/streaks").then(res => res.json()),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     retry: 2,
     refetchOnWindowFocus: false,
+    enabled: true,
   });
 
   // Memoized calculations to avoid re-computation
-  const experienceProgress = userLevel?.experienceToNext && userLevel?.experience
-    ? ((userLevel.experience % 1000) / 1000) * 100 
-    : 0;
+  const { experienceProgress, unlockedAchievements, lockedAchievements } = useMemo(() => {
+    const progress = userLevel?.experienceToNext && userLevel?.experience
+      ? ((userLevel.experience % 1000) / 1000) * 100 
+      : 0;
 
-  const unlockedAchievementIds = Array.isArray(userAchievements) 
-    ? userAchievements.map((ua: any) => ua.achievementId).filter(Boolean)
-    : [];
-  
-  const unlockedAchievements = Array.isArray(allAchievements) 
-    ? allAchievements.filter((a: any) => a && a.id && unlockedAchievementIds.includes(a.id))
-    : [];
-  
-  const lockedAchievements = Array.isArray(allAchievements)
-    ? allAchievements.filter((a: any) => a && a.id && !unlockedAchievementIds.includes(a.id))
-    : [];
+    const unlockedIds = Array.isArray(userAchievements) 
+      ? userAchievements.map((ua: any) => ua.achievementId).filter(Boolean)
+      : [];
+    
+    const unlocked = Array.isArray(allAchievements) 
+      ? allAchievements.filter((a: any) => a && a.id && unlockedIds.includes(a.id))
+      : [];
+    
+    const locked = Array.isArray(allAchievements)
+      ? allAchievements.filter((a: any) => a && a.id && !unlockedIds.includes(a.id))
+      : [];
+
+    return {
+      experienceProgress: progress,
+      unlockedAchievements: unlocked,
+      lockedAchievements: locked
+    };
+  }, [userLevel, userAchievements, allAchievements]);
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -160,7 +176,7 @@ export default function Profile() {
                   <span>Pokrok k další úrovni</span>
                   <span>
                     {levelLoading ? (
-                      <div className="h-4 w-16 bg-charcoal/10 rounded animate-pulse"></div>
+                      <div className="h-4 w-20 bg-charcoal/10 rounded animate-pulse inline-block"></div>
                     ) : (
                       `${userLevel?.experienceToNext || 0} XP zbývá`
                     )}

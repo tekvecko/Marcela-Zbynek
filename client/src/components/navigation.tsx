@@ -40,37 +40,46 @@ export default function Navigation({}: NavigationProps = {}) {
     { id: 'music', title: 'Hudba', icon: Music }
   ];
 
-  // Sledování aktivní sekce při scrollování na stránce detailů
+  // Sledování aktivní sekce při scrollování na stránce detailů - optimalizováno s throttling
   useEffect(() => {
     if (location === '/details') {
+      let ticking = false;
+      
       const handleScroll = () => {
-        const sections = detailSections.map(section => section.id);
-        let currentSection = '';
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            const sections = detailSections.map(section => section.id);
+            let currentSection = '';
 
-        for (const sectionId of sections) {
-          const element = document.getElementById(sectionId);
-          if (element) {
-            const rect = element.getBoundingClientRect();
-            if (rect.top <= 150 && rect.bottom >= 150) {
-              currentSection = sectionId;
-              break;
+            for (const sectionId of sections) {
+              const element = document.getElementById(sectionId);
+              if (element) {
+                const rect = element.getBoundingClientRect();
+                if (rect.top <= 150 && rect.bottom >= 150) {
+                  currentSection = sectionId;
+                  break;
+                }
+              }
             }
-          }
-        }
 
-        if (currentSection && currentSection !== activeDetailSection) {
-          setActiveDetailSection(currentSection);
+            if (currentSection && currentSection !== activeDetailSection) {
+              setActiveDetailSection(currentSection);
+            }
+            ticking = false;
+          });
+          ticking = true;
         }
       };
 
-      window.addEventListener('scroll', handleScroll);
+      window.addEventListener('scroll', handleScroll, { passive: true });
 
-      // Only check initial position without scrolling
-      setTimeout(() => {
-        handleScroll();
-      }, 100);
+      // Check initial position
+      const timer = setTimeout(handleScroll, 100);
 
-      return () => window.removeEventListener('scroll', handleScroll);
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        clearTimeout(timer);
+      };
     }
   }, [location, activeDetailSection]);
 
@@ -152,50 +161,48 @@ export default function Navigation({}: NavigationProps = {}) {
     },
   });
 
-  // Fetch user level for navigation display
-  const { data: userLevel } = useQuery({
-    queryKey: ["/api/user/level"],
-    enabled: !!user,
-    staleTime: 30 * 1000,
-  });
+  // User level removed from navigation - not needed for display
 
-  // Scroll-based navigation hiding with position tracking
+  // Scroll-based navigation hiding - optimized
   useEffect(() => {
     let previousScrollY = window.scrollY;
     let ticking = false;
+    let timeout: NodeJS.Timeout;
 
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollY = window.scrollY;
+          const scrollDiff = Math.abs(scrollY - previousScrollY);
 
-          // Simple logic: up = show, down = hide
-          if (scrollY > previousScrollY && scrollY > 100) {
-            // Scrolling down
-            setIsVisible(false);
-          } else {
-            // Scrolling up or at top
-            setIsVisible(true);
+          // Only update if significant scroll change
+          if (scrollDiff > 5) {
+            if (scrollY > previousScrollY && scrollY > 100) {
+              setIsVisible(false);
+            } else {
+              setIsVisible(true);
+            }
+            previousScrollY = scrollY;
           }
-
-          previousScrollY = scrollY;
-          setLastScrollY(scrollY);
-          setCurrentScrollY(scrollY);
+          
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    // Initialize as visible
-    setIsVisible(true);
-    setLastScrollY(0);
-    setCurrentScrollY(window.scrollY);
+    // Debounce scroll events slightly
+    const debouncedHandleScroll = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(handleScroll, 10);
+    };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    setIsVisible(true);
+    window.addEventListener('scroll', debouncedHandleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', debouncedHandleScroll);
+      clearTimeout(timeout);
     };
   }, []);
 
