@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowJs": true,
@@ -15,7 +15,8 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../client/src/*"]
+      "@/*": ["../client/src/*"],
+      "@shared/*": ["../shared/*"]
     },
     "types": ["node"]
   },
