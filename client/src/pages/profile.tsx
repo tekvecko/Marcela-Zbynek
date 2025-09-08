@@ -206,9 +206,9 @@ export default function Profile() {
               <TrendingUp size={16} />
               Denní série
             </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2">
-              <Target size={16} />
-              Stats
+            <TabsTrigger value="stats" className="flex items-center gap-1 text-xs">
+              <Target size={14} />
+              Statistiky
             </TabsTrigger>
           </TabsList>
 
