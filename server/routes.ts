@@ -536,6 +536,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Add experience points and check achievements for photo likes
+      if (result.action === 'liked') {
+        try {
+          // Award experience for liking photos (social interaction)
+          await levelSystem.addExperience(userEmail, 2, 'lajkování fotky');
+          console.log(`🌟 Added 2 XP to ${userEmail} for photo like`);
+
+          // Check for new achievements
+          const newAchievements = await achievementSystem.checkUserAchievements(userEmail);
+          if (newAchievements.length > 0) {
+            console.log(`🏆 ${newAchievements.length} new achievements unlocked for ${userEmail}`);
+          }
+        } catch (error) {
+          console.error('Failed to update gamification systems for like:', error);
+        }
+      }
+
       res.json({
         userHasLiked: result.userHasLiked,
         likes: result.likes,
