@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,11 +73,11 @@ export default function Profile() {
     const unlockedIds = Array.isArray(userAchievements) 
       ? userAchievements.map((ua: any) => ua.achievementId).filter(Boolean)
       : [];
-    
+
     const unlocked = Array.isArray(allAchievements) 
       ? allAchievements.filter((a: any) => a && a.id && unlockedIds.includes(a.id))
       : [];
-    
+
     const locked = Array.isArray(allAchievements)
       ? allAchievements.filter((a: any) => a && a.id && !unlockedIds.includes(a.id))
       : [];
@@ -112,12 +111,11 @@ export default function Profile() {
 
   // Only show full loading for critical data
   const isCriticalLoading = levelLoading && achievementsLoading && streaksLoading;
-  
+
   // Show error state only if ALL critical queries fail
   if (levelError && achievementsError && streaksError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-        <Navigation />
         <div className="max-w-6xl mx-auto pt-20 md:pt-24">
           <div className="text-center py-12">
             <Trophy size={48} className="text-charcoal/30 mx-auto mb-4" />
@@ -140,7 +138,6 @@ export default function Profile() {
   if (isCriticalLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage p-4 md:p-8">
-        <Navigation />
         <div className="max-w-6xl mx-auto pt-20 md:pt-24">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-romantic"></div>
@@ -155,14 +152,14 @@ export default function Profile() {
     <div className="min-h-screen bg-gradient-to-br from-blush via-cream to-sage">
       <Navigation />
       <div className="max-w-6xl mx-auto space-y-8 p-4 md:p-8 pt-20 md:pt-24">
-        
+
         {/* Profile Header */}
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-white/30">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-24 h-24 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center">
               <span className="text-4xl">{userLevel?.badge || "🌟"}</span>
             </div>
-            
+
             <div className="flex-1 text-center md:text-left">
               <h1 className="font-display text-3xl font-bold text-charcoal mb-2">
                 {userLevel?.title || "Svatební nováček"}
@@ -170,7 +167,7 @@ export default function Profile() {
               <p className="text-lg text-charcoal/70 mb-4">
                 Úroveň {userLevel?.level || 1} • {userLevel?.experience || 0} XP
               </p>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-charcoal/60">
                   <span>Pokrok k další úrovni</span>
@@ -244,7 +241,7 @@ export default function Profile() {
                       </div>
                     </div>
                   ))}
-                  
+
                   {unlockedAchievements.length === 0 && (
                     <div className="text-center py-8">
                       <Trophy size={48} className="text-charcoal/30 mx-auto mb-4" />
