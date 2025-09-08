@@ -77,18 +77,18 @@ export default function Profile() {
     );
   }
 
-  const experienceProgress = userLevel?.experienceToNext 
+  const experienceProgress = userLevel?.experienceToNext && userLevel?.experience
     ? ((userLevel.experience % 1000) / 1000) * 100 
     : 0;
 
   const unlockedAchievementIds = Array.isArray(userAchievements) 
-    ? userAchievements.map((ua: any) => ua.achievementId)
+    ? userAchievements.map((ua: any) => ua.achievementId).filter(Boolean)
     : [];
   const unlockedAchievements = Array.isArray(allAchievements) 
-    ? allAchievements.filter((a: any) => unlockedAchievementIds.includes(a.id))
+    ? allAchievements.filter((a: any) => a && a.id && unlockedAchievementIds.includes(a.id))
     : [];
   const lockedAchievements = Array.isArray(allAchievements)
-    ? allAchievements.filter((a: any) => !unlockedAchievementIds.includes(a.id))
+    ? allAchievements.filter((a: any) => a && a.id && !unlockedAchievementIds.includes(a.id))
     : [];
 
   return (
@@ -164,16 +164,16 @@ export default function Profile() {
                 <CardContent className="space-y-4">
                   {unlockedAchievements.map((achievement: any) => (
                     <div key={achievement.id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gold/10 to-yellow-400/10 rounded-lg border border-gold/20">
-                      <span className="text-2xl">{achievement.icon}</span>
+                      <span className="text-2xl">{achievement.icon || "🏆"}</span>
                       <div className="flex-1">
-                        <h4 className="font-medium text-charcoal">{achievement.title}</h4>
-                        <p className="text-sm text-charcoal/60">{achievement.description}</p>
+                        <h4 className="font-medium text-charcoal">{achievement.title || "Neznámý achievement"}</h4>
+                        <p className="text-sm text-charcoal/60">{achievement.description || "Popis není k dispozici"}</p>
                         <div className="flex items-center gap-2 mt-2">
-                          {getTypeIcon(achievement.type)}
-                          <Badge className={getRarityColor(achievement.rarity)}>
-                            {achievement.rarity}
+                          {getTypeIcon(achievement.type || "special")}
+                          <Badge className={getRarityColor(achievement.rarity || "common")}>
+                            {achievement.rarity || "common"}
                           </Badge>
-                          <span className="text-xs text-gold">+{achievement.points} bodů</span>
+                          <span className="text-xs text-gold">+{achievement.points || 0} bodů</span>
                         </div>
                       </div>
                     </div>
@@ -200,16 +200,16 @@ export default function Profile() {
                 <CardContent className="space-y-4">
                   {lockedAchievements.slice(0, 8).map((achievement: any) => (
                     <div key={achievement.id} className="flex items-center gap-4 p-4 bg-white/50 rounded-lg border border-white/30 opacity-70">
-                      <span className="text-2xl grayscale">{achievement.icon}</span>
+                      <span className="text-2xl grayscale">{achievement.icon || "🏆"}</span>
                       <div className="flex-1">
-                        <h4 className="font-medium text-charcoal">{achievement.title}</h4>
-                        <p className="text-sm text-charcoal/60">{achievement.description}</p>
+                        <h4 className="font-medium text-charcoal">{achievement.title || "Neznámý achievement"}</h4>
+                        <p className="text-sm text-charcoal/60">{achievement.description || "Popis není k dispozici"}</p>
                         <div className="flex items-center gap-2 mt-2">
-                          {getTypeIcon(achievement.type)}
+                          {getTypeIcon(achievement.type || "special")}
                           <Badge variant="outline" className="text-xs">
-                            {achievement.rarity}
+                            {achievement.rarity || "common"}
                           </Badge>
-                          <span className="text-xs text-charcoal/50">+{achievement.points} bodů</span>
+                          <span className="text-xs text-charcoal/50">+{achievement.points || 0} bodů</span>
                         </div>
                       </div>
                     </div>

@@ -447,7 +447,7 @@ export default function Navigation({}: NavigationProps = {}) {
                         <motion.button
                           key={section.id}
                           onClick={() => scrollToSection(section.id)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                             isActive
                               ? 'bg-romantic text-white shadow-md'
                               : 'text-charcoal hover:bg-romantic/10 hover:text-romantic bg-white/70'
