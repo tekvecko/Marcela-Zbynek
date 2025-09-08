@@ -768,17 +768,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Real-time notifications would go here (Socket.IO removed for now)
 
       // Update quest progress if questId provided and user authenticated
+      let questJustCompleted = false;
       if (questId && req.user?.email) {
         try {
           const progress = await storage.getOrCreateQuestProgress(questId, req.user.email);
           if (photoData.isVerified) {
             const challenge = await storage.getQuestChallenge(questId);
             if (challenge) {
+              const wasCompleted = progress.isCompleted;
+              const newPhotosCount = progress.photosUploaded + 1;
+              const willBeCompleted = newPhotosCount >= challenge.targetPhotos;
+              
               await storage.updateQuestProgress(
                 progress.id, 
-                progress.photosUploaded + 1,
-                progress.photosUploaded + 1 >= challenge.targetPhotos
+                newPhotosCount,
+                willBeCompleted
               );
+
+              // Check if quest was just completed (wasn't completed before, but is now)
+              if (!wasCompleted && willBeCompleted) {
+                questJustCompleted = true;
+                console.log(`🎉 Quest "${challenge.title}" completed by ${req.user.email}!`);
+              }
             }
           }
         } catch (error) {
@@ -797,6 +808,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Award smaller experience for unverified photo attempt
             await levelSystem.addExperience(req.user.email, 5, 'pokus o fotku');
             console.log(`🌟 Added 5 XP to ${req.user.email} for photo upload attempt`);
+          }
+
+          // Award bonus experience for quest completion
+          if (questJustCompleted) {
+            await levelSystem.addExperience(req.user.email, 100, 'dokončení výzvy');
+            console.log(`🎉 Added 100 bonus XP to ${req.user.email} for quest completion!`);
           }
 
           // Check for new achievements
